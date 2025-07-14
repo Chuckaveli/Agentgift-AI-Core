@@ -1,65 +1,93 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
+import lottie from "lottie-web"
 
 export function HeroGiftAnimation() {
-  const [mounted, setMounted] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setMounted(true)
+    if (containerRef.current) {
+      const animation = lottie.loadAnimation({
+        container: containerRef.current,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        // Using a gift box animation data
+        animationData: {
+          v: "5.7.4",
+          fr: 30,
+          ip: 0,
+          op: 90,
+          w: 400,
+          h: 400,
+          nm: "Gift Animation",
+          ddd: 0,
+          assets: [],
+          layers: [
+            {
+              ddd: 0,
+              ind: 1,
+              ty: 4,
+              nm: "Gift Box",
+              sr: 1,
+              ks: {
+                o: { a: 0, k: 100 },
+                r: {
+                  a: 1,
+                  k: [
+                    { i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [0] },
+                    { t: 90, s: [360] },
+                  ],
+                },
+                p: { a: 0, k: [200, 200, 0] },
+                a: { a: 0, k: [0, 0, 0] },
+                s: {
+                  a: 1,
+                  k: [
+                    { i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 0, s: [80, 80, 100] },
+                    { i: { x: [0.833], y: [0.833] }, o: { x: [0.167], y: [0.167] }, t: 45, s: [120, 120, 100] },
+                    { t: 90, s: [80, 80, 100] },
+                  ],
+                },
+              },
+              ao: 0,
+              shapes: [
+                {
+                  ty: "gr",
+                  it: [
+                    {
+                      ty: "rc",
+                      d: 1,
+                      s: { a: 0, k: [100, 100] },
+                      p: { a: 0, k: [0, 0] },
+                      r: { a: 0, k: 10 },
+                    },
+                    {
+                      ty: "fl",
+                      c: { a: 0, k: [0.8, 0.3, 0.9, 1] },
+                      o: { a: 0, k: 100 },
+                    },
+                  ],
+                },
+              ],
+              ip: 0,
+              op: 90,
+              st: 0,
+            },
+          ],
+        },
+      })
+
+      return () => {
+        animation.destroy()
+      }
+    }
   }, [])
 
-  if (!mounted) {
-    return (
-      <div className="relative w-full h-96 flex items-center justify-center">
-        <div className="text-6xl animate-pulse">🎁</div>
-      </div>
-    )
-  }
-
   return (
-    <div className="relative w-full h-96 flex items-center justify-center overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 opacity-50 rounded-3xl" />
-
-      {/* Main gift box animation */}
-      <div className="relative z-10 flex items-center justify-center">
-        <div className="animate-bounce">
-          <div className="text-8xl transform hover:scale-110 transition-transform duration-300 cursor-pointer">🎁</div>
-        </div>
-      </div>
-
-      {/* Floating sparkles */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 text-2xl animate-pulse delay-100">✨</div>
-        <div className="absolute top-1/3 right-1/4 text-xl animate-pulse delay-300">🌟</div>
-        <div className="absolute bottom-1/3 left-1/3 text-lg animate-pulse delay-500">💫</div>
-        <div className="absolute bottom-1/4 right-1/3 text-2xl animate-pulse delay-700">⭐</div>
-      </div>
-
-      {/* Floating emojis */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/6 left-1/6 text-xl animate-float delay-200">🎉</div>
-        <div className="absolute top-1/5 right-1/6 text-lg animate-float delay-400">🎊</div>
-        <div className="absolute bottom-1/5 left-1/5 text-xl animate-float delay-600">🎈</div>
-        <div className="absolute bottom-1/6 right-1/5 text-lg animate-float delay-800">🎀</div>
-      </div>
-
-      {/* Pulsing rings */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-32 h-32 border-2 border-purple-300 rounded-full animate-ping opacity-20" />
-        <div className="absolute w-48 h-48 border-2 border-pink-300 rounded-full animate-ping opacity-10 delay-1000" />
-      </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}</style>
+    <div className="w-full max-w-md h-96 flex items-center justify-center">
+      <div ref={containerRef} className="w-80 h-80" />
     </div>
   )
 }

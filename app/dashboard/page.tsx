@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Gift, Heart, Users, Sparkles, TrendingUp, Star, Crown, Zap, Target } from "lucide-react"
+import { Gift, Heart, Users, Sparkles, TrendingUp, Star, Crown, Zap, Target, Calendar, Globe } from "lucide-react"
 import Link from "next/link"
 import { FeatureTile } from "@/components/global/feature-tile"
 import { XPTracker } from "@/components/global/xp-tracker"
 import { ToastBadgeNotifier } from "@/components/global/toast-badge-notifier"
 import { TIERS, type GlobalUser } from "@/lib/global-logic"
+import { useCulturalContext } from "@/components/cultural/cultural-context"
+import LocaleHolidayService, { type LocaleHoliday } from "@/lib/fetchLocaleHolidayData"
 
 // Mock user data - in real app, this would come from auth/database
 const mockUser: GlobalUser = {
@@ -80,23 +82,110 @@ const features = [
 
 export default function DashboardPage() {
   const [user, setUser] = useState<GlobalUser>(mockUser)
+  const [upcomingHolidays, setUpcomingHolidays] = useState<LocaleHoliday[]>([])
   const [recentActivity, setRecentActivity] = useState([
     { id: 1, action: "Completed Gift Gut Check", time: "2 hours ago", xp: 25 },
     { id: 2, action: "Unlocked 'Getting Started' badge", time: "1 day ago", xp: 50 },
     { id: 3, action: "Created Agent Gifty drop", time: "3 days ago", xp: 30 },
   ])
 
+  const { currentLocale, culturalPreferences } = useCulturalContext()
+
+  useEffect(() => {
+    loadHolidayData()
+  }, [currentLocale])
+
+  const loadHolidayData = async () => {
+    try {
+      const holidays = await LocaleHolidayService.fetchUpcomingHolidays(currentLocale, 30)
+      setUpcomingHolidays(holidays)
+    } catch (error) {
+      console.error("Error loading holiday data:", error)
+    }
+  }
+
+  const getHolidayBannerStyle = (holiday: LocaleHoliday) => {
+    const primaryColor = holiday.color_themes[0] || "purple"
+    const secondaryColor = holiday.color_themes[1] || "pink"
+
+    const colorMap: Record<string, string> = {
+      red: "from-red-500 to-red-600",
+      green: "from-green-500 to-green-600",
+      blue: "from-blue-500 to-blue-600",
+      purple: "from-purple-500 to-purple-600",
+      orange: "from-orange-500 to-orange-600",
+      gold: "from-yellow-500 to-yellow-600",
+      pink: "from-pink-500 to-pink-600",
+    }
+
+    return colorMap[primaryColor] || "from-purple-500 to-pink-500"
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
       <ToastBadgeNotifier />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Cultural Holiday Banners */}
+        {upcomingHolidays.length > 0 && (
+          <div className="space-y-4">
+            {upcomingHolidays.slice(0, 2).map((holiday) => (
+              <Card
+                key={holiday.id}
+                className={`bg-gradient-to-r ${getHolidayBannerStyle(holiday)} text-white border-0`}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold">{holiday.name}</h3>
+                        <p className="text-white/90">{holiday.cultural_significance}</p>
+                        <p className="text-sm text-white/80">
+                          {new Date(holiday.date).toLocaleDateString(currentLocale, {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-white/20 text-white border-white/30 mb-2">
+                        {LocaleHolidayService.getHolidayXPBonus(holiday)}x XP Bonus
+                      </Badge>
+                      <div>
+                        <Button
+                          asChild
+                          variant="secondary"
+                          className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                        >
+                          <Link href={`/culture/${holiday.country_code.toLowerCase()}`}>Explore Traditions</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             Welcome back, {user.name}! 🎁
           </h1>
           <p className="text-gray-600 dark:text-gray-400">Ready to create some gift magic today?</p>
+          {culturalPreferences && (
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <Globe className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-500">Culturally adapted for {culturalPreferences.locale}</span>
+            </div>
+          )}
         </div>
 
         {/* Stats Overview */}

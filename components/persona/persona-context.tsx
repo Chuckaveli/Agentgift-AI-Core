@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { createClient } from "@supabase/supabase-js"
+import { PersonaCulturalAdaptationService, type PersonaCulturalAdaptation } from "@/lib/persona-cultural-adaptation"
+import { useCulturalContext } from "@/components/cultural/cultural-context"
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -30,6 +32,10 @@ export interface Persona {
   chatPrompt: string
   contentPrompt: string
   isActive: boolean
+  // Cultural adaptation fields
+  culturalAdaptation?: PersonaCulturalAdaptation
+  adaptedIntroMessage?: string
+  adaptedTone?: string
 }
 
 interface PersonaContextType {
@@ -39,6 +45,7 @@ interface PersonaContextType {
   isLoading: boolean
   error: string | null
   refreshPersonas: () => Promise<void>
+  getCulturalPrompt: (giftContext: string) => string
 }
 
 const PersonaContext = createContext<PersonaContextType | undefined>(undefined)
@@ -118,11 +125,19 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   const [personas, setPersonas] = useState<Persona[]>(defaultPersonas)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { currentLocale } = useCulturalContext()
 
   // Load user's preferred persona from Supabase
   useEffect(() => {
     loadUserPersona()
   }, [])
+
+  // Update persona cultural adaptation when locale changes
+  useEffect(() => {
+    if (currentPersona && currentLocale) {
+      updatePersonaCulturalAdaptation(currentPersona.id, currentLocale)
+    }
+  }, [currentLocale])
 
   const loadUserPersona = async () => {
     try {
@@ -138,25 +153,61 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       if (savedPersonaId) {
         const persona = personas.find((p) => p.id === savedPersonaId)
         if (persona) {
-          setCurrentPersona(persona)
-          applyPersonaTheme(persona)
+          await setPersonaWithCulturalAdaptation(persona)
         } else {
           // Fallback to first persona
-          setCurrentPersona(personas[0])
-          applyPersonaTheme(personas[0])
+          await setPersonaWithCulturalAdaptation(personas[0])
         }
       } else {
         // Default to first persona
-        setCurrentPersona(personas[0])
-        applyPersonaTheme(personas[0])
+        await setPersonaWithCulturalAdaptation(personas[0])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load persona")
       // Fallback to first persona on error
-      setCurrentPersona(personas[0])
-      applyPersonaTheme(personas[0])
+      await setPersonaWithCulturalAdaptation(personas[0])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const setPersonaWithCulturalAdaptation = async (persona: Persona) => {
+    try {
+      // Get cultural adaptation for current locale
+      const adaptation = await PersonaCulturalAdaptationService.getAdaptedPersona(persona.id, currentLocale)
+
+      const adaptedPersona: Persona = {
+        ...persona,
+        culturalAdaptation: adaptation || undefined,
+        adaptedIntroMessage: adaptation?.intro_message || persona.description,
+        adaptedTone: adaptation?.cultural_tone || persona.tone,
+      }
+
+      setCurrentPersona(adaptedPersona)
+      applyPersonaTheme(adaptedPersona)
+    } catch (err) {
+      console.error("Error setting persona with cultural adaptation:", err)
+      setCurrentPersona(persona)
+      applyPersonaTheme(persona)
+    }
+  }
+
+  const updatePersonaCulturalAdaptation = async (personaId: string, locale: string) => {
+    if (!currentPersona) return
+
+    try {
+      const adaptation = await PersonaCulturalAdaptationService.getAdaptedPersona(personaId, locale)
+
+      const updatedPersona: Persona = {
+        ...currentPersona,
+        culturalAdaptation: adaptation || undefined,
+        adaptedIntroMessage: adaptation?.intro_message || currentPersona.description,
+        adaptedTone: adaptation?.cultural_tone || currentPersona.tone,
+      }
+
+      setCurrentPersona(updatedPersona)
+    } catch (err) {
+      console.error("Error updating persona cultural adaptation:", err)
     }
   }
 
@@ -167,8 +218,7 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
         throw new Error("Persona not found")
       }
 
-      setCurrentPersona(persona)
-      applyPersonaTheme(persona)
+      await setPersonaWithCulturalAdaptation(persona)
 
       // Save to localStorage (in real app, save to Supabase user profile)
       localStorage.setItem("agentgift_preferred_persona", personaId)
@@ -219,6 +269,15 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const getCulturalPrompt = (giftContext: string): string => {
+    if (currentPersona?.culturalAdaptation) {
+      return PersonaCulturalAdaptationService.generateCulturalPrompt(currentPersona.culturalAdaptation, giftContext)
+    }
+
+    // Fallback to default prompt
+    return `${currentPersona?.chatPrompt || ""}\n\nGift Context: ${giftContext}`
+  }
+
   const value: PersonaContextType = {
     currentPersona,
     personas,
@@ -226,6 +285,7 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
     refreshPersonas,
+    getCulturalPrompt,
   }
 
   return <PersonaContext.Provider value={value}>{children}</PersonaContext.Provider>
@@ -241,12 +301,15 @@ export function usePersona() {
 
 // Hook for getting persona-specific prompts for OpenAI
 export function usePersonaPrompts() {
-  const { currentPersona } = usePersona()
+  const { currentPersona, getCulturalPrompt } = usePersona()
 
   return {
     getChatPrompt: () => currentPersona?.chatPrompt || "",
     getContentPrompt: () => currentPersona?.contentPrompt || "",
+    getCulturalPrompt,
     getVoiceId: () => currentPersona?.voiceId || "",
     getTheme: () => currentPersona?.theme || defaultPersonas[0].theme,
+    getAdaptedIntroMessage: () => currentPersona?.adaptedIntroMessage || currentPersona?.description || "",
+    getAdaptedTone: () => currentPersona?.adaptedTone || currentPersona?.tone || "",
   }
 }
