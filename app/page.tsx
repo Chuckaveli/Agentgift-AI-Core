@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Gift, Sparkles, Users, Zap, Heart, Star, Trophy, Target } from "lucide-react"
 import Link from "next/link"
-import { HeroGiftAnimation } from "@/components/animations/hero-gift-animation"
 
 export default function LandingPage() {
   return (
@@ -66,9 +65,21 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right side - Lottie Animation */}
+            {/* Right side - Simple Hero Visual */}
             <div className="flex justify-center lg:justify-end">
-              <HeroGiftAnimation />
+              <div className="relative w-full max-w-md h-96 flex items-center justify-center">
+                {/* Background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 opacity-50 rounded-3xl" />
+
+                {/* Simple gift icon */}
+                <div className="relative z-10 text-8xl">🎁</div>
+
+                {/* Decorative elements */}
+                <div className="absolute top-4 right-4 text-2xl">✨</div>
+                <div className="absolute bottom-4 left-4 text-2xl">🌟</div>
+                <div className="absolute top-4 left-4 text-xl">🎉</div>
+                <div className="absolute bottom-4 right-4 text-xl">🎊</div>
+              </div>
             </div>
           </div>
         </div>

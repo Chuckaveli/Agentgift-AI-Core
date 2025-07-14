@@ -12,7 +12,7 @@ export function HeroGiftAnimation() {
   if (!mounted) {
     return (
       <div className="relative w-full h-96 flex items-center justify-center">
-        <div className="text-6xl">🎁</div>
+        <div className="text-6xl animate-pulse">🎁</div>
       </div>
     )
   }
@@ -50,6 +50,16 @@ export function HeroGiftAnimation() {
         <div className="w-32 h-32 border-2 border-purple-300 rounded-full animate-ping opacity-20" />
         <div className="absolute w-48 h-48 border-2 border-pink-300 rounded-full animate-ping opacity-10 delay-1000" />
       </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   )
 }
