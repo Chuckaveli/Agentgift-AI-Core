@@ -21,7 +21,7 @@ export interface FeatureConfig {
   enabled: boolean
 }
 
-// 🌐 Feature Credit Rules – Update as you add features
+// Universal feature configurations
 export const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
   "gift-gut-check": {
     name: "Gift Gut Check",
@@ -59,16 +59,16 @@ export const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
     creditsNeeded: 0,
     enabled: true,
   },
-  "giftbridge-nominate": {
-    name: "GiftBridge Nomination",
-    requiredTier: "free_agent",
+  "giftbridge": {
+    name: "GiftBridge",
+    requiredTier: "premium_spy",
     creditsNeeded: 2,
-    enabled: true,
+    enabled: false, // Feature locked until 2026
   },
-  "giftbridge-vote": {
-    name: "GiftBridge Vote",
+  "pride-alliance": {
+    name: "Pride Alliance Engine",
     requiredTier: "free_agent",
-    creditsNeeded: 0,
+    creditsNeeded: 1,
     enabled: true,
   },
 }
