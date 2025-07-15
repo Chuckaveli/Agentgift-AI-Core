@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import type { Database } from "@/types/supabase"
 
@@ -22,7 +21,7 @@ export interface FeatureConfig {
   enabled: boolean
 }
 
-// Feature configurations
+// 🌐 Feature Credit Rules – Update as you add features
 export const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
   "gift-gut-check": {
     name: "Gift Gut Check",
@@ -60,13 +59,24 @@ export const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
     creditsNeeded: 0,
     enabled: true,
   },
+  "giftbridge-nominate": {
+    name: "GiftBridge Nomination",
+    requiredTier: "free_agent",
+    creditsNeeded: 2,
+    enabled: true,
+  },
+  "giftbridge-vote": {
+    name: "GiftBridge Vote",
+    requiredTier: "free_agent",
+    creditsNeeded: 0,
+    enabled: true,
+  },
 }
 
 export async function checkUserAccess(featureName: string): Promise<AccessCheckResult> {
   const supabase = createClientComponentClient<Database>()
 
   try {
-    // Check authentication
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -80,9 +90,7 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
       }
     }
 
-    // Get feature config
     const featureConfig = FEATURE_CONFIGS[featureName]
-
     if (!featureConfig || !featureConfig.enabled) {
       return {
         accessGranted: false,
@@ -92,10 +100,9 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
       }
     }
 
-    // Get user profile
     const { data: profile } = await supabase
       .from("user_profiles")
-      .select("tier, credits, xp, level")
+      .select("tier, credits")
       .eq("id", session.user.id)
       .single()
 
@@ -120,7 +127,6 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
     const userTierLevel = tierLevels[profile.tier as keyof typeof tierLevels] || 0
     const requiredTierLevel = tierLevels[featureConfig.requiredTier as keyof typeof tierLevels] || 0
 
-    // Check tier access
     if (userTierLevel < requiredTierLevel) {
       return {
         accessGranted: false,
@@ -132,7 +138,6 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
       }
     }
 
-    // Check credit availability
     if (profile.credits < featureConfig.creditsNeeded) {
       return {
         accessGranted: false,
@@ -143,10 +148,9 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
       }
     }
 
-    // Access granted
     return {
       accessGranted: true,
-      fallbackReason: "no_auth", // Won't be used
+      fallbackReason: "no_auth",
       creditsLeft: profile.credits || 0,
       upgradeRequired: false,
       currentTier: profile.tier,
@@ -162,7 +166,6 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
   }
 }
 
-// Client-side hook for React components
 export function useUserAccess(featureName: string) {
   const [accessResult, setAccessResult] = React.useState<AccessCheckResult | null>(null)
   const [loading, setLoading] = React.useState(true)
