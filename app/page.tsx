@@ -11,6 +11,18 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       {/* Cultural Navigation Bar */}
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        {/* 🔒 Spy Mission Alert Login Strip */}
+<div className="w-full bg-gradient-to-r from-black via-gray-900 to-black text-green-400 py-3 px-4 text-sm sm:text-base flex justify-between items-center border-b border-green-600 shadow-md tracking-wide">
+  <span className="flex items-center gap-2">
+    🕵🏽‍♂️ <span className="hidden sm:inline">Access Required:</span> Agent Login Channel
+  </span>
+  <Link
+    href="/login"
+    className="bg-green-600 text-black font-bold py-1.5 px-4 rounded hover:bg-green-500 transition-all shadow-green-800 hover:shadow-lg"
+  >
+    ENTER
+  </Link>
+</div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
