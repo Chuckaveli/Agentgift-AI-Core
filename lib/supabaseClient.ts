@@ -1,7 +1,7 @@
-import { createBrowserClient } from '@supabase/ssr';
-import { Database } from '@/types/supabase'; // auto-gen from Supabase
+'use client'
 
-export const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
+import { Database } from '@/types/supabase' // your typed DB schema
+
+export const createClient = () =>
+  createBrowserSupabaseClient<Database>()
