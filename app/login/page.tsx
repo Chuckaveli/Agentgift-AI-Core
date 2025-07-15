@@ -10,9 +10,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     supabase.auth.signInWithOAuth({
-      provider: 'google', // You can change this to github, discord, etc.
+      provider: 'google',
       options: {
-        redirectTo: `${location.origin}/dashboard`,
+        redirectTo: `${location.origin}/dashboard`, // Works in Vercel prod
       },
     })
   }, [])
