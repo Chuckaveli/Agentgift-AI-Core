@@ -12,14 +12,16 @@ export default function LoginPage() {
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${location.origin}/dashboard`, // Works in Vercel prod
-      },
+        redirectTo: `${location.origin}/dashboard`
+      }
     })
   }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
-      <h1 className="text-lg font-semibold animate-pulse">🎯 Redirecting to your mission...</h1>
+      <h1 className="text-lg font-semibold animate-pulse">
+        🎯 Redirecting to your mission...
+      </h1>
     </div>
   )
 }
