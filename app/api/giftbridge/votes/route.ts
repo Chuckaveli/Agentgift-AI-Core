@@ -1,5 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+// Mock user votes storage (in real app, this would be in database)
+const mockUserVotes: Record<string, string[]> = {
+  "mock-user-123": ["1", "3"], // User has voted for nominations 1 and 3
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -9,30 +14,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing nomination ID or user ID" }, { status: 400 })
     }
 
-    // Check if user already voted this season (mock - in real app, check Supabase)
-    const userVotesThisSeason = [] // Mock - get from database
-    const hasVotedForNomination = userVotesThisSeason.includes(nominationId)
-
-    if (hasVotedForNomination) {
+    // Check if user already voted for this nomination
+    const userVotes = mockUserVotes[userId] || []
+    if (userVotes.includes(nominationId)) {
       return NextResponse.json(
         { success: false, error: "You have already voted for this nomination this season" },
         { status: 400 },
       )
     }
 
-    // Record vote (mock - in real app, insert into Supabase)
-    console.log(`User ${userId} voted for nomination ${nominationId}`)
+    // Record the vote
+    if (!mockUserVotes[userId]) {
+      mockUserVotes[userId] = []
+    }
+    mockUserVotes[userId].push(nominationId)
 
-    // Update nomination vote count (mock - in real app, increment in Supabase)
-    console.log(`Incremented vote count for nomination ${nominationId}`)
-
-    // Award XP (mock - in real app, update user XP in Supabase)
-    console.log(`Awarded 500 XP to user ${userId} for voting`)
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     return NextResponse.json({
       success: true,
-      message: "Vote recorded successfully! 500 XP awarded.",
-      xpAwarded: 500,
+      message: "Vote recorded successfully! 50 XP awarded.",
+      xpAwarded: 50,
     })
   } catch (error) {
     console.error("Error recording vote:", error)
@@ -49,8 +52,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "User ID required" }, { status: 400 })
     }
 
-    // Get user's votes for current season (mock - in real app, fetch from Supabase)
-    const userVotes = ["1", "3"] // Mock user votes
+    // Get user's votes
+    const userVotes = mockUserVotes[userId] || []
 
     return NextResponse.json({
       success: true,
