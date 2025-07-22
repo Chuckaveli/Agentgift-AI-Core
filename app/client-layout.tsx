@@ -1,5 +1,11 @@
 "use client"
 
+import { SheetContent } from "@/components/ui/sheet"
+
+import { SheetTrigger } from "@/components/ui/sheet"
+
+import { Sheet } from "@/components/ui/sheet"
+
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -25,19 +31,13 @@ import {
   Shield,
   LogOut,
 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { ThemeProvider } from "@/components/theme-provider"
+import { GamificationProvider } from "@/components/layout/gamification-provider"
+import { CulturalProvider } from "@/components/cultural/cultural-context"
+import { PersonaThemeWrapper } from "@/components/persona/persona-theme-wrapper"
+import { MobileFooterNav } from "@/components/navigation/mobile-footer-nav"
+import { ToastBadgeNotifier } from "@/components/global/toast-badge-notifier"
+import { ConciergeTrigger } from "@/components/concierge-trigger"
 
 interface NavigationItem {
   id: string
@@ -49,13 +49,8 @@ interface NavigationItem {
   adminOnly?: boolean
 }
 
-interface AppLayoutProps {
+interface ClientLayoutProps {
   children: React.ReactNode
-  user?: any | null
-  showSidebar?: boolean
-  showGamification?: boolean
-  showNotifications?: boolean
-  customModules?: React.ReactNode[]
 }
 
 const publicNavigation: NavigationItem[] = [
@@ -77,14 +72,7 @@ const adminNavigation: NavigationItem[] = [
   { id: "users", label: "User Management", href: "/admin/users", icon: Users, adminOnly: true },
 ]
 
-export function AppLayout({
-  children,
-  user,
-  showSidebar = true,
-  showGamification = true,
-  showNotifications = true,
-  customModules = [],
-}: AppLayoutProps) {
+const AppLayoutInner = ({ children }: ClientLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -94,6 +82,7 @@ export function AppLayout({
     setMounted(true)
   }, [])
 
+  const user = null // Placeholder for user data
   const isAuthenticated = !!user
   const isAdmin = user?.tier === "premium" // Simplified admin check
 
@@ -127,7 +116,7 @@ export function AppLayout({
       </div>
 
       {/* Gamification Bar */}
-      {showGamification && user && (
+      {user && (
         <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -145,19 +134,21 @@ export function AppLayout({
                 <span>XP Progress</span>
                 <span>{user.xp} XP</span>
               </div>
-              <Progress value={getXPProgress()} className="h-2" />
+              <div className="h-2 bg-accent rounded-full overflow-hidden">
+                <div className="h-full bg-accent-foreground w-full" style={{ width: `${getXPProgress()}%` }} />
+              </div>
             </div>
             {user.badges.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {user.badges.slice(0, 3).map((badge, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
+                  <div key={index} className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs">
                     {badge}
-                  </Badge>
+                  </div>
                 ))}
                 {user.badges.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
+                  <div className="bg-outline text-outline-foreground px-2 py-1 rounded text-xs">
                     +{user.badges.length - 3} more
-                  </Badge>
+                  </div>
                 )}
               </div>
             )}
@@ -179,24 +170,15 @@ export function AppLayout({
                 <item.icon className="h-4 w-4" />
                 <span>{item.label}</span>
                 {item.badge && (
-                  <Badge variant="secondary" className="ml-auto">
+                  <div className="bg-secondary text-secondary-foreground px-2 py-1 rounded text-xs ml-auto">
                     {item.badge}
-                  </Badge>
+                  </div>
                 )}
               </Link>
             </li>
           ))}
         </ul>
       </div>
-
-      {/* Custom Modules */}
-      {customModules.length > 0 && (
-        <div className="p-4 border-t">
-          {customModules.map((module, index) => (
-            <div key={index}>{module}</div>
-          ))}
-        </div>
-      )}
     </div>
   )
 
@@ -207,21 +189,19 @@ export function AppLayout({
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Mobile Menu + Logo */}
           <div className="flex items-center gap-4">
-            {showSidebar && (
-              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-80">
-                  <SidebarContent />
-                </SheetContent>
-              </Sheet>
-            )}
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-80">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
 
             {/* Logo (visible on mobile when no sidebar) */}
-            {(!showSidebar || !isAuthenticated) && (
+            {!isAuthenticated && (
               <a href="/" className="flex items-center gap-2">
                 <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
                 <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:block">
@@ -234,62 +214,62 @@ export function AppLayout({
           {/* Header Actions */}
           <div className="flex items-center gap-2">
             {/* Theme Toggle */}
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            <button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
+            </button>
 
             {/* Notifications */}
-            {showNotifications && isAuthenticated && (
-              <Button variant="ghost" size="icon" className="relative">
+            {isAuthenticated && (
+              <button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                <div className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-secondary text-secondary-foreground rounded-full">
                   3
-                </Badge>
-              </Button>
+                </div>
+              </button>
             )}
 
             {/* User Menu */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
+              <div className="relative">
+                <button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <div
+                    className="h-10 w-10 bg-cover bg-center rounded-full"
+                    style={{ backgroundImage: `url(${user.avatar || "/placeholder.svg"})` }}
+                  >
+                    {user.avatar ? "" : user.name.charAt(0)}
+                  </div>
+                </button>
+                <div className="absolute right-0 top-full w-56 bg-background border rounded mt-2">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
                       <p className="font-medium">{user.name}</p>
                       <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <div className="border-t" />
+                  <button className="flex items-center justify-start gap-2 p-2 w-full hover:bg-accent hover:text-accent-foreground">
                     <UserIcon className="mr-2 h-4 w-4" />
                     Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  </button>
+                  <button className="flex items-center justify-start gap-2 p-2 w-full hover:bg-accent hover:text-accent-foreground">
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  </button>
+                  <div className="border-t" />
+                  <button className="flex items-center justify-start gap-2 p-2 w-full hover:bg-accent hover:text-accent-foreground">
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
+                <button variant="ghost" size="sm">
                   Sign In
-                </Button>
-                <Button variant="default" size="sm">
+                </button>
+                <button variant="default" size="sm">
                   Sign Up
-                </Button>
+                </button>
               </div>
             )}
           </div>
@@ -301,3 +281,35 @@ export function AppLayout({
     </div>
   )
 }
+
+export function ClientLayout({ children }: ClientLayoutProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <CulturalProvider>
+        <GamificationProvider>
+          <PersonaThemeWrapper>
+            <div className="min-h-screen bg-background">
+              <AppLayoutInner>{children}</AppLayoutInner>
+              <MobileFooterNav />
+              <ConciergeTrigger />
+              <ToastBadgeNotifier />
+            </div>
+          </PersonaThemeWrapper>
+        </GamificationProvider>
+      </CulturalProvider>
+    </ThemeProvider>
+  )
+}
+
+// Default export for Next.js
+export default ClientLayout
