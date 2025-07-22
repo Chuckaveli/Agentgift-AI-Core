@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
+import type React from "react"
+import { useTheme } from "next-themes"
 import {
   Menu,
   Home,
@@ -25,6 +25,7 @@ import {
   Shield,
   LogOut,
 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -37,8 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useTheme } from "next-themes"
-import Image from "next/image"
 
 interface NavigationItem {
   id: string
@@ -78,7 +77,7 @@ const adminNavigation: NavigationItem[] = [
   { id: "users", label: "User Management", href: "/admin/users", icon: Users, adminOnly: true },
 ]
 
-export default function AppLayout({
+export function AppLayout({
   children,
   user,
   showSidebar = true,
@@ -120,9 +119,7 @@ export default function AppLayout({
       {/* Logo */}
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
-          </div>
+          <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
           <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             AgentGift.ai
           </span>
@@ -226,9 +223,7 @@ export default function AppLayout({
             {/* Logo (visible on mobile when no sidebar) */}
             {(!showSidebar || !isAuthenticated) && (
               <a href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
-                </div>
+                <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
                 <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:block">
                   AgentGift.ai
                 </span>
@@ -292,11 +287,8 @@ export default function AppLayout({
                 <Button variant="ghost" size="sm">
                   Sign In
                 </Button>
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                >
-                  Get Started
+                <Button variant="default" size="sm">
+                  Sign Up
                 </Button>
               </div>
             )}
@@ -304,21 +296,8 @@ export default function AppLayout({
         </div>
       </header>
 
-      <div className="flex">
-        {/* Desktop Sidebar */}
-        {showSidebar && isAuthenticated && (
-          <aside className="hidden md:flex w-80 flex-col fixed inset-y-0 left-0 top-16 border-r bg-background">
-            <SidebarContent />
-          </aside>
-        )}
-
-        {/* Main Content */}
-        <main className={`flex-1 ${showSidebar && isAuthenticated ? "md:ml-80" : ""}`}>{children}</main>
-      </div>
-      {/* Footer */}
-      <footer className="bg-gray-100 p-4 text-center">
-        <p>&copy; 2023 Your Company. All rights reserved.</p>
-      </footer>
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">{children}</main>
     </div>
   )
 }

@@ -1,9 +1,7 @@
 "use client"
 
 import Link from "next/link"
-
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import {
@@ -24,6 +22,9 @@ import {
   Users,
   Shield,
   LogOut,
+  Star,
+  Heart,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -39,6 +40,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useTheme } from "next-themes"
 import Image from "next/image"
+import { CulturalLocaleSelector } from "@/components/cultural/cultural-locale-selector"
 
 interface NavigationItem {
   id: string
@@ -50,13 +52,8 @@ interface NavigationItem {
   adminOnly?: boolean
 }
 
-interface AppLayoutProps {
+interface ClientLayoutProps {
   children: React.ReactNode
-  user?: any | null
-  showSidebar?: boolean
-  showGamification?: boolean
-  showNotifications?: boolean
-  customModules?: React.ReactNode[]
 }
 
 const publicNavigation: NavigationItem[] = [
@@ -78,25 +75,33 @@ const adminNavigation: NavigationItem[] = [
   { id: "users", label: "User Management", href: "/admin/users", icon: Users, adminOnly: true },
 ]
 
-export default function AppLayout({
-  children,
-  user,
-  showSidebar = true,
-  showGamification = true,
-  showNotifications = true,
-  customModules = [],
-}: AppLayoutProps) {
+export default function ClientLayout({ children }: ClientLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
 
+  // Mock user data - replace with actual auth
+  const [user, setUser] = useState<any>(null)
+
   useEffect(() => {
     setMounted(true)
+    // Mock user for demo - replace with actual auth
+    setUser({
+      id: "1",
+      name: "Demo User",
+      email: "demo@agentgift.ai",
+      avatar: "/placeholder-user.jpg",
+      tier: "free",
+      level: 5,
+      xp: 2450,
+      credits: 150,
+      badges: ["Early Adopter", "Gift Guru", "Social Butterfly"],
+    })
   }, [])
 
   const isAuthenticated = !!user
-  const isAdmin = user?.tier === "premium" // Simplified admin check
+  const isAdmin = user?.tier === "premium"
 
   const allNavigation = [
     ...publicNavigation,
@@ -120,8 +125,8 @@ export default function AppLayout({
       {/* Logo */}
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+            <Image src="/agentgift-new-logo.png" alt="AgentGift Logo" width={40} height={40} className="rounded-lg" />
           </div>
           <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             AgentGift.ai
@@ -130,7 +135,7 @@ export default function AppLayout({
       </div>
 
       {/* Gamification Bar */}
-      {showGamification && user && (
+      {user && (
         <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -152,7 +157,7 @@ export default function AppLayout({
             </div>
             {user.badges.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {user.badges.slice(0, 3).map((badge, index) => (
+                {user.badges.slice(0, 3).map((badge: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {badge}
                   </Badge>
@@ -170,12 +175,12 @@ export default function AppLayout({
 
       {/* Navigation */}
       <div className="flex-1 py-4">
-        <ul className="space-y-1">
+        <ul className="space-y-1 px-3">
           {allNavigation.map((item) => (
             <li key={item.id}>
               <Link
                 href={item.href}
-                className={`flex items-center gap-3 p-3 rounded-md hover:bg-accent hover:text-accent-foreground ${
+                className={`flex items-center gap-3 p-3 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${
                   pathname === item.href ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground"
                 }`}
               >
@@ -191,17 +196,12 @@ export default function AppLayout({
           ))}
         </ul>
       </div>
-
-      {/* Custom Modules */}
-      {customModules.length > 0 && (
-        <div className="p-4 border-t">
-          {customModules.map((module, index) => (
-            <div key={index}>{module}</div>
-          ))}
-        </div>
-      )}
     </div>
   )
+
+  if (!mounted) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -210,7 +210,7 @@ export default function AppLayout({
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Mobile Menu + Logo */}
           <div className="flex items-center gap-4">
-            {showSidebar && (
+            {isAuthenticated && (
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="md:hidden">
@@ -223,28 +223,35 @@ export default function AppLayout({
               </Sheet>
             )}
 
-            {/* Logo (visible on mobile when no sidebar) */}
-            {(!showSidebar || !isAuthenticated) && (
-              <a href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} />
-                </div>
-                <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:block">
-                  AgentGift.ai
-                </span>
-              </a>
-            )}
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                <Image
+                  src="/agentgift-new-logo.png"
+                  alt="AgentGift Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
+                />
+              </div>
+              <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:block">
+                AgentGift.ai
+              </span>
+            </Link>
           </div>
 
           {/* Header Actions */}
           <div className="flex items-center gap-2">
+            {/* Cultural Locale Selector */}
+            <CulturalLocaleSelector />
+
             {/* Theme Toggle */}
             <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
             {/* Notifications */}
-            {showNotifications && isAuthenticated && (
+            {isAuthenticated && (
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
@@ -259,7 +266,7 @@ export default function AppLayout({
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} />
+                      <AvatarImage src={user.avatar || "/placeholder-user.jpg"} />
                       <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                   </Button>
@@ -306,18 +313,106 @@ export default function AppLayout({
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        {showSidebar && isAuthenticated && (
+        {isAuthenticated && (
           <aside className="hidden md:flex w-80 flex-col fixed inset-y-0 left-0 top-16 border-r bg-background">
             <SidebarContent />
           </aside>
         )}
 
         {/* Main Content */}
-        <main className={`flex-1 ${showSidebar && isAuthenticated ? "md:ml-80" : ""}`}>{children}</main>
+        <main className={`flex-1 ${isAuthenticated ? "md:ml-80" : ""}`}>{children}</main>
       </div>
+
       {/* Footer */}
-      <footer className="bg-gray-100 p-4 text-center">
-        <p>&copy; 2023 Your Company. All rights reserved.</p>
+      <footer className="border-t bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/agentgift-new-logo.png"
+                  alt="AgentGift Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
+                />
+                <span className="font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  AgentGift.ai
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                AI-powered gift intelligence for meaningful connections and perfect presents.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">Features</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link href="/smart-search" className="hover:text-foreground">
+                    Smart Search
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/gift-dna" className="hover:text-foreground">
+                    Gift DNA
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/agent-gifty" className="hover:text-foreground">
+                    Agent Gifty
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/reveal" className="hover:text-foreground">
+                    Gift Reveal
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">Company</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link href="/mission" className="hover:text-foreground">
+                    Our Mission
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/blog" className="hover:text-foreground">
+                    Gift Intel
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="hover:text-foreground">
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="hover:text-foreground">
+                    Terms
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">Connect</h3>
+              <div className="flex space-x-4">
+                <Button variant="ghost" size="icon">
+                  <Heart className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Star className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Sparkles className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+            <p>&copy; 2024 AgentGift.ai. All rights reserved. Made with ❤️ for meaningful connections.</p>
+          </div>
+        </div>
       </footer>
     </div>
   )

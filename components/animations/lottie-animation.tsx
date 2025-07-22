@@ -1,82 +1,65 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
 
 interface LottieAnimationProps {
-  animationData?: any
-  animationUrl?: string
+  src: string
   className?: string
-  width?: number
-  height?: number
-  loop?: boolean
   autoplay?: boolean
+  loop?: boolean
+  speed?: number
 }
 
-export function LottieAnimation({
-  animationData,
-  animationUrl,
-  className = "",
-  width = 300,
-  height = 300,
-  loop = true,
-  autoplay = true,
-}: LottieAnimationProps) {
+export function LottieAnimation({ src, className, autoplay = true, loop = true, speed = 1 }: LottieAnimationProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [error, setError] = useState(false)
+  const animationRef = useRef<any>(null)
 
   useEffect(() => {
-    let animationInstance: any = null
+    let lottie: any = null
 
     const loadLottie = async () => {
       try {
-        const lottie = await import("lottie-web")
+        // Dynamically import lottie-web to avoid SSR issues
+        const lottieModule = await import("lottie-web")
+        lottie = lottieModule.default
 
-        if (!containerRef.current) return
+        if (containerRef.current && lottie) {
+          // Clear any existing animation
+          if (animationRef.current) {
+            animationRef.current.destroy()
+          }
 
-        let data = animationData
+          // Load the animation
+          animationRef.current = lottie.loadAnimation({
+            container: containerRef.current,
+            renderer: "svg",
+            loop,
+            autoplay,
+            path: src,
+          })
 
-        if (animationUrl && !data) {
-          const response = await fetch(animationUrl)
-          data = await response.json()
+          // Set speed if provided
+          if (speed !== 1) {
+            animationRef.current.setSpeed(speed)
+          }
         }
-
-        if (!data) {
-          setError(true)
-          return
-        }
-
-        animationInstance = lottie.default.loadAnimation({
-          container: containerRef.current,
-          renderer: "svg",
-          loop,
-          autoplay,
-          animationData: data,
-        })
-
-        setIsLoaded(true)
-      } catch (err) {
-        console.error("Failed to load Lottie animation:", err)
-        setError(true)
+      } catch (error) {
+        console.error("Failed to load Lottie animation:", error)
       }
     }
 
     loadLottie()
 
     return () => {
-      if (animationInstance) {
-        animationInstance.destroy()
+      if (animationRef.current) {
+        animationRef.current.destroy()
+        animationRef.current = null
       }
     }
-  }, [animationData, animationUrl, loop, autoplay])
+  }, [src, autoplay, loop, speed])
 
-  if (error) {
-    return (
-      <div className={`flex items-center justify-center ${className}`} style={{ width, height }}>
-        <div className="text-4xl animate-bounce">🎁</div>
-      </div>
-    )
-  }
-
-  return <div ref={containerRef} className={className} style={{ width, height }} />
+  return (
+    <div ref={containerRef} className={cn("lottie-animation", className)} style={{ width: "100%", height: "100%" }} />
+  )
 }

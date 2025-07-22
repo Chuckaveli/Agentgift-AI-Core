@@ -1,201 +1,139 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
-import { checkUserAccess, type AccessCheckResult } from "@/lib/helpers/checkUserAccess"
-import { OutOfCreditsModal } from "./OutOfCreditsModal"
-import { UpgradeCTA } from "./UpgradeCTA"
-import { Card, CardContent } from "@/components/ui/card"
-import { Loader2, Lock } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Lock, Zap } from "lucide-react"
+import dynamic from "next/dynamic"
+
+// Dynamically import Lottie to avoid SSR issues
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
 
 interface FeatureGateWrapperProps {
-  featureName: string
   children: React.ReactNode
-  showLockedPreview?: boolean
-  previewContent?: React.ReactNode
-  className?: string
+  featureId: string
+  requiredTier: "free_agent" | "premium_spy"
+  userTier: "free_agent" | "premium_spy"
+  usageCount?: number
+  usageLimit?: number
+  customMessage?: string
 }
 
 export function FeatureGateWrapper({
-  featureName,
   children,
-  showLockedPreview = true,
-  previewContent,
-  className = "",
+  featureId,
+  requiredTier,
+  userTier,
+  usageCount = 0,
+  usageLimit = 0,
+  customMessage,
 }: FeatureGateWrapperProps) {
-  const [accessResult, setAccessResult] = useState<AccessCheckResult | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [showCreditsModal, setShowCreditsModal] = useState(false)
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const { toast } = useToast()
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false)
+  const [comingSoonAnimation, setComingSoonAnimation] = useState(null)
 
+  // Load coming soon animation
   useEffect(() => {
-    const checkAccess = async () => {
+    const loadAnimation = async () => {
       try {
-        const result = await checkUserAccess(featureName)
-        setAccessResult(result)
-
-        // Get user profile for modal
-        if (!result.accessGranted && result.fallbackReason === "insufficient_credits") {
-          // Fetch user profile for XP/level info
-          const { createClientComponentClient } = await import("@supabase/auth-helpers-nextjs")
-          const supabase = createClientComponentClient()
-
-          const {
-            data: { session },
-          } = await supabase.auth.getSession()
-          if (session) {
-            const { data: profile } = await supabase
-              .from("user_profiles")
-              .select("xp, level, credits")
-              .eq("id", session.user.id)
-              .single()
-
-            setUserProfile(profile)
-          }
-        }
+        const response = await fetch("/coming_soon.json")
+        const data = await response.json()
+        setComingSoonAnimation(data)
       } catch (error) {
-        console.error("Access check failed:", error)
-        toast({
-          title: "Error",
-          description: "Failed to check feature access. Please try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
+        console.error("Failed to load coming soon animation:", error)
       }
     }
+    loadAnimation()
+  }, [])
 
-    checkAccess()
-  }, [featureName, toast])
+  const hasAccess = userTier === requiredTier || userTier === "premium_spy"
+  const hasUsageRemaining = usageLimit === 0 || usageCount < usageLimit
 
-  // Show loading state
-  if (loading) {
-    return (
-      <Card className={`${className}`}>
-        <CardContent className="p-8 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-500" />
-          <p className="text-gray-600">Checking access...</p>
-        </CardContent>
-      </Card>
-    )
+  const handleLockedFeatureClick = () => {
+    setShowComingSoonModal(true)
   }
 
-  // Show access granted - render children
-  if (accessResult?.accessGranted) {
+  if (hasAccess && hasUsageRemaining) {
     return <>{children}</>
   }
 
-  // Handle different access denial reasons
-  if (accessResult) {
-    // No authentication
-    if (accessResult.fallbackReason === "no_auth") {
-      return (
-        <Card className={`border-2 border-dashed border-gray-300 ${className}`}>
-          <CardContent className="p-8 text-center">
-            <Lock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
-            <p className="text-gray-600 mb-4">Please sign in to access this feature.</p>
-            <button
-              onClick={() => (window.location.href = "/login")}
-              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Sign In
-            </button>
+  return (
+    <>
+      <div className="max-w-2xl mx-auto">
+        <Card className="border-2 border-dashed border-muted-foreground/25">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="h-8 w-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl">
+              {requiredTier === "premium_spy" ? "Premium Feature" : "Feature Locked"}
+            </CardTitle>
+            <CardDescription>
+              {customMessage ||
+                (requiredTier === "premium_spy"
+                  ? "This feature is available for Premium Spy members"
+                  : "Upgrade to access this feature")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            {!hasUsageRemaining && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  You've used {usageCount} of {usageLimit} free uses this month
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Badge variant="secondary" className="mb-2">
+                {requiredTier === "premium_spy" ? "Premium Spy Required" : "Upgrade Required"}
+              </Badge>
+              <p className="text-muted-foreground">Unlock this feature and many more with a Premium Spy membership</p>
+            </div>
+
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={handleLockedFeatureClick}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Upgrade to Premium
+              </Button>
+              <Button variant="outline">Learn More</Button>
+            </div>
           </CardContent>
         </Card>
-      )
-    }
+      </div>
 
-    // Insufficient tier
-    if (accessResult.fallbackReason === "insufficient_tier") {
-      if (showLockedPreview && previewContent) {
-        return (
-          <div className={`relative ${className}`}>
-            <div className="relative">
-              {previewContent}
-              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                <UpgradeCTA
-                  currentTier={accessResult.currentTier || "free_agent"}
-                  requiredTier={accessResult.requiredTier || "premium_spy"}
-                  featureName={featureName}
-                  variant="card"
-                />
+      {/* Coming Soon Modal */}
+      <Dialog open={showComingSoonModal} onOpenChange={setShowComingSoonModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Coming Soon!</DialogTitle>
+            <DialogDescription className="text-center">This premium feature will be available soon</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {comingSoonAnimation && (
+              <div className="w-full h-48 flex items-center justify-center">
+                <Lottie animationData={comingSoonAnimation} loop={true} className="w-full h-full" />
               </div>
+            )}
+            <div className="text-center">
+              <p className="text-muted-foreground mb-4">
+                We're working hard to bring you amazing new features. Stay tuned!
+              </p>
+              <Button
+                onClick={() => setShowComingSoonModal(false)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                Got it!
+              </Button>
             </div>
           </div>
-        )
-      }
-
-      return (
-        <UpgradeCTA
-          currentTier={accessResult.currentTier || "free_agent"}
-          requiredTier={accessResult.requiredTier || "premium_spy"}
-          featureName={featureName}
-          variant="card"
-          className={className}
-        />
-      )
-    }
-
-    // Insufficient credits
-    if (accessResult.fallbackReason === "insufficient_credits") {
-      return (
-        <>
-          <Card className={`border-2 border-dashed border-orange-300 bg-orange-50 ${className}`}>
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Credits Required</h3>
-              <p className="text-gray-600 mb-4">
-                You need {accessResult.creditsNeeded} credits to use this feature.
-                <br />
-                You currently have {accessResult.creditsLeft} credits.
-              </p>
-              <button
-                onClick={() => setShowCreditsModal(true)}
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
-              >
-                Get More Credits
-              </button>
-            </CardContent>
-          </Card>
-
-          <OutOfCreditsModal
-            isOpen={showCreditsModal}
-            onClose={() => setShowCreditsModal(false)}
-            userXP={userProfile?.xp || 0}
-            userLevel={userProfile?.level || 1}
-            creditsNeeded={accessResult.creditsNeeded || 1}
-          />
-        </>
-      )
-    }
-
-    // Feature disabled
-    if (accessResult.fallbackReason === "feature_disabled") {
-      return (
-        <Card className={`border-2 border-dashed border-gray-300 ${className}`}>
-          <CardContent className="p-8 text-center">
-            <Lock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold mb-2">Feature Unavailable</h3>
-            <p className="text-gray-600">This feature is currently disabled or under maintenance.</p>
-          </CardContent>
-        </Card>
-      )
-    }
-  }
-
-  // Fallback error state
-  return (
-    <Card className={`border-2 border-dashed border-red-300 bg-red-50 ${className}`}>
-      <CardContent className="p-8 text-center">
-        <Lock className="w-12 h-12 mx-auto mb-4 text-red-400" />
-        <h3 className="text-lg font-semibold mb-2">Access Error</h3>
-        <p className="text-gray-600">Unable to verify access to this feature. Please try again.</p>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

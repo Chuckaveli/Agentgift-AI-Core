@@ -1,18 +1,16 @@
 import type React from "react"
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
-import { PersonaProvider } from "@/components/persona/persona-context"
 import { CulturalProvider } from "@/components/cultural/cultural-context"
+import ClientLayout from "@/app/ClientLayout"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "AgentGift.ai - Culturally Intelligent Gift Recommendations",
-  description:
-    "The world's most culturally aware AI gift platform. Perfect gifts across cultures, languages, and traditions.",
+export const metadata = {
+  title: "AgentGift.ai - AI-Powered Gift Intelligence",
+  description: "AI-powered gift intelligence for meaningful connections and perfect presents.",
     generator: 'v0.dev'
 }
 
@@ -24,12 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <CulturalProvider>
-            <PersonaProvider>
-              {children}
-              <Toaster />
-            </PersonaProvider>
+            <ClientLayout>{children}</ClientLayout>
+            <Toaster />
           </CulturalProvider>
         </ThemeProvider>
       </body>
