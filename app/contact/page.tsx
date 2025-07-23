@@ -2,263 +2,365 @@
 
 import type React from "react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Mail, MessageSquare, Shield, Users, Briefcase, HelpCircle, Clock, CheckCircle } from "lucide-react"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Mail, Clock, Send, MessageSquare, Phone, MapPin } from "lucide-react"
+import { toast } from "sonner"
+
+const departments = [
+  {
+    id: "magic",
+    name: "Main Support",
+    email: "magic@agentgift.ai",
+    description: "General inquiries and main support",
+    icon: "🛟",
+    responseTime: "12-24 hours",
+    priority: "high",
+  },
+  {
+    id: "rescue",
+    name: "Gift Recovery",
+    email: "rescue@agentgift.ai",
+    description: "Support, troubleshooting, failed gift recovery",
+    icon: "🛟",
+    responseTime: "24-48 hours",
+    priority: "urgent",
+  },
+  {
+    id: "signals",
+    name: "Marketing & Campaigns",
+    email: "signals@agentgift.ai",
+    description: "Marketing, launches, campaigns",
+    icon: "📡",
+    responseTime: "1-2 business days",
+    priority: "medium",
+  },
+  {
+    id: "receipts",
+    name: "Billing & Finance",
+    email: "receipts@agentgift.ai",
+    description: "Billing, invoice questions, vendor confirmations",
+    icon: "💰",
+    responseTime: "1-2 business days",
+    priority: "high",
+  },
+  {
+    id: "allies",
+    name: "Partnerships",
+    email: "allies@agentgift.ai",
+    description: "Partnerships, influencer collabs, affiliate outreach",
+    icon: "🤝",
+    responseTime: "2-3 business days",
+    priority: "medium",
+  },
+  {
+    id: "elite",
+    name: "VIP Concierge",
+    email: "elite@agentgift.ai",
+    description: "VIP/Pro+ concierge support, high-tier users",
+    icon: "🥂",
+    responseTime: "4-8 hours",
+    priority: "urgent",
+  },
+  {
+    id: "intel",
+    name: "Content & Intelligence",
+    email: "intel@agentgift.ai",
+    description: "Newsletter, blog drops, AI-powered gift tips",
+    icon: "🧠",
+    responseTime: "2-3 business days",
+    priority: "low",
+  },
+]
+
+const priorityColors = {
+  urgent: "bg-red-100 text-red-800 border-red-200",
+  high: "bg-orange-100 text-orange-800 border-orange-200",
+  medium: "bg-blue-100 text-blue-800 border-blue-200",
+  low: "bg-gray-100 text-gray-800 border-gray-200",
+}
 
 export default function ContactPage() {
-  const [selectedDepartment, setSelectedDepartment] = useState("")
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    department: "",
     subject: "",
     message: "",
+    priority: "medium",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const departments = [
-    {
-      id: "support",
-      name: "General Support",
-      email: "support@agentgift.ai",
-      icon: HelpCircle,
-      description: "Account issues, feature questions, technical problems",
-      responseTime: "24-48 hours",
-    },
-    {
-      id: "business",
-      name: "Business Inquiries",
-      email: "business@agentgift.ai",
-      icon: Briefcase,
-      description: "Enterprise solutions, partnerships, bulk licensing",
-      responseTime: "1-2 business days",
-    },
-    {
-      id: "privacy",
-      name: "Privacy & Security",
-      email: "privacy@agentgift.ai",
-      icon: Shield,
-      description: "Data requests, privacy concerns, security reports",
-      responseTime: "2-3 business days",
-    },
-    {
-      id: "community",
-      name: "Community & Social",
-      email: "community@agentgift.ai",
-      icon: Users,
-      description: "Social media verification, community guidelines, events",
-      responseTime: "1-2 business days",
-    },
-  ]
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission
-    console.log("Form submitted:", { ...formData, department: selectedDepartment })
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      toast.success("Message sent successfully! We'll get back to you soon.", {
+        description: `Your message has been forwarded to ${departments.find((d) => d.id === formData.department)?.name || "our team"}.`,
+      })
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        department: "",
+        subject: "",
+        message: "",
+        priority: "medium",
+      })
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const selectedDepartment = departments.find((d) => d.id === formData.department)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-            Contact & Support
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            Get in Touch
           </h1>
-          <p className="text-gray-600 text-lg">Get help with your AgentGift.ai experience</p>
-          <Badge variant="outline" className="mt-2">
-            <Clock className="h-3 w-3 mr-1" />
-            Average response: 24-48 hours
-          </Badge>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Have a question, need support, or want to partner with us? Choose the right department below and we'll get
+            back to you quickly.
+          </p>
         </div>
 
-        {/* Quick Help */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Quick Help
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-medium mb-1">FAQ</h3>
-                <p className="text-sm text-gray-600 mb-3">Common questions and answers</p>
-                <Button variant="outline" size="sm">
-                  View FAQ
-                </Button>
-              </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <HelpCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-medium mb-1">Help Center</h3>
-                <p className="text-sm text-gray-600 mb-3">Guides and tutorials</p>
-                <Button variant="outline" size="sm">
-                  Browse Guides
-                </Button>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <Users className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <h3 className="font-medium mb-1">Community</h3>
-                <p className="text-sm text-gray-600 mb-3">Connect with other users</p>
-                <Button variant="outline" size="sm">
-                  Join Discord
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Department Selection */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Choose Your Department</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              {departments.map((dept) => {
-                const Icon = dept.icon
-                return (
-                  <div
-                    key={dept.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedDepartment === dept.id
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() => setSelectedDepartment(dept.id)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Icon
-                        className={`h-6 w-6 mt-1 ${selectedDepartment === dept.id ? "text-blue-600" : "text-gray-500"}`}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Contact Form */}
+          <div className="lg:col-span-2">
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-purple-600" />
+                  Send us a Message
+                </CardTitle>
+                <CardDescription>
+                  Fill out the form below and we'll route your message to the right team.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Personal Info */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        placeholder="Your full name"
+                        required
                       />
-                      <div className="flex-1">
-                        <h3 className="font-medium mb-1">{dept.name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{dept.description}</p>
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-xs">
-                            {dept.email}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        placeholder="your.email@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Department Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => handleInputChange("department", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select the best department for your inquiry" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{dept.icon}</span>
+                              <span>{dept.name}</span>
+                              <Badge
+                                variant="outline"
+                                className={`ml-auto text-xs ${priorityColors[dept.priority as keyof typeof priorityColors]}`}
+                              >
+                                {dept.responseTime}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedDepartment && (
+                      <p className="text-sm text-gray-600 mt-1">{selectedDepartment.description}</p>
+                    )}
+                  </div>
+
+                  {/* Subject */}
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input
+                      id="subject"
+                      value={formData.subject}
+                      onChange={(e) => handleInputChange("subject", e.target.value)}
+                      placeholder="Brief description of your inquiry"
+                      required
+                    />
+                  </div>
+
+                  {/* Message */}
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      value={formData.message}
+                      onChange={(e) => handleInputChange("message", e.target.value)}
+                      placeholder="Please provide as much detail as possible..."
+                      rows={6}
+                      required
+                    />
+                  </div>
+
+                  {/* Priority */}
+                  <div className="space-y-2">
+                    <Label htmlFor="priority">Priority Level</Label>
+                    <Select value={formData.priority} onValueChange={(value) => handleInputChange("priority", value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low - General inquiry</SelectItem>
+                        <SelectItem value="medium">Medium - Standard support</SelectItem>
+                        <SelectItem value="high">High - Important issue</SelectItem>
+                        <SelectItem value="urgent">Urgent - Critical problem</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Message
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Department Quick Reference */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Our Departments</CardTitle>
+                <CardDescription>Quick reference for choosing the right contact</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {departments.map((dept, index) => (
+                  <div key={dept.id}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg">{dept.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-sm">{dept.name}</h4>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${priorityColors[dept.priority as keyof typeof priorityColors]}`}
+                          >
+                            {dept.responseTime}
                           </Badge>
-                          <span className="text-xs text-gray-500">{dept.responseTime}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed">{dept.description}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Mail className="h-3 w-3 text-gray-400" />
+                          <span className="text-xs text-gray-500">{dept.email}</span>
                         </div>
                       </div>
                     </div>
+                    {index < departments.length - 1 && <Separator className="mt-4" />}
                   </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </CardContent>
+            </Card>
 
-        {/* Contact Form */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Send Message
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Name</label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Your full name"
-                    required
-                  />
+            {/* Contact Info */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Other Ways to Reach Us</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <p className="font-medium text-sm">Phone Support</p>
+                    <p className="text-xs text-gray-600">Coming soon for Pro+ users</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="your.email@example.com"
-                    required
-                  />
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <p className="font-medium text-sm">Headquarters</p>
+                    <p className="text-xs text-gray-600">Remote-first company</p>
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Subject</label>
-                <Input
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="Brief description of your inquiry"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Message</label>
-                <Textarea
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Please provide details about your question or issue..."
-                  rows={6}
-                  required
-                />
-              </div>
-
-              {selectedDepartment && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    <strong>Selected Department:</strong> {departments.find((d) => d.id === selectedDepartment)?.name}
-                  </p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    Expected response time: {departments.find((d) => d.id === selectedDepartment)?.responseTime}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <p className="font-medium text-sm">Response Times</p>
+                    <p className="text-xs text-gray-600">Vary by department & priority</p>
+                  </div>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              <Button type="submit" className="w-full" disabled={!selectedDepartment}>
-                Send Message
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Emergency Contact */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-red-600" />
-              Emergency & Security Issues
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 font-medium mb-2">For urgent security issues or data breaches:</p>
-              <p className="text-red-700 text-sm mb-3">
-                Contact our security team immediately at{" "}
-                <a href="mailto:security@agentgift.ai" className="font-medium underline">
-                  security@agentgift.ai
-                </a>
-              </p>
-              <p className="text-red-600 text-xs">
-                Security issues receive priority handling within 2-4 hours during business days.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center text-gray-500 text-sm">
-          <p>© 2025 AgentGift.ai. All rights reserved.</p>
-          <p className="mt-1">
-            Need immediate help? Check our{" "}
-            <a href="/terms" className="text-blue-600 hover:underline">
-              Terms & Transparency
-            </a>{" "}
-            page for common questions.
-          </p>
+            {/* FAQ Link */}
+            <Card className="shadow-xl border-0 bg-gradient-to-br from-purple-600 to-pink-600 text-white">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">Need Quick Answers?</h3>
+                <p className="text-sm text-purple-100 mb-4">
+                  Check our FAQ section for instant answers to common questions.
+                </p>
+                <Button variant="secondary" size="sm" className="w-full">
+                  View FAQ
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

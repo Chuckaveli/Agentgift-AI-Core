@@ -133,10 +133,37 @@ export default function FeatureBuilderPage() {
   const fetchAnalytics = async () => {
     try {
       const response = await fetch("/api/admin/feature-analytics")
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       const data = await response.json()
-      setAnalytics(data)
+
+      // Validate the response structure
+      if (typeof data === "object" && data !== null) {
+        setAnalytics({
+          total_features: Number(data.total_features) || 0,
+          active_features: Number(data.active_features) || 0,
+          total_usage: Number(data.total_usage) || 0,
+          top_features: Array.isArray(data.top_features) ? data.top_features : [],
+        })
+      } else {
+        throw new Error("Invalid response format")
+      }
     } catch (error) {
       console.error("Failed to load analytics:", error)
+
+      // Set default values on error
+      setAnalytics({
+        total_features: 0,
+        active_features: 0,
+        total_usage: 0,
+        top_features: [],
+      })
+
+      // Don't show error toast for analytics failure
+      // toast.error("Failed to load analytics")
     }
   }
 
