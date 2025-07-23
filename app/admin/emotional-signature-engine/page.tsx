@@ -1,562 +1,847 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
-import { toast } from "sonner"
-import {
-  Brain,
-  Heart,
-  TrendingUp,
-  Mail,
-  Download,
-  Search,
-  Zap,
-  Target,
-  Settings,
-  BarChart3,
-  Activity,
-  Sparkles,
-  CheckCircle,
-  Clock,
-  ArrowRight,
-} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { createClient } from "@supabase/supabase-js"
+import { Download, RefreshCw, Search, Send, X } from "lucide-react"
 
-interface EmotionalSignature {
-  id: string
-  timestamp: string
-  source_label: string
-  sender_email: string
-  parsed_emotion: string
-  confidence_score: number
-  context_label: string
-  summary_snippet: string
-  suggested_action: string
-  processed: boolean
-}
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-interface EmotionalAnalytics {
-  emotions_tagged_week: number
-  top_emotions: Array<{ emotion: string; count: number }>
-  top_contexts: Array<{ context: string; count: number }>
-  processing_accuracy: number
-  webhook_success_rate: number
-}
-
+// Emotion colors
 const EMOTION_COLORS = {
-  joy: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  sadness: "bg-blue-100 text-blue-800 border-blue-200",
-  anger: "bg-red-100 text-red-800 border-red-200",
-  fear: "bg-purple-100 text-purple-800 border-purple-200",
-  surprise: "bg-green-100 text-green-800 border-green-200",
-  disgust: "bg-gray-100 text-gray-800 border-gray-200",
-  anxiety: "bg-orange-100 text-orange-800 border-orange-200",
-  love: "bg-pink-100 text-pink-800 border-pink-200",
-  grief: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  excitement: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  Joy: "#FFD700",
+  Sadness: "#6495ED",
+  Anger: "#FF4500",
+  Fear: "#800080",
+  Disgust: "#008000",
+  Surprise: "#FFA500",
+  Trust: "#4682B4",
+  Anticipation: "#FF69B4",
+  Love: "#FF1493",
+  Grief: "#000080",
+  Anxiety: "#9370DB",
+  Excitement: "#FF6347",
+  Gratitude: "#2E8B57",
+  Guilt: "#8B4513",
+  Pride: "#DAA520",
+  Shame: "#A52A2A",
+  Contentment: "#87CEEB",
+  Disappointment: "#778899",
+  Jealousy: "#006400",
+  Hope: "#00BFFF",
+  default: "#718096",
 }
 
-const CONTEXT_ACTIONS = {
-  Breakup: "Auto-route to LUMIENCE™",
-  Graduation: "Flag for BondCraft™ ritual trigger",
-  Grief: "Sync to Just-Because Gift Loop",
-  Anniversary: "Flag for BondCraft™ ritual trigger",
-  Illness: "Sync to Just-Because Gift Loop",
-  Promotion: "Flag for BondCraft™ ritual trigger",
-  Birthday: "Flag for BondCraft™ ritual trigger",
-  Wedding: "Flag for BondCraft™ ritual trigger",
+// Context routing systems
+const CONTEXT_ROUTING = {
+  Breakup: "LUMIENCE™",
+  Grief: "Just-Because Gift Loop",
+  Anxiety: "LUMIENCE™",
+  Depression: "LUMIENCE™",
+  "Job Loss": "LUMIENCE™",
+  Graduation: "BondCraft™",
+  Anniversary: "BondCraft™",
+  Promotion: "BondCraft™",
+  Birthday: "BondCraft™",
+  Wedding: "BondCraft™",
+  "New Baby": "BondCraft™",
+  Celebration: "BondCraft™",
+  Illness: "Just-Because Gift Loop",
+  Moving: "Just-Because Gift Loop",
+  Apology: "Just-Because Gift Loop",
+  default: "General",
 }
 
-export default function EmotionalSignatureEnginePage() {
-  const [signatures, setSignatures] = useState<EmotionalSignature[]>([])
-  const [analytics, setAnalytics] = useState<EmotionalAnalytics>({
-    emotions_tagged_week: 0,
-    top_emotions: [],
-    top_contexts: [],
-    processing_accuracy: 0,
-    webhook_success_rate: 0,
+export default function EmotionalSignatureEngine() {
+  // State
+  const [activeTab, setActiveTab] = useState("dashboard")
+  const [signatures, setSignatures] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedSignature, setSelectedSignature] = useState(null)
+  const [emotionStats, setEmotionStats] = useState([])
+  const [contextStats, setContextStats] = useState([])
+  const [totalSignatures, setTotalSignatures] = useState(0)
+  const [filters, setFilters] = useState({
+    emotion: "all",
+    context: "all",
+    date: "week",
+    search: "",
   })
-  const [selectedSignature, setSelectedSignature] = useState<EmotionalSignature | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [emotionFilter, setEmotionFilter] = useState("all")
-  const [contextFilter, setContextFilter] = useState("all")
-  const [dateFilter, setDateFilter] = useState("all")
 
+  // Router
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Fetch data on mount and when filters change
   useEffect(() => {
     fetchSignatures()
-    fetchAnalytics()
-  }, [])
+    fetchStats()
+  }, [filters])
 
-  const fetchSignatures = async () => {
+  // Fetch emotional signatures
+  async function fetchSignatures() {
+    setLoading(true)
     try {
-      const response = await fetch("/api/emotional-signatures")
-      const data = await response.json()
-      setSignatures(data.signatures || [])
+      const { emotion, context, date, search } = filters
+
+      let query = supabase.from("emotional_signatures").select("*").order("timestamp", { ascending: false }).limit(50)
+
+      // Apply filters
+      if (emotion !== "all") {
+        query = query.eq("parsed_emotion", emotion)
+      }
+
+      if (context !== "all") {
+        query = query.eq("context_label", context)
+      }
+
+      // Apply date filter
+      if (date !== "all") {
+        const now = new Date()
+        let startDate
+
+        switch (date) {
+          case "today":
+            startDate = new Date(now.setHours(0, 0, 0, 0))
+            break
+          case "week":
+            startDate = new Date(now)
+            startDate.setDate(now.getDate() - 7)
+            break
+          case "month":
+            startDate = new Date(now)
+            startDate.setDate(now.getDate() - 30)
+            break
+          case "quarter":
+            startDate = new Date(now)
+            startDate.setDate(now.getDate() - 90)
+            break
+          default:
+            startDate = new Date(now)
+            startDate.setDate(now.getDate() - 7)
+        }
+
+        query = query.gte("timestamp", startDate.toISOString())
+      }
+
+      // Apply search filter
+      if (search) {
+        query = query.or(`sender_email.ilike.%${search}%,summary_snippet.ilike.%${search}%`)
+      }
+
+      const { data, error, count } = await query
+
+      if (error) {
+        console.error("Error fetching signatures:", error)
+        return
+      }
+
+      setSignatures(data || [])
+      setTotalSignatures(count || 0)
+
+      // Select first signature if none selected
+      if (data && data.length > 0 && !selectedSignature) {
+        setSelectedSignature(data[0])
+      }
     } catch (error) {
-      toast.error("Failed to load emotional signatures")
+      console.error("Error in fetchSignatures:", error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const fetchAnalytics = async () => {
+  // Fetch statistics
+  async function fetchStats() {
     try {
-      const response = await fetch("/api/emotional-analytics")
-      const data = await response.json()
-      setAnalytics(data)
-    } catch (error) {
-      console.error("Failed to load analytics:", error)
-    }
-  }
-
-  const filteredSignatures = signatures.filter((signature) => {
-    const matchesSearch =
-      signature.sender_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      signature.summary_snippet.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesEmotion = emotionFilter === "all" || signature.parsed_emotion === emotionFilter
-    const matchesContext = contextFilter === "all" || signature.context_label === contextFilter
-
-    let matchesDate = true
-    if (dateFilter !== "all") {
-      const signatureDate = new Date(signature.timestamp)
+      // Get date range based on filter
       const now = new Date()
-      const daysDiff = Math.floor((now.getTime() - signatureDate.getTime()) / (1000 * 60 * 60 * 24))
+      let startDate
 
-      switch (dateFilter) {
+      switch (filters.date) {
         case "today":
-          matchesDate = daysDiff === 0
+          startDate = new Date(now.setHours(0, 0, 0, 0))
           break
         case "week":
-          matchesDate = daysDiff <= 7
+          startDate = new Date(now)
+          startDate.setDate(now.getDate() - 7)
           break
         case "month":
-          matchesDate = daysDiff <= 30
+          startDate = new Date(now)
+          startDate.setDate(now.getDate() - 30)
           break
+        case "quarter":
+          startDate = new Date(now)
+          startDate.setDate(now.getDate() - 90)
+          break
+        default:
+          startDate = new Date(now)
+          startDate.setDate(now.getDate() - 7)
       }
+
+      // Fetch emotion stats
+      const { data: emotionData, error: emotionError } = await supabase
+        .from("emotional_signatures")
+        .select("parsed_emotion, count")
+        .gte("timestamp", startDate.toISOString())
+        .group("parsed_emotion")
+        .order("count", { ascending: false })
+
+      if (emotionError) {
+        console.error("Error fetching emotion stats:", emotionError)
+      } else {
+        setEmotionStats(
+          emotionData.map((item) => ({
+            name: item.parsed_emotion,
+            value: item.count,
+            color: EMOTION_COLORS[item.parsed_emotion] || EMOTION_COLORS.default,
+          })),
+        )
+      }
+
+      // Fetch context stats
+      const { data: contextData, error: contextError } = await supabase
+        .from("emotional_signatures")
+        .select("context_label, count")
+        .gte("timestamp", startDate.toISOString())
+        .group("context_label")
+        .order("count", { ascending: false })
+
+      if (contextError) {
+        console.error("Error fetching context stats:", contextError)
+      } else {
+        setContextStats(
+          contextData.map((item) => ({
+            name: item.context_label,
+            value: item.count,
+          })),
+        )
+      }
+    } catch (error) {
+      console.error("Error in fetchStats:", error)
     }
+  }
 
-    return matchesSearch && matchesEmotion && matchesContext && matchesDate
-  })
+  // Handle filter changes
+  function handleFilterChange(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
 
-  const exportToCSV = () => {
-    const headers = ["Timestamp", "Source", "Sender", "Emotion", "Confidence", "Context", "Summary"]
+  // Handle signature selection
+  function handleSignatureSelect(signature) {
+    setSelectedSignature(signature)
+  }
+
+  // Format date
+  function formatDate(dateString) {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    }).format(date)
+  }
+
+  // Get confidence color
+  function getConfidenceColor(score) {
+    if (score >= 90) return "bg-green-500"
+    if (score >= 75) return "bg-green-400"
+    if (score >= 60) return "bg-yellow-400"
+    if (score >= 40) return "bg-yellow-500"
+    return "bg-red-500"
+  }
+
+  // Get emotion color
+  function getEmotionColor(emotion) {
+    return EMOTION_COLORS[emotion] || EMOTION_COLORS.default
+  }
+
+  // Get routing system
+  function getRoutingSystem(context) {
+    return CONTEXT_ROUTING[context] || CONTEXT_ROUTING.default
+  }
+
+  // Export data as CSV
+  function exportCSV() {
+    if (signatures.length === 0) return
+
+    const headers = [
+      "ID",
+      "Timestamp",
+      "Source",
+      "Email",
+      "Emotion",
+      "Confidence",
+      "Context",
+      "Summary",
+      "Suggested Action",
+    ]
+
+    const csvData = signatures.map((sig) => [
+      sig.id,
+      sig.timestamp,
+      sig.source_label,
+      sig.sender_email,
+      sig.parsed_emotion,
+      sig.confidence_score,
+      sig.context_label,
+      sig.summary_snippet,
+      sig.suggested_action || "",
+    ])
+
     const csvContent = [
       headers.join(","),
-      ...filteredSignatures.map((sig) =>
-        [
-          sig.timestamp,
-          sig.source_label,
-          sig.sender_email,
-          sig.parsed_emotion,
-          `${sig.confidence_score}%`,
-          sig.context_label,
-          `"${sig.summary_snippet.replace(/"/g, '""')}"`,
-        ].join(","),
-      ),
+      ...csvData.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")),
     ].join("\n")
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `emotional-signatures-${new Date().toISOString().split("T")[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
-  }
-
-  const getEmotionBadgeClass = (emotion: string) => {
-    return (
-      EMOTION_COLORS[emotion.toLowerCase() as keyof typeof EMOTION_COLORS] ||
-      "bg-gray-100 text-gray-800 border-gray-200"
-    )
-  }
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 90) return "text-green-600"
-    if (confidence >= 70) return "text-yellow-600"
-    return "text-red-600"
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `emotional-signatures-${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white">
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-purple-100 shadow-sm">
-          <div className="p-6 border-b border-purple-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-gray-900">AgentGift.ai</h1>
-                <p className="text-xs text-purple-600">Emotional Engine</p>
-              </div>
-            </div>
-          </div>
-
-          <nav className="p-4 space-y-2">
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Engine Status</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Processing</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-green-600 font-medium">Active</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Supabase</span>
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Make.com</span>
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                </div>
-              </div>
-            </div>
-
-            <Button variant="ghost" className="w-full justify-start" size="sm">
-              <Mail className="w-4 h-4 mr-2" />
-              Triggers
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" size="sm">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Emotional Logs
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" size="sm">
-              <Target className="w-4 h-4 mr-2" />
-              Gifting Contexts
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" size="sm">
-              <Brain className="w-4 h-4 mr-2" />
-              Insights
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-          </nav>
-
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-900">Processing Power</span>
-              </div>
-              <Progress value={analytics.processing_accuracy} className="h-2" />
-              <p className="text-xs text-purple-700 mt-1">{analytics.processing_accuracy}% accuracy</p>
-            </div>
-          </div>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-purple-700">Emotional Signature Engine™</h2>
+          <p className="text-xs text-gray-500">AgentGift's Emotional Intelligence Layer</p>
         </div>
 
-        {/* Main Panel */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white border-b border-purple-100 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Emotional Signature Engine™
-                </h1>
-                <p className="text-gray-600 mt-1">AgentGift's Emotional Intelligence Layer (Private Use Only)</p>
-              </div>
-              <Button onClick={exportToCSV} variant="outline" className="flex items-center gap-2 bg-transparent">
-                <Download className="w-4 h-4" />
-                Export CSV
+        <nav className="flex-1 p-4 space-y-1">
+          <button
+            className={`w-full flex items-center px-3 py-2 text-sm rounded-md ${
+              activeTab === "dashboard" ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            <span className="mr-2">📥</span>
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            className={`w-full flex items-center px-3 py-2 text-sm rounded-md ${
+              activeTab === "logs" ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={() => setActiveTab("logs")}
+          >
+            <span className="mr-2">📊</span>
+            <span>Emotional Logs</span>
+          </button>
+
+          <button
+            className={`w-full flex items-center px-3 py-2 text-sm rounded-md ${
+              activeTab === "contexts" ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={() => setActiveTab("contexts")}
+          >
+            <span className="mr-2">🎯</span>
+            <span>Gifting Contexts</span>
+          </button>
+
+          <button
+            className={`w-full flex items-center px-3 py-2 text-sm rounded-md ${
+              activeTab === "insights" ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={() => setActiveTab("insights")}
+          >
+            <span className="mr-2">🧠</span>
+            <span>Insights</span>
+          </button>
+
+          <button
+            className={`w-full flex items-center px-3 py-2 text-sm rounded-md ${
+              activeTab === "settings" ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-gray-100"
+            }`}
+            onClick={() => setActiveTab("settings")}
+          >
+            <span className="mr-2">⚙️</span>
+            <span>Settings</span>
+          </button>
+        </nav>
+
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500">WEBHOOK STATUS</span>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              Active
+            </Badge>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-500">MAKE.COM</span>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              Connected
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Emotional Signature Engine™</h1>
+              <p className="text-sm text-gray-500">AgentGift's Emotional Intelligence Layer (Private Use Only)</p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={fetchSignatures}>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+
+              <Button variant="outline" size="sm" onClick={exportCSV}>
+                <Download className="h-4 w-4 mr-1" />
+                Export
               </Button>
             </div>
           </div>
+        </header>
 
-          <div className="flex-1 overflow-auto p-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card className="border-purple-100">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Heart className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{analytics.emotions_tagged_week}</div>
-                  <div className="text-sm text-gray-600">Emotions Tagged This Week</div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-purple-100">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
-                    <span className="font-medium text-gray-900">Top Emotions</span>
-                  </div>
-                  <div className="space-y-2">
-                    {analytics.top_emotions.slice(0, 3).map((emotion, index) => (
-                      <div key={emotion.emotion} className="flex items-center justify-between">
-                        <Badge variant="outline" className={getEmotionBadgeClass(emotion.emotion)}>
-                          {emotion.emotion}
-                        </Badge>
-                        <span className="text-sm font-medium">{emotion.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-purple-100">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Target className="w-5 h-5 text-purple-600" />
-                    <span className="font-medium text-gray-900">Top Contexts</span>
-                  </div>
-                  <div className="space-y-2">
-                    {analytics.top_contexts.slice(0, 3).map((context, index) => (
-                      <div key={context.context} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700">{context.context}</span>
-                        <span className="text-sm font-medium">{context.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-purple-100">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Zap className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{analytics.webhook_success_rate}%</div>
-                  <div className="text-sm text-gray-600">Webhook Success Rate</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Filters */}
-            <Card className="mb-6 border-purple-100">
-              <CardContent className="p-4">
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-gray-500" />
-                    <Input
-                      placeholder="Search emails or snippets..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-64"
-                    />
-                  </div>
-
-                  <Select value={emotionFilter} onValueChange={setEmotionFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="All Emotions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Emotions</SelectItem>
-                      {Object.keys(EMOTION_COLORS).map((emotion) => (
-                        <SelectItem key={emotion} value={emotion}>
-                          {emotion}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={contextFilter} onValueChange={setContextFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="All Contexts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Contexts</SelectItem>
-                      {Object.keys(CONTEXT_ACTIONS).map((context) => (
-                        <SelectItem key={context} value={context}>
-                          {context}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="All Time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Data Table */}
-            <Card className="border-purple-100">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-purple-600" />
-                  Latest Emotional Tags ({filteredSignatures.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">Loading emotional signatures...</div>
-                ) : filteredSignatures.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No emotional signatures found matching your filters.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Timestamp</TableHead>
-                          <TableHead>Source</TableHead>
-                          <TableHead>Sender Email</TableHead>
-                          <TableHead>Emotion</TableHead>
-                          <TableHead>Confidence</TableHead>
-                          <TableHead>Context</TableHead>
-                          <TableHead>Summary</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSignatures.map((signature) => (
-                          <TableRow
-                            key={signature.id}
-                            className="cursor-pointer hover:bg-purple-50"
-                            onClick={() => setSelectedSignature(signature)}
-                          >
-                            <TableCell className="font-mono text-sm">
-                              {new Date(signature.timestamp).toLocaleString()}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{signature.source_label}</Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">{signature.sender_email}</TableCell>
-                            <TableCell>
-                              <Badge className={getEmotionBadgeClass(signature.parsed_emotion)}>
-                                {signature.parsed_emotion}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className={getConfidenceColor(signature.confidence_score)}>
-                              {signature.confidence_score}%
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">{signature.context_label}</Badge>
-                            </TableCell>
-                            <TableCell className="max-w-xs truncate">{signature.summary_snippet}</TableCell>
-                            <TableCell>
-                              {signature.processed ? (
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                              ) : (
-                                <Clock className="w-4 h-4 text-yellow-500" />
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Right Panel */}
-        <div className="w-80 bg-white border-l border-purple-100 overflow-auto">
-          {selectedSignature ? (
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Brain className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-gray-900">Emotional Analysis</h3>
-              </div>
-
+        {/* Content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Main Panel */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {activeTab === "dashboard" && (
               <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Full Context</Label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-lg text-sm text-gray-800">
-                    {selectedSignature.summary_snippet}
-                  </div>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-500">Emotions Tagged</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{totalSignatures}</div>
+                      <p className="text-xs text-gray-500">
+                        {filters.date === "today"
+                          ? "Today"
+                          : filters.date === "week"
+                            ? "This Week"
+                            : filters.date === "month"
+                              ? "This Month"
+                              : filters.date === "quarter"
+                                ? "This Quarter"
+                                : "All Time"}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-500">Top Emotions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {emotionStats.slice(0, 3).map((emotion, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: emotion.color }} />
+                            <span className="text-sm">{emotion.name}</span>
+                          </div>
+                          <span className="text-sm font-medium">{emotion.value}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-500">Top Contexts</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {contextStats.slice(0, 3).map((context, index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <span className="text-sm">{context.name}</span>
+                          <span className="text-sm font-medium">{context.value}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Emotional Profile</Label>
-                  <div className="mt-2 space-y-2">
+                {/* Charts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Emotion Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-80">
+                      <ChartContainer
+                        config={{
+                          emotion: {
+                            label: "Emotions",
+                            color: "hsl(var(--chart-1))",
+                          },
+                        }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={emotionStats}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={80}
+                              label={(entry) => entry.name}
+                            >
+                              {emotionStats.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Context Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-80">
+                      <ChartContainer
+                        config={{
+                          context: {
+                            label: "Contexts",
+                            color: "hsl(var(--chart-2))",
+                          },
+                        }}
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={contextStats.slice(0, 8)}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="value" name="Count" fill="hsl(var(--chart-2))" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Filters and Table */}
+                <Card>
+                  <CardHeader>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">Primary Emotion</span>
-                      <Badge className={getEmotionBadgeClass(selectedSignature.parsed_emotion)}>
-                        {selectedSignature.parsed_emotion}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Confidence Score</span>
-                      <span className={`font-medium ${getConfidenceColor(selectedSignature.confidence_score)}`}>
-                        {selectedSignature.confidence_score}%
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Context Label</span>
-                      <Badge variant="secondary">{selectedSignature.context_label}</Badge>
-                    </div>
-                  </div>
-                </div>
+                      <CardTitle>Latest Emotional Tags</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <Select value={filters.date} onValueChange={(value) => handleFilterChange("date", value)}>
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Date Range" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">This Week</SelectItem>
+                            <SelectItem value="month">This Month</SelectItem>
+                            <SelectItem value="quarter">This Quarter</SelectItem>
+                            <SelectItem value="all">All Time</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Suggested Internal Action</Label>
-                  <div className="mt-2 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ArrowRight className="w-4 h-4 text-purple-600" />
-                      <span className="font-medium text-purple-900">
-                        {CONTEXT_ACTIONS[selectedSignature.context_label as keyof typeof CONTEXT_ACTIONS] ||
-                          selectedSignature.suggested_action}
-                      </span>
-                    </div>
-                    <p className="text-sm text-purple-700">
-                      Based on the emotional signature and context, this interaction should be routed to the appropriate
-                      AgentGift.ai system for optimal gift recommendation.
-                    </p>
-                  </div>
-                </div>
+                        <Select value={filters.emotion} onValueChange={(value) => handleFilterChange("emotion", value)}>
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Emotion" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Emotions</SelectItem>
+                            <SelectItem value="Joy">Joy</SelectItem>
+                            <SelectItem value="Sadness">Sadness</SelectItem>
+                            <SelectItem value="Anger">Anger</SelectItem>
+                            <SelectItem value="Fear">Fear</SelectItem>
+                            <SelectItem value="Love">Love</SelectItem>
+                            <SelectItem value="Grief">Grief</SelectItem>
+                            <SelectItem value="Anxiety">Anxiety</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Processing Details</Label>
-                  <div className="mt-2 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Source</span>
-                      <span className="font-medium">{selectedSignature.source_label}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Processed</span>
-                      <span className={selectedSignature.processed ? "text-green-600" : "text-yellow-600"}>
-                        {selectedSignature.processed ? "Yes" : "Pending"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Timestamp</span>
-                      <span className="font-mono text-xs">
-                        {new Date(selectedSignature.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                        <Select value={filters.context} onValueChange={(value) => handleFilterChange("context", value)}>
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Context" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Contexts</SelectItem>
+                            <SelectItem value="Breakup">Breakup</SelectItem>
+                            <SelectItem value="Grief">Grief</SelectItem>
+                            <SelectItem value="Graduation">Graduation</SelectItem>
+                            <SelectItem value="Birthday">Birthday</SelectItem>
+                            <SelectItem value="Anniversary">Anniversary</SelectItem>
+                            <SelectItem value="Illness">Illness</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                  Process Action
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Input
+                            className="pl-8 w-[200px]"
+                            placeholder="Search..."
+                            value={filters.search}
+                            onChange={(e) => handleFilterChange("search", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Source</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Emotion</TableHead>
+                            <TableHead>Confidence</TableHead>
+                            <TableHead>Context</TableHead>
+                            <TableHead>Summary</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {loading ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-4">
+                                Loading...
+                              </TableCell>
+                            </TableRow>
+                          ) : signatures.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-4">
+                                No emotional signatures found
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            signatures.map((signature) => (
+                              <TableRow
+                                key={signature.id}
+                                className={`cursor-pointer ${
+                                  selectedSignature?.id === signature.id ? "bg-purple-50" : ""
+                                }`}
+                                onClick={() => handleSignatureSelect(signature)}
+                              >
+                                <TableCell>{formatDate(signature.timestamp)}</TableCell>
+                                <TableCell>{signature.source_label}</TableCell>
+                                <TableCell>{signature.sender_email}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <div
+                                      className="w-3 h-3 rounded-full mr-2"
+                                      style={{
+                                        backgroundColor: getEmotionColor(signature.parsed_emotion),
+                                      }}
+                                    />
+                                    {signature.parsed_emotion}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                                      <div
+                                        className={`h-2 rounded-full ${getConfidenceColor(signature.confidence_score)}`}
+                                        style={{ width: `${signature.confidence_score}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-xs">{signature.confidence_score}%</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{signature.context_label}</TableCell>
+                                <TableCell className="max-w-xs truncate">{signature.summary_snippet}</TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === "logs" && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Emotional Logs</CardTitle>
+                    <CardDescription>Complete history of emotional signatures detected by AgentGift.ai</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Logs content */}
+                    <div className="text-center py-8 text-gray-500">Detailed logs view coming soon</div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === "contexts" && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Gifting Contexts</CardTitle>
+                    <CardDescription>Configure and manage emotional contexts for gift recommendations</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Contexts content */}
+                    <div className="text-center py-8 text-gray-500">Gifting contexts configuration coming soon</div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === "insights" && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Insights</CardTitle>
+                    <CardDescription>Advanced analytics and insights from emotional data</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Insights content */}
+                    <div className="text-center py-8 text-gray-500">Advanced insights dashboard coming soon</div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === "settings" && (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Settings</CardTitle>
+                    <CardDescription>Configure the Emotional Signature Engine™</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Settings content */}
+                    <div className="text-center py-8 text-gray-500">Settings configuration coming soon</div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+
+          {/* Right Panel */}
+          {selectedSignature && (
+            <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-medium">Emotional Preview</h3>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedSignature(null)}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          ) : (
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Brain className="w-8 h-8 text-purple-600" />
+
+              <div className="p-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs text-gray-500">Timestamp</Label>
+                    <p className="text-sm">{formatDate(selectedSignature.timestamp)}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Source</Label>
+                    <p className="text-sm">{selectedSignature.source_label}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Email</Label>
+                    <p className="text-sm">{selectedSignature.sender_email}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Emotion</Label>
+                    <div className="flex items-center">
+                      <div
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{
+                          backgroundColor: getEmotionColor(selectedSignature.parsed_emotion),
+                        }}
+                      />
+                      <p className="text-sm">{selectedSignature.parsed_emotion}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Confidence</Label>
+                    <div className="flex items-center mt-1">
+                      <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
+                        <div
+                          className={`h-2 rounded-full ${getConfidenceColor(selectedSignature.confidence_score)}`}
+                          style={{ width: `${selectedSignature.confidence_score}%` }}
+                        />
+                      </div>
+                      <span className="text-xs">{selectedSignature.confidence_score}%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Context</Label>
+                    <p className="text-sm">{selectedSignature.context_label}</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Summary</Label>
+                    <p className="text-sm">{selectedSignature.summary_snippet}</p>
+                  </div>
+
+                  {selectedSignature.raw_content && (
+                    <div>
+                      <Label className="text-xs text-gray-500">Full Content</Label>
+                      <ScrollArea className="h-24 rounded border border-gray-200 p-2 mt-1">
+                        <p className="text-xs">{selectedSignature.raw_content}</p>
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Suggested Internal Action</Label>
+                    <div className="mt-2 p-3 bg-purple-50 rounded-md border border-purple-100">
+                      {selectedSignature.suggested_action ? (
+                        <p className="text-sm">{selectedSignature.suggested_action}</p>
+                      ) : (
+                        <p className="text-sm text-gray-500">No action suggested</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-gray-500">Routing System</Label>
+                    <Badge className="mt-1" variant="outline">
+                      {getRoutingSystem(selectedSignature.context_label)}
+                    </Badge>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button className="w-full">
+                      <Send className="h-4 w-4 mr-2" />
+                      Apply Suggested Action
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-medium text-gray-900 mb-2">Select an Emotional Signature</h3>
-              <p className="text-sm text-gray-600">
-                Click on any row in the table to view detailed emotional analysis and suggested actions.
-              </p>
             </div>
           )}
         </div>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Check, X, Zap, Crown, Shield, Sparkles, Building2, Gift, Moon, Sun, ArrowRight, Star } from "lucide-react"
+import { Check, X, Zap, Crown, Shield, Sparkles, Building2, Gift, Moon, Sun, ArrowRight, Star, Coins, Trophy, Target, Brain, Mic, MessageSquare, Heart } from 'lucide-react'
 import Link from "next/link"
 
 const pricingTiers = [
@@ -13,178 +13,130 @@ const pricingTiers = [
     id: "free",
     name: "Free Agent",
     icon: Gift,
-    description: "Perfect for casual gift-givers starting their mission",
+    description: "Just getting started or testing us out",
     monthlyPrice: 0,
     yearlyPrice: 0,
+    credits: 2,
     badge: null,
     color: "from-gray-400 to-gray-600",
     features: [
-      "5 AI gift recommendations per month",
-      "Basic personality analysis",
-      "Email support",
-      "Gift history tracking",
+      "2 credits per month",
+      "AI Gift Suggestions",
+      "Basic voice input",
       "Mobile app access",
+      "XP tracking",
     ],
-    limitations: ["Advanced AI insights", "Priority support", "Custom gift categories", "Team collaboration"],
+    limitations: ["Agent Concierge access", "Advanced rituals", "LUMIENCE™ sessions", "Credit rollover"],
   },
   {
     id: "premium",
     name: "Premium Spy",
     icon: Sparkles,
-    description: "For dedicated agents who need more intel",
-    monthlyPrice: 9.99,
-    yearlyPrice: 99.99,
+    description: "Light gifter, casual occasions",
+    monthlyPrice: 3.99,
+    yearlyPrice: 39.99,
+    credits: 12,
     badge: null,
     color: "from-blue-400 to-blue-600",
     features: [
-      "50 AI gift recommendations per month",
-      "Advanced personality insights",
-      "Priority email support",
-      "Gift wishlist creation",
-      "Social media integration",
-      "Occasion reminders",
+      "12 credits per month",
+      "Credits roll over 1 month",
+      "Text-to-speech messages",
+      "Voice input (1 credit/min)",
+      "Agent Gifty™ access",
+      "XP multiplier: 1.2x",
     ],
-    limitations: ["Team collaboration", "Custom branding", "API access", "Advanced analytics"],
+    limitations: ["Agent Concierge (limited)", "Advanced rituals", "LUMIENCE™ sessions", "Prestige levels"],
   },
   {
     id: "pro",
     name: "Pro Agent",
     icon: Zap,
-    description: "Most popular choice for serious gift operatives",
-    monthlyPrice: 19.99,
-    yearlyPrice: 199.99,
+    description: "Active users, couples, gift pros",
+    monthlyPrice: 9.99,
+    yearlyPrice: 99.99,
+    credits: 60,
     badge: "Most Popular",
     color: "from-purple-400 to-pink-600",
     features: [
-      "Unlimited AI recommendations",
-      "Deep personality profiling",
-      "24/7 priority support",
-      "Custom gift categories",
-      "Advanced occasion tracking",
-      "Gift budget optimization",
-      "Sentiment analysis",
+      "60 credits per month",
+      "Credits roll over 1 month",
+      "Agent Concierge (GPT-4o)",
+      "Advanced Ritual Generator",
+      "LUMIENCE™ Mood Mirror",
+      "XP multiplier: 1.5x",
+      "Priority support",
     ],
-    limitations: ["Team collaboration (5+ users)", "White-label solutions", "Custom integrations"],
+    limitations: ["Unlimited concierge", "Prestige levels", "Custom AI voice", "Mentor role"],
   },
   {
     id: "agent00g",
-    name: "Agent 00G",
+    name: "Agent 00G (Pro+)",
     icon: Crown,
-    description: "Elite tier for gift-giving legends",
-    monthlyPrice: 39.99,
-    yearlyPrice: 399.99,
+    description: "Power gifters, concierge access, full unlock",
+    monthlyPrice: 19.99,
+    yearlyPrice: 199.99,
+    credits: 200,
     badge: "Premium",
     color: "from-yellow-400 to-orange-600",
     features: [
-      "Everything in Pro Agent",
-      "Personal gift concierge",
-      "Custom AI training",
-      "VIP customer success manager",
-      "Early access to new features",
-      "Gift delivery coordination",
-      "Exclusive gift partnerships",
+      "200 credits per month",
+      "Credits roll over 1 month",
+      "Unlimited Agent Concierge",
+      "All premium features unlocked",
+      "Custom gifting identity",
+      "XP multiplier: 2x",
+      "VIP customer success",
+      "Early access to features",
     ],
-    limitations: ["Enterprise-level security", "Custom contracts", "Dedicated infrastructure"],
-  },
-  {
-    id: "business",
-    name: "Small Business",
-    icon: Building2,
-    description: "Perfect for teams and small organizations",
-    monthlyPrice: 99.99,
-    yearlyPrice: 999.99,
-    badge: "Team Favorite",
-    color: "from-green-400 to-emerald-600",
-    features: [
-      "Everything in Agent 00G",
-      "Team collaboration (up to 25 users)",
-      "Bulk gift management",
-      "Custom branding",
-      "Analytics dashboard",
-      "API access",
-      "SSO integration",
-    ],
-    limitations: ["Enterprise security features", "Custom SLA", "Dedicated support team"],
+    limitations: ["Enterprise security", "Custom contracts", "Unlimited users"],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    icon: Shield,
-    description: "For large organizations with complex needs",
+    icon: Building2,
+    description: "HR teams, culture leaders, brand partners",
     monthlyPrice: null,
     yearlyPrice: null,
+    credits: "Unlimited",
     badge: "Custom",
     color: "from-indigo-400 to-purple-600",
     features: [
-      "Everything in Small Business",
-      "Unlimited users",
+      "Unlimited or tiered credits",
+      "Team collaboration",
       "Custom integrations",
       "Dedicated support team",
       "Custom SLA",
-      "Advanced security & compliance",
-      "On-premise deployment options",
+      "Advanced analytics",
+      "White-label options",
     ],
     limitations: [],
   },
 ]
 
-const comparisonFeatures = [
-  {
-    name: "AI Recommendations per month",
-    free: "5",
-    premium: "50",
-    pro: "Unlimited",
-    agent00g: "Unlimited",
-    business: "Unlimited",
-    enterprise: "Unlimited",
-  },
-  {
-    name: "Personality Analysis",
-    free: "Basic",
-    premium: "Advanced",
-    pro: "Deep",
-    agent00g: "Custom",
-    business: "Custom",
-    enterprise: "Custom",
-  },
-  {
-    name: "Support Level",
-    free: "Email",
-    premium: "Priority Email",
-    pro: "24/7 Priority",
-    agent00g: "VIP Manager",
-    business: "Dedicated Team",
-    enterprise: "Custom SLA",
-  },
-  { name: "Team Users", free: "1", premium: "1", pro: "1", agent00g: "1", business: "25", enterprise: "Unlimited" },
-  { name: "API Access", free: false, premium: false, pro: false, agent00g: false, business: true, enterprise: true },
-  {
-    name: "Custom Branding",
-    free: false,
-    premium: false,
-    pro: false,
-    agent00g: false,
-    business: true,
-    enterprise: true,
-  },
-  {
-    name: "SSO Integration",
-    free: false,
-    premium: false,
-    pro: false,
-    agent00g: false,
-    business: true,
-    enterprise: true,
-  },
-  {
-    name: "Analytics Dashboard",
-    free: false,
-    premium: false,
-    pro: false,
-    agent00g: false,
-    business: true,
-    enterprise: true,
-  },
+const creditActions = [
+  { action: "AI Gift Suggestion", cost: 1, icon: Gift },
+  { action: "Text-to-Speech Message", cost: 1, icon: MessageSquare },
+  { action: "Voice Input (per minute)", cost: 1, icon: Mic },
+  { action: "Agent Concierge (GPT-4o)", cost: "5-10", icon: Brain },
+  { action: "Agent Gifty™ (voice/video)", cost: "2-5", icon: Heart },
+  { action: "Advanced Ritual Generator", cost: "3-7", icon: Sparkles },
+  { action: "LUMIENCE™ Mood Mirror", cost: "3-5", icon: Target },
+]
+
+const creditAddOns = [
+  { name: "Quick Boost", price: 5, credits: 50 },
+  { name: "Momentum Pack", price: 10, credits: 125 },
+  { name: "Power Pack", price: 25, credits: 400 },
+  { name: "Gifter's Vault", price: 50, credits: 1000 },
+]
+
+const prestigeLevels = [
+  { level: "🥈 1", unlock: "10% off annual plans" },
+  { level: "🥇 2", unlock: "20% off annual plans" },
+  { level: "💎 3", unlock: "50% off for life (revocable)" },
+  { level: "🧬 4", unlock: "Custom Gifting Identity - AI voice tone + gift style unlock" },
+  { level: "🫶 5", unlock: "Mentor Role - Earn credits reviewing gifts, join gifting guilds" },
 ]
 
 export default function PricingPage() {
@@ -240,22 +192,21 @@ export default function PricingPage() {
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-12 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-lg px-4 py-2">
-            <Star className="w-4 h-4 mr-2" />
-            Choose Your Agent Level
+            <Coins className="w-4 h-4 mr-2" />
+            Welcome to the Creditverse™
           </Badge>
 
           <h1 className="text-4xl md:text-6xl font-bold">
-            Upgrade Your{" "}
+            💸 Pricing That Grows With Your{" "}
             <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Gift Game
+              Gifting Power
             </span>
           </h1>
 
-          <p className={`text-xl ${isDarkMode ? "text-gray-300" : "text-gray-600"} max-w-2xl mx-auto`}>
-            From casual gift-giver to elite operative - find the perfect plan to match your gifting ambitions. Every
-            agent deserves the right tools for their mission! 🎯
+          <p className={`text-xl ${isDarkMode ? "text-gray-300" : "text-gray-600"} max-w-3xl mx-auto`}>
+            Welcome to the AgentGift.ai Creditverse™ — where every thoughtful action, voice note, or surprise gift is powered by our credit-based economy built for real-world scale.
           </p>
 
           {/* Billing Toggle */}
@@ -269,12 +220,32 @@ export default function PricingPage() {
             </span>
             {isYearly && <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Save up to 20%!</Badge>}
           </div>
+
+          {/* Key Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+            <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white/60"} backdrop-blur`}>
+              <div className="text-2xl mb-2">🌀</div>
+              <p className="text-sm">All plans include 1 free trial of premium features before locking</p>
+            </div>
+            <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white/60"} backdrop-blur`}>
+              <div className="text-2xl mb-2">🎯</div>
+              <p className="text-sm">Credits roll over 1 month. Use 'em or gift 'em</p>
+            </div>
+            <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white/60"} backdrop-blur`}>
+              <div className="text-2xl mb-2">🧮</div>
+              <p className="text-sm">Credit Power = Gifting Power</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Pricing Cards */}
       <section className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">🎁 Starter Plans</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl mx-auto">
           {pricingTiers.map((tier, index) => {
             const IconComponent = tier.icon
             const savings = getSavings(tier)
@@ -295,9 +266,7 @@ export default function PricingPage() {
                           ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                           : tier.badge === "Premium"
                             ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
-                            : tier.badge === "Team Favorite"
-                              ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                              : "bg-gray-600 text-white"
+                            : "bg-gray-600 text-white"
                       } px-4 py-1 text-sm font-semibold shadow-lg`}
                     >
                       {tier.badge}
@@ -312,26 +281,30 @@ export default function PricingPage() {
 
                 <CardHeader className="text-center space-y-4 pt-8">
                   <div
-                    className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-r ${tier.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
+                    className={`w-12 h-12 mx-auto rounded-full bg-gradient-to-r ${tier.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
                   >
-                    <IconComponent className="w-8 h-8 text-white" />
+                    <IconComponent className="w-6 h-6 text-white" />
                   </div>
 
                   <div>
-                    <h3 className="text-2xl font-bold">{tier.name}</h3>
-                    <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"} mt-2`}>
+                    <h3 className="text-xl font-bold">{tier.name}</h3>
+                    <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-600"} mt-1`}>
                       {tier.description}
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-4xl font-bold">
+                    <div className="text-3xl font-bold">
                       {getPrice(tier)}
                       {tier.monthlyPrice !== null && tier.monthlyPrice > 0 && (
-                        <span className={`text-lg font-normal ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                        <span className={`text-sm font-normal ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
                           {getPeriod()}
                         </span>
                       )}
+                    </div>
+                    <div className="flex items-center justify-center space-x-1">
+                      <Coins className="w-4 h-4 text-purple-500" />
+                      <span className="font-semibold text-purple-600">{tier.credits} credits</span>
                     </div>
                     {isYearly && savings && (
                       <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Save {savings}%</Badge>
@@ -339,20 +312,20 @@ export default function PricingPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4">
                   {/* Features */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {tier.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start space-x-3">
-                        <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>{feature}</span>
+                      <div key={idx} className="flex items-start space-x-2">
+                        <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className={`text-xs ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>{feature}</span>
                       </div>
                     ))}
 
                     {tier.limitations.map((limitation, idx) => (
-                      <div key={idx} className="flex items-start space-x-3 opacity-50">
-                        <X className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className={`text-sm ${isDarkMode ? "text-gray-500" : "text-gray-500"}`}>
+                      <div key={idx} className="flex items-start space-x-2 opacity-50">
+                        <X className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <span className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-500"}`}>
                           {limitation}
                         </span>
                       </div>
@@ -367,15 +340,15 @@ export default function PricingPage() {
                         : tier.id === "free"
                           ? "bg-gray-600 hover:bg-gray-700 text-white"
                           : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                    } group/btn`}
-                    size="lg"
+                    } group/btn text-sm`}
+                    size="sm"
                   >
                     {tier.id === "free"
-                      ? "Start Free Mission"
+                      ? "Start Free"
                       : tier.id === "enterprise"
                         ? "Contact Sales"
-                        : "Upgrade to Agent"}
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                        : "Choose Plan"}
+                    <ArrowRight className="w-3 h-3 ml-1 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
                 </CardContent>
               </Card>
@@ -384,150 +357,176 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Comparison Table */}
+      {/* Credit Actions */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Feature Comparison</h2>
+          <h2 className="text-3xl font-bold mb-4">🧮 Credit Power = Gifting Power</h2>
           <p className={`${isDarkMode ? "text-gray-400" : "text-gray-600"} max-w-2xl mx-auto`}>
-            Compare all features across our agent tiers to find your perfect match
+            🧠 Credits are consumed per action — not per session. Choose your moves wisely.
           </p>
         </div>
 
-        <div className={`overflow-x-auto rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
-          <table className="w-full">
-            <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
-              <tr>
-                <th className="text-left p-4 font-semibold">Features</th>
-                {pricingTiers.map((tier) => (
-                  <th key={tier.id} className="text-center p-4 font-semibold min-w-32">
-                    {tier.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {comparisonFeatures.map((feature, index) => (
-                <tr key={index} className={`border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                  <td className="p-4 font-medium">{feature.name}</td>
-                  <td className="text-center p-4">
-                    {typeof feature.free === "boolean" ? (
-                      feature.free ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-gray-400 mx-auto" />
-                      )
-                    ) : (
-                      feature.free
-                    )}
-                  </td>
-                  <td className="text-center p-4">
-                    {typeof feature.premium === "boolean" ? (
-                      feature.premium ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-gray-400 mx-auto" />
-                      )
-                    ) : (
-                      feature.premium
-                    )}
-                  </td>
-                  <td className="text-center p-4">
-                    {typeof feature.pro === "boolean" ? (
-                      feature.pro ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-gray-400 mx-auto" />
-                      )
-                    ) : (
-                      feature.pro
-                    )}
-                  </td>
-                  <td className="text-center p-4">
-                    {typeof feature.agent00g === "boolean" ? (
-                      feature.agent00g ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-gray-400 mx-auto" />
-                      )
-                    ) : (
-                      feature.agent00g
-                    )}
-                  </td>
-                  <td className="text-center p-4">
-                    {typeof feature.business === "boolean" ? (
-                      feature.business ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-gray-400 mx-auto" />
-                      )
-                    ) : (
-                      feature.business
-                    )}
-                  </td>
-                  <td className="text-center p-4">
-                    {typeof feature.enterprise === "boolean" ? (
-                      feature.enterprise ? (
-                        <Check className="w-5 h-5 text-green-500 mx-auto" />
-                      ) : (
-                        <X className="w-5 h-5 text-gray-400 mx-auto" />
-                      )
-                    ) : (
-                      feature.enterprise
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {creditActions.map((action, index) => {
+            const IconComponent = action.icon
+            return (
+              <Card key={index} className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white/80 backdrop-blur"} hover:shadow-lg transition-all`}>
+                <CardContent className="p-6 text-center">
+                  <div className="w-12 h-12 mx-auto mb-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <IconComponent className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-semibold mb-2">{action.action}</h3>
+                  <div className="text-2xl font-bold text-purple-600">{action.cost}</div>
+                  <div className="text-sm text-gray-500">credit{action.cost !== 1 && action.cost !== "1" ? "s" : ""}</div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </section>
 
-      {/* FAQ Section */}
+      {/* Gamification */}
       <section className="container mx-auto px-4 py-16">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-8">Frequently Asked Questions</h2>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">🏆 Gamify Your Giving</h2>
+          <p className={`${isDarkMode ? "text-gray-400" : "text-gray-600"} max-w-2xl mx-auto`}>
+            Every credit spent fuels your XP journey. Here's how it works:
+          </p>
+        </div>
 
-          <div className="space-y-6 text-left">
-            <div className={`p-6 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
-              <h3 className="font-semibold mb-2">Can I change my plan anytime?</h3>
-              <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-                You can upgrade or downgrade your agent level at any time. Changes take effect immediately, and we'll
-                prorate any billing differences.
-              </p>
-            </div>
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <Card className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white/80 backdrop-blur"}`}>
+              <CardHeader>
+                <h3 className="text-xl font-bold flex items-center">
+                  <Trophy className="w-5 h-5 mr-2 text-yellow-500" />
+                  XP System
+                </h3>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span>2 credits spent</span>
+                  <Badge className="bg-purple-100 text-purple-700">1 XP</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Concierge/4o Use</span>
+                  <Badge className="bg-purple-100 text-purple-700">10 XP</Badge>
+                </div>
+                <div className="pt-4 border-t">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">15,000 XP</div>
+                    <div className="text-sm text-gray-500">= Level 100</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className={`p-6 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
-              <h3 className="font-semibold mb-2">What happens if I exceed my recommendation limit?</h3>
-              <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-                Don't worry! We'll notify you when you're approaching your limit. You can either upgrade your plan or
-                wait for your monthly reset - no gifts left behind! 🎁
-              </p>
-            </div>
-
-            <div className={`p-6 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"} shadow-lg`}>
-              <h3 className="font-semibold mb-2">Is there a free trial for paid plans?</h3>
-              <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-                Yes! All paid plans come with a 14-day free trial. No credit card required for the Free Agent tier, and
-                you can cancel anytime during your trial period.
-              </p>
-            </div>
+            <Card className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white/80 backdrop-blur"}`}>
+              <CardHeader>
+                <h3 className="text-xl font-bold flex items-center">
+                  <Crown className="w-5 h-5 mr-2 text-yellow-500" />
+                  Prestige Path
+                </h3>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm mb-4">Reach Level 100? Unlock the Prestige Path</p>
+                <div className="space-y-2">
+                  {prestigeLevels.map((prestige, index) => (
+                    <div key={index} className="flex items-start space-x-2">
+                      <span className="text-lg">{prestige.level}</span>
+                      <span className="text-sm">{prestige.unlock}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Credit Add-Ons */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">🛒 Credit Add-Ons</h2>
+          <p className={`${isDarkMode ? "text-gray-400" : "text-gray-600"} max-w-2xl mx-auto`}>
+            Need more credits? Top up anytime with our credit bundles.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          {creditAddOns.map((addon, index) => (
+            <Card key={index} className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white/80 backdrop-blur"} hover:shadow-lg transition-all text-center`}>
+              <CardContent className="p-6">
+                <h3 className="font-bold text-lg mb-2">{addon.name}</h3>
+                <div className="text-3xl font-bold text-purple-600 mb-2">${addon.price}</div>
+                <div className="flex items-center justify-center space-x-1 mb-4">
+                  <Coins className="w-4 h-4 text-purple-500" />
+                  <span className="font-semibold">{addon.credits.toLocaleString()} credits</span>
+                </div>
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                  Buy Now
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Transparency Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto">
+          <Card className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white/80 backdrop-blur"}`}>
+            <CardHeader>
+              <h2 className="text-2xl font-bold text-center">👀 Behind the Curtain (For Transparency's Sake)</h2>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2">⚖️ Smart Pricing</h3>
+                  <p className="text-sm text-gray-600">
+                    AgentGift auto-calibrates credit cost vs. infrastructure cost (OpenAI, Supabase, etc.) so your usage is always efficient — and we stay in business. 😎
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">📊 Feature Assessment</h3>
+                  <p className="text-sm text-gray-600">
+                    All features are auto-assessed for ROI, XP balance, and upgrade conversion.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">🎯 Trial Strategy</h3>
+                  <p className="text-sm text-gray-600">
+                    Expensive features are trial-limited with upgrade nudges.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">👑 Founder Override</h3>
+                  <p className="text-sm text-gray-600">
+                    Founder override is always in place. You call the shots.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white">
-          <h2 className="text-4xl font-bold mb-4">Ready to Level Up Your Gift Game? 🚀</h2>
+          <h2 className="text-4xl font-bold mb-4">Ready to upgrade your gifting game? 🚀</h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of agents who've mastered the art of perfect gift-giving with AI
+            Every action is emotional currency. We just made it intelligent.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100">
-              Start Free Mission
+              🪙 Choose Your Plan
             </Button>
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 bg-transparent">
-              Talk to Sales
+              📈 Track Your XP
+            </Button>
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 bg-transparent">
+              🎁 Get More Credits
             </Button>
           </div>
         </div>

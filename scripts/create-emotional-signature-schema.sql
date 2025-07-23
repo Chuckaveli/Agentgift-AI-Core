@@ -1,176 +1,218 @@
--- Emotional Signature Engine™ Database Schema
--- This powers AgentGift.ai's emotional intelligence layer for gift prediction
--- Integrates with Supabase and Make.com webhooks
+-- Create emotional signatures schema
+CREATE SCHEMA IF NOT EXISTS emotional_signatures;
 
--- Enable necessary extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Emotional signatures table - stores parsed emotional data from various sources
+-- Create emotional signatures table
 CREATE TABLE IF NOT EXISTS emotional_signatures (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    source_label VARCHAR(50) NOT NULL, -- 'Gmail', 'Manual', 'API', etc.
-    sender_email VARCHAR(255) NOT NULL,
-    raw_content TEXT, -- Original message/content
-    parsed_emotion VARCHAR(50) NOT NULL, -- Primary detected emotion
-    confidence_score INTEGER NOT NULL CHECK (confidence_score >= 0 AND confidence_score <= 100),
-    context_label VARCHAR(100) NOT NULL, -- 'Breakup', 'Graduation', 'Grief', etc.
-    summary_snippet TEXT NOT NULL, -- AI-generated summary
-    suggested_action VARCHAR(200), -- Internal routing suggestion
-    processed BOOLEAN DEFAULT FALSE,
-    webhook_sent BOOLEAN DEFAULT FALSE,
-    webhook_response JSONB, -- Store Make.com webhook response
-    metadata JSONB, -- Additional context data
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ,
+  source_type VARCHAR(50) NOT NULL,
+  source_label VARCHAR(100) NOT NULL,
+  sender_email VARCHAR(255) NOT NULL,
+  raw_content TEXT,
+  parsed_emotion VARCHAR(50) NOT NULL,
+  confidence_score NUMERIC(5,2) NOT NULL CHECK (confidence_score >= 0 AND confidence_score <= 100),
+  context_label VARCHAR(100) NOT NULL,
+  context_metadata JSONB,
+  summary_snippet TEXT NOT NULL,
+  suggested_action TEXT,
+  priority_level VARCHAR(20) NOT NULL DEFAULT 'medium',
+  processed BOOLEAN NOT NULL DEFAULT FALSE,
+  webhook_sent BOOLEAN NOT NULL DEFAULT FALSE,
+  webhook_response JSONB,
+  webhook_payload JSONB
 );
 
--- Emotional contexts table - predefined contexts for classification
-CREATE TABLE IF NOT EXISTS emotional_contexts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    context_name VARCHAR(100) UNIQUE NOT NULL,
-    description TEXT,
-    suggested_routing VARCHAR(200), -- Which AgentGift system to route to
-    priority_level INTEGER DEFAULT 1, -- 1=low, 5=high
-    active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+-- Create index on timestamp for faster queries
+CREATE INDEX IF NOT EXISTS idx_emotional_signatures_timestamp ON emotional_signatures (timestamp DESC);
+
+-- Create index on parsed_emotion for faster filtering
+CREATE INDEX IF NOT EXISTS idx_emotional_signatures_emotion ON emotional_signatures (parsed_emotion);
+
+-- Create index on context_label for faster filtering
+CREATE INDEX IF NOT EXISTS idx_emotional_signatures_context ON emotional_signatures (context_label);
+
+-- Create integration logs table
+CREATE TABLE IF NOT EXISTS integration_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  integration_type VARCHAR(50) NOT NULL,
+  action_type VARCHAR(50) NOT NULL,
+  emotional_signature_id UUID REFERENCES emotional_signatures(id),
+  request_payload JSONB,
+  response_payload JSONB,
+  status VARCHAR(20) NOT NULL,
+  error_message TEXT,
+  execution_time_ms INTEGER
 );
 
--- Emotional analytics table - aggregated data for dashboard
+-- Create emotional analytics table
 CREATE TABLE IF NOT EXISTS emotional_analytics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    date DATE NOT NULL,
-    emotion VARCHAR(50) NOT NULL,
-    context VARCHAR(100) NOT NULL,
-    count INTEGER DEFAULT 1,
-    avg_confidence DECIMAL(5,2),
-    webhook_success_count INTEGER DEFAULT 0,
-    webhook_failure_count INTEGER DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(date, emotion, context)
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  date DATE NOT NULL,
+  emotion VARCHAR(50) NOT NULL,
+  context VARCHAR(100) NOT NULL,
+  count INTEGER NOT NULL DEFAULT 1,
+  avg_confidence NUMERIC(5,2) NOT NULL,
+  UNIQUE(date, emotion, context)
 );
 
--- Webhook logs table - track Make.com integration
-CREATE TABLE IF NOT EXISTS emotional_webhook_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    signature_id UUID REFERENCES emotional_signatures(id),
-    webhook_url VARCHAR(500),
-    payload JSONB NOT NULL,
-    response_status INTEGER,
-    response_body JSONB,
-    success BOOLEAN DEFAULT FALSE,
-    retry_count INTEGER DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+-- Create emotional contexts reference table
+CREATE TABLE IF NOT EXISTS emotional_contexts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  context_name VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT,
+  priority_level INTEGER NOT NULL DEFAULT 3,
+  routing_system VARCHAR(50),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Insert default emotional contexts
-INSERT INTO emotional_contexts (context_name, description, suggested_routing, priority_level) VALUES
-('Breakup', 'Relationship ending or romantic distress', 'Auto-route to LUMIENCE™', 5),
-('Graduation', 'Educational milestone achievement', 'Flag for BondCraft™ ritual trigger', 3),
-('Grief', 'Loss of loved one or mourning', 'Sync to Just-Because Gift Loop', 5),
-('Anniversary', 'Relationship or milestone anniversary', 'Flag for BondCraft™ ritual trigger', 4),
-('Illness', 'Health challenges or recovery', 'Sync to Just-Because Gift Loop', 4),
-('Promotion', 'Career advancement or achievement', 'Flag for BondCraft™ ritual trigger', 3),
-('Birthday', 'Birthday celebration', 'Flag for BondCraft™ ritual trigger', 3),
-('Wedding', 'Marriage ceremony or engagement', 'Flag for BondCraft™ ritual trigger', 4),
-('New Baby', 'Birth or adoption announcement', 'Flag for BondCraft™ ritual trigger', 4),
-('Moving', 'Relocation or new home', 'Sync to Just-Because Gift Loop', 2),
-('Job Loss', 'Employment termination or career change', 'Auto-route to LUMIENCE™', 4),
-('Anxiety', 'Stress or anxiety expression', 'Auto-route to LUMIENCE™', 3),
-('Depression', 'Signs of depression or sadness', 'Auto-route to LUMIENCE™', 5),
-('Celebration', 'General celebration or joy', 'Flag for BondCraft™ ritual trigger', 2),
-('Apology', 'Seeking forgiveness or making amends', 'Sync to Just-Because Gift Loop', 3)
+INSERT INTO emotional_contexts (context_name, description, priority_level, routing_system)
+VALUES
+  ('Breakup', 'Relationship ending context', 5, 'LUMIENCE'),
+  ('Grief', 'Loss and mourning context', 5, 'JUST_BECAUSE_LOOP'),
+  ('Anxiety', 'Worry and stress context', 4, 'LUMIENCE'),
+  ('Depression', 'Mental health struggle context', 5, 'LUMIENCE'),
+  ('Job Loss', 'Career transition context', 4, 'LUMIENCE'),
+  ('Graduation', 'Educational achievement context', 3, 'BONDCRAFT'),
+  ('Anniversary', 'Relationship milestone context', 4, 'BONDCRAFT'),
+  ('Promotion', 'Career advancement context', 3, 'BONDCRAFT'),
+  ('Birthday', 'Birth celebration context', 3, 'BONDCRAFT'),
+  ('Wedding', 'Marriage celebration context', 4, 'BONDCRAFT'),
+  ('New Baby', 'New child context', 4, 'BONDCRAFT'),
+  ('Celebration', 'General positive event context', 2, 'BONDCRAFT'),
+  ('Illness', 'Health challenge context', 4, 'JUST_BECAUSE_LOOP'),
+  ('Moving', 'Relocation context', 2, 'JUST_BECAUSE_LOOP'),
+  ('Apology', 'Reconciliation context', 3, 'JUST_BECAUSE_LOOP')
 ON CONFLICT (context_name) DO NOTHING;
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_emotional_signatures_timestamp ON emotional_signatures(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_emotional_signatures_emotion ON emotional_signatures(parsed_emotion);
-CREATE INDEX IF NOT EXISTS idx_emotional_signatures_context ON emotional_signatures(context_label);
-CREATE INDEX IF NOT EXISTS idx_emotional_signatures_processed ON emotional_signatures(processed);
-CREATE INDEX IF NOT EXISTS idx_emotional_analytics_date ON emotional_analytics(date DESC);
-CREATE INDEX IF NOT EXISTS idx_webhook_logs_signature ON emotional_webhook_logs(signature_id);
+-- Create emotions reference table
+CREATE TABLE IF NOT EXISTS emotional_reference (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  emotion_name VARCHAR(50) NOT NULL UNIQUE,
+  description TEXT,
+  color_hex VARCHAR(7),
+  intensity_level INTEGER NOT NULL DEFAULT 3,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- Create updated_at trigger function
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Insert default emotions
+INSERT INTO emotional_reference (emotion_name, description, color_hex, intensity_level)
+VALUES
+  ('Joy', 'Feeling of great pleasure and happiness', '#FFD700', 4),
+  ('Sadness', 'Feeling of sorrow or unhappiness', '#6495ED', 3),
+  ('Anger', 'Strong feeling of annoyance or displeasure', '#FF4500', 4),
+  ('Fear', 'Feeling of being afraid or anxious', '#800080', 4),
+  ('Disgust', 'Strong feeling of dislike or aversion', '#008000', 3),
+  ('Surprise', 'Feeling of being astonished or startled', '#FFA500', 3),
+  ('Trust', 'Firm belief in reliability or truth', '#4682B4', 2),
+  ('Anticipation', 'Looking forward to something', '#FF69B4', 2),
+  ('Love', 'Deep affection or attachment', '#FF1493', 5),
+  ('Grief', 'Deep sorrow, especially caused by death', '#000080', 5),
+  ('Anxiety', 'Feeling of worry or nervousness', '#9370DB', 4),
+  ('Excitement', 'Feeling of great enthusiasm', '#FF6347', 4),
+  ('Gratitude', 'Feeling of thankfulness', '#2E8B57', 3),
+  ('Guilt', 'Feeling of having done wrong', '#8B4513', 3),
+  ('Pride', 'Feeling of satisfaction from achievements', '#DAA520', 3),
+  ('Shame', 'Painful feeling of humiliation', '#A52A2A', 4),
+  ('Contentment', 'State of peaceful happiness', '#87CEEB', 2),
+  ('Disappointment', 'Sadness from unfulfilled expectations', '#778899', 3),
+  ('Jealousy', 'Envious resentment of someone', '#006400', 4),
+  ('Hope', 'Feeling of expectation and desire', '#00BFFF', 3)
+ON CONFLICT (emotion_name) DO NOTHING;
+
+-- Create webhook configuration table
+CREATE TABLE IF NOT EXISTS webhook_configurations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  webhook_name VARCHAR(100) NOT NULL UNIQUE,
+  webhook_url TEXT NOT NULL,
+  event_type VARCHAR(50) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  headers JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+-- Insert default webhook configurations
+INSERT INTO webhook_configurations (webhook_name, webhook_url, event_type)
+VALUES
+  ('Make.com General', 'https://hook.make.com/agentgift-emotional-signature', 'all'),
+  ('Make.com Grief Trigger', 'https://hook.make.com/agentgift-grief-trigger', 'grief'),
+  ('Make.com Joy Trigger', 'https://hook.make.com/agentgift-joy-trigger', 'joy'),
+  ('Make.com Anxiety Trigger', 'https://hook.make.com/agentgift-anxiety-trigger', 'anxiety')
+ON CONFLICT (webhook_name) DO NOTHING;
+
+-- Create RLS policies
+ALTER TABLE emotional_signatures ENABLE ROW LEVEL SECURITY;
+ALTER TABLE integration_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE emotional_analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE emotional_contexts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE emotional_reference ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_configurations ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for authenticated users
+CREATE POLICY "Allow authenticated access to emotional_signatures" 
+  ON emotional_signatures FOR ALL 
+  TO authenticated 
+  USING (true);
+
+CREATE POLICY "Allow authenticated access to integration_logs" 
+  ON integration_logs FOR ALL 
+  TO authenticated 
+  USING (true);
+
+CREATE POLICY "Allow authenticated access to emotional_analytics" 
+  ON emotional_analytics FOR ALL 
+  TO authenticated 
+  USING (true);
+
+CREATE POLICY "Allow authenticated access to emotional_contexts" 
+  ON emotional_contexts FOR ALL 
+  TO authenticated 
+  USING (true);
+
+CREATE POLICY "Allow authenticated access to emotional_reference" 
+  ON emotional_reference FOR ALL 
+  TO authenticated 
+  USING (true);
+
+CREATE POLICY "Allow authenticated access to webhook_configurations" 
+  ON webhook_configurations FOR ALL 
+  TO authenticated 
+  USING (true);
+
+-- Create functions for analytics
+CREATE OR REPLACE FUNCTION update_emotional_analytics()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+  INSERT INTO emotional_analytics (date, emotion, context, count, avg_confidence)
+  VALUES (
+    CURRENT_DATE,
+    NEW.parsed_emotion,
+    NEW.context_label,
+    1,
+    NEW.confidence_score
+  )
+  ON CONFLICT (date, emotion, context)
+  DO UPDATE SET
+    count = emotional_analytics.count + 1,
+    avg_confidence = (emotional_analytics.avg_confidence * emotional_analytics.count + NEW.confidence_score) / (emotional_analytics.count + 1);
+  
+  RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Apply updated_at trigger to emotional_signatures
-CREATE TRIGGER update_emotional_signatures_updated_at 
-    BEFORE UPDATE ON emotional_signatures 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Create trigger for analytics
+CREATE TRIGGER trigger_update_emotional_analytics
+AFTER INSERT ON emotional_signatures
+FOR EACH ROW
+EXECUTE FUNCTION update_emotional_analytics();
 
--- Sample data for testing (remove in production)
-INSERT INTO emotional_signatures (
-    source_label, sender_email, raw_content, parsed_emotion, 
-    confidence_score, context_label, summary_snippet, suggested_action
-) VALUES
-('Gmail', 'sarah@example.com', 'I can''t believe we broke up after 3 years...', 'sadness', 92, 'Breakup', 'User expressing deep sadness about relationship ending after 3 years', 'Auto-route to LUMIENCE™'),
-('Gmail', 'mike@example.com', 'Just graduated from college! Time to celebrate!', 'joy', 88, 'Graduation', 'User celebrating college graduation milestone', 'Flag for BondCraft™ ritual trigger'),
-('Manual', 'lisa@example.com', 'Mom passed away last week. Still processing everything.', 'grief', 95, 'Grief', 'User dealing with loss of mother, in mourning process', 'Sync to Just-Because Gift Loop'),
-('Gmail', 'john@example.com', 'Got the promotion I''ve been working towards!', 'excitement', 85, 'Promotion', 'User excited about career advancement and promotion', 'Flag for BondCraft™ ritual trigger'),
-('Gmail', 'emma@example.com', 'Feeling really anxious about the presentation tomorrow', 'anxiety', 78, 'Anxiety', 'User expressing anxiety about upcoming work presentation', 'Auto-route to LUMIENCE™');
-
--- Create view for dashboard analytics
-CREATE OR REPLACE VIEW emotional_dashboard_stats AS
-SELECT 
-    COUNT(*) FILTER (WHERE timestamp >= NOW() - INTERVAL '7 days') as emotions_tagged_week,
-    (SELECT json_agg(emotion_counts) FROM (
-        SELECT parsed_emotion as emotion, COUNT(*) as count 
-        FROM emotional_signatures 
-        WHERE timestamp >= NOW() - INTERVAL '30 days'
-        GROUP BY parsed_emotion 
-        ORDER BY count DESC 
-        LIMIT 10
-    ) emotion_counts) as top_emotions,
-    (SELECT json_agg(context_counts) FROM (
-        SELECT context_label as context, COUNT(*) as count 
-        FROM emotional_signatures 
-        WHERE timestamp >= NOW() - INTERVAL '30 days'
-        GROUP BY context_label 
-        ORDER BY count DESC 
-        LIMIT 10
-    ) context_counts) as top_contexts,
-    COALESCE(AVG(confidence_score), 0) as processing_accuracy,
-    COALESCE(
-        (COUNT(*) FILTER (WHERE webhook_sent = true AND processed = true)::float / 
-         NULLIF(COUNT(*) FILTER (WHERE webhook_sent = true), 0)) * 100, 
-        0
-    ) as webhook_success_rate
-FROM emotional_signatures;
-
--- Comments for webhook integration with Make.com
-/*
-Webhook Payload Structure for Make.com:
-{
-  "signature_id": "uuid",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "emotion": "sadness",
-  "context": "Breakup", 
-  "confidence": 92,
-  "sender_email": "user@example.com",
-  "suggested_action": "Auto-route to LUMIENCE™",
-  "summary": "User expressing deep sadness about relationship ending",
-  "agentgift_routing": {
-    "system": "LUMIENCE",
-    "priority": 5,
-    "auto_trigger": true
-  }
-}
-
-Make.com Webhook Endpoints:
-- Production: https://hook.make.com/your-webhook-id
-- Staging: https://hook.make.com/your-staging-webhook-id
-
-Response Expected:
-{
-  "success": true,
-  "processed_by": "make_scenario_id",
-  "routed_to": "LUMIENCE",
-  "timestamp": "2024-01-15T10:30:05Z"
-}
-*/
+-- Grant permissions
+GRANT USAGE ON SCHEMA emotional_signatures TO service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA emotional_signatures TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA emotional_signatures TO service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA emotional_signatures TO service_role;
