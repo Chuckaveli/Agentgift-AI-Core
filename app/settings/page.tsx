@@ -12,7 +12,7 @@ import { useCulturalContext } from "@/components/cultural/cultural-context"
 import { usePersona } from "@/components/persona/persona-context"
 
 export default function SettingsPage() {
-  const { currentLocale, culturalPreferences, setLocale } = useCulturalContext()
+  const { currentLocale, setCurrentLocale } = useCulturalContext()
   const { currentPersona, personas, setPersona } = usePersona()
 
   const [settings, setSettings] = useState({
@@ -121,7 +121,7 @@ export default function SettingsPage() {
                       Your cultural and language preferences
                     </p>
                     <Badge variant="outline" className="text-sm">
-                      {currentLocale} - {culturalPreferences?.locale}
+                      {currentLocale?.name} - {currentLocale?.code}
                     </Badge>
                   </div>
                   <div>

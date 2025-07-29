@@ -6,20 +6,36 @@ import type { NextRequest } from "next/server"
 const protectedRoutes = ["/dashboard", "/admin", "/features", "/business", "/api/protected"]
 
 // Public routes that should always be accessible
-const publicRoutes = ["/", "/tokenomics", "/pricing", "/terms", "/contact", "/login", "/signup"]
+const publicRoutes = ["/", "/tokenomics", "/pricing", "/terms", "/contact", "/login", "/sign-in", "/signup"]
 
 // Admin-only routes
 const adminRoutes = ["/admin", "/api/admin"]
 
 // Feature-specific routes with tier requirements
 const featureRoutes = {
+  "/features/test": "free_agent",
+  "/features/pride-alliance": "premium_spy",
+  "/features/social-proof-verifier": "premium_spy",
+  "/features/gift-gut-check": "premium_spy",
+  "/features/agent-gifty": "pro_agent",
+  "/features/gift-dna-quiz": "premium_spy",
+  "/features/group-splitter": "premium_spy",
+  "/features/emotion-tags": "premium_spy",
+  "/features/gift-real-viewer": "premium_spy",
+  "/features/gift-reveal-viewer": "premium_spy",
   "/features/ai-companion": "agent_00g",
   "/features/gift-campaigns": "pro_agent",
   "/features/reminder-scheduler": "pro_agent",
-  "/features/social-proof-verifier": "premium_spy",
   "/api/features/ai-companion": "agent_00g",
   "/api/features/gift-campaigns": "pro_agent",
   "/api/features/reminder-scheduler": "pro_agent",
+  "/api/features/gift-gut-check": "premium_spy",
+  "/api/features/agent-gifty": "pro_agent",
+  "/api/features/gift-dna-quiz": "premium_spy",
+  "/api/features/group-splitter": "premium_spy",
+  "/api/features/emotion-tags": "premium_spy",
+  "/api/features/gift-real-viewer": "premium_spy",
+  "/api/features/gift-reveal-viewer": "premium_spy",
 }
 
 export async function middleware(req: NextRequest) {
@@ -53,8 +69,12 @@ export async function middleware(req: NextRequest) {
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("tier, credits, role")
-      .eq("id", session.user.id)
+      .eq("user_id", session.user.id)
       .single()
+
+    console.log(`User session: ${session.user.id}`)
+    console.log(`User profile found: ${!!profile}`)
+    console.log(`User profile tier: ${profile?.tier}`)
 
     // Check admin access
     const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
@@ -80,6 +100,10 @@ export async function middleware(req: NextRequest) {
 
       const userTierLevel = tierLevels[profile.tier as keyof typeof tierLevels] || 0
       const requiredTierLevel = tierLevels[requiredTier as keyof typeof tierLevels]
+
+      console.log(`Feature route check: ${pathname}`)
+      console.log(`User tier: ${profile.tier}, Required tier: ${requiredTier}`)
+      console.log(`User tier level: ${userTierLevel}, Required tier level: ${requiredTierLevel}`)
 
       if (userTierLevel < requiredTierLevel) {
         // For API routes, return 403

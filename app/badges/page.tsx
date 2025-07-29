@@ -370,7 +370,7 @@ export default function BadgesPage() {
                 asChild
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
-                <Link href="/auth/signup">Get Started Free</Link>
+                <Link href="/login">Get Started Free</Link>
               </Button>
             </div>
           )}
