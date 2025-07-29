@@ -4,50 +4,85 @@ import { useState, useEffect } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase-client"
 
+interface UserProfile {
+  id: string
+  email: string
+  name?: string
+  tier: string
+  admin_role: boolean
+  credits: number
+  xp: number
+  level: number
+  badges: string[]
+  prestige_level: string | null
+}
+
 export function useUser() {
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Get initial session
-    const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      setLoading(false)
-    }
-
-    getInitialSession()
+      if (session?.user) {
+        fetchProfile(session.user.id)
+      } else {
+        setLoading(false)
+      }
+    })
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null)
-      setLoading(false)
-
-      // Store user info in localStorage for internal use
       if (session?.user) {
-        localStorage.setItem("agentgift_user_id", session.user.id)
-        localStorage.setItem("agentgift_user_email", session.user.email || "")
+        fetchProfile(session.user.id)
       } else {
-        localStorage.removeItem("agentgift_user_id")
-        localStorage.removeItem("agentgift_user_email")
+        setProfile(null)
+        setLoading(false)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.from("user_profiles").select("*").eq("id", userId).single()
+
+      if (error) throw error
+      setProfile(data)
+    } catch (error) {
+      console.error("Error fetching profile:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const signInWithMagicLink = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
+    })
+    return { error }
+  }
+
   const signOut = async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    return { error }
   }
 
   return {
     user,
+    profile,
     loading,
+    signInWithMagicLink,
     signOut,
-    isAuthenticated: !!user,
+    isAdmin: profile?.admin_role || false,
   }
 }
