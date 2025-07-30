@@ -6,60 +6,60 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const seasonId = searchParams.get("seasonId")
+    const itemId = searchParams.get("itemId")
 
-    // Get auction winners and stats
-    let query = supabase
-      .from("agentvault_auction_history")
-      .select(`
-        *,
-        reward:agentvault_rewards(name, tier, description),
-        season:agentvault_seasons(season_name, season_type)
-      `)
-      .order("created_at", { ascending: false })
+    if (itemId) {
+      // Get leaderboard for specific item
+      const { data: itemBids, error: itemError } = await supabase
+        .from("vault_auction_bids")
+        .select("*")
+        .eq("item_id", itemId)
+        .order("bid_amount", { ascending: false })
 
-    if (seasonId) {
-      query = query.eq("season_id", seasonId)
+      if (itemError) throw itemError
+
+      return NextResponse.json({
+        itemLeaderboard: itemBids || [],
+        itemId,
+      })
     }
 
-    const { data: winners, error: winnersError } = await query.limit(50)
-
-    if (winnersError) throw winnersError
-
-    // Get top VaultCoin earners
-    const { data: topEarners, error: earnersError } = await supabase
-      .from("agentvault_coins")
+    // Get overall leaderboard
+    const { data: topTeams, error: teamsError } = await supabase
+      .from("vault_coin_logs")
       .select("*")
+      .eq("is_qualified", true)
       .order("total_earned", { ascending: false })
       .limit(20)
 
-    if (earnersError) throw earnersError
+    if (teamsError) throw teamsError
 
-    // Get auction statistics
-    const { data: stats, error: statsError } = await supabase
-      .from("agentvault_auction_logs")
-      .select("event_type, created_at")
+    // Get current auction winners
+    const { data: currentWinners, error: winnersError } = await supabase
+      .from("vault_auction_bids")
+      .select(`
+        *,
+        item:vault_auction_items(title, tier, tier_emoji)
+      `)
+      .eq("is_current_winner", true)
+      .order("bid_amount", { ascending: false })
+
+    if (winnersError) throw winnersError
+
+    // Get auction activity stats
+    const { data: activityStats, error: statsError } = await supabase
+      .from("auction_participation_logs")
+      .select("participation_type, created_at")
       .order("created_at", { ascending: false })
       .limit(100)
 
     if (statsError) throw statsError
 
-    // Process statistics
-    const eventCounts =
-      stats?.reduce((acc: any, log) => {
-        acc[log.event_type] = (acc[log.event_type] || 0) + 1
-        return acc
-      }, {}) || {}
-
     return NextResponse.json({
-      winners: winners || [],
-      topEarners: topEarners || [],
-      stats: {
-        totalBids: eventCounts.bid_placed || 0,
-        totalWins: eventCounts.bid_won || 0,
-        activeParticipants: topEarners?.length || 0,
-        vaultCoinsCirculating: topEarners?.reduce((sum, earner) => sum + earner.balance, 0) || 0,
-      },
+      topTeams: topTeams || [],
+      currentWinners: currentWinners || [],
+      activityStats: activityStats || [],
+      totalQualifiedTeams: topTeams?.length || 0,
     })
   } catch (error) {
     console.error("AgentVault leaderboard error:", error)

@@ -6,19 +6,17 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get("userId")
-    const companyId = searchParams.get("companyId")
+    const teamId = searchParams.get("teamId")
 
-    if (!userId || !companyId) {
-      return NextResponse.json({ error: "Missing userId or companyId" }, { status: 400 })
+    if (!teamId) {
+      return NextResponse.json({ error: "Missing teamId" }, { status: 400 })
     }
 
-    // Get user's VaultCoin balance
+    // Get team's VibeCoins balance
     const { data: balance, error: balanceError } = await supabase
-      .from("agentvault_coins")
+      .from("vault_coin_logs")
       .select("*")
-      .eq("user_id", userId)
-      .eq("company_id", companyId)
+      .eq("team_id", teamId)
       .single()
 
     if (balanceError && balanceError.code !== "PGRST116") {
@@ -27,12 +25,11 @@ export async function GET(request: NextRequest) {
 
     // Get recent transactions
     const { data: transactions, error: transError } = await supabase
-      .from("agentvault_coin_transactions")
+      .from("vault_coin_transactions")
       .select("*")
-      .eq("user_id", userId)
-      .eq("company_id", companyId)
+      .eq("team_id", teamId)
       .order("created_at", { ascending: false })
-      .limit(10)
+      .limit(20)
 
     if (transError) throw transError
 
@@ -41,32 +38,34 @@ export async function GET(request: NextRequest) {
         balance: 0,
         total_earned: 0,
         total_spent: 0,
-        last_earned_at: null,
+        is_qualified: false,
+        min_xp_met: false,
+        event_participation_count: 0,
       },
       transactions: transactions || [],
     })
   } catch (error) {
     console.error("AgentVault coins error:", error)
-    return NextResponse.json({ error: "Failed to fetch VaultCoins" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch VibeCoins" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, companyId, amount, source, sourceId, description } = await request.json()
+    const { teamId, amount, source, sourceId, description, userId } = await request.json()
 
-    if (!userId || !companyId || !amount || !source) {
+    if (!teamId || !amount || !source) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Award VaultCoins using the database function
-    const { data, error } = await supabase.rpc("award_vault_coins", {
-      p_company_id: companyId,
-      p_user_id: userId,
+    // Award VibeCoins using the database function
+    const { data, error } = await supabase.rpc("award_vibe_coins", {
+      p_team_id: teamId,
       p_amount: amount,
       p_source: source,
       p_source_id: sourceId || null,
       p_description: description || null,
+      p_user_id: userId || null,
     })
 
     if (error) throw error
@@ -78,6 +77,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("AgentVault award coins error:", error)
-    return NextResponse.json({ error: "Failed to award VaultCoins" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to award VibeCoins" }, { status: 500 })
   }
 }

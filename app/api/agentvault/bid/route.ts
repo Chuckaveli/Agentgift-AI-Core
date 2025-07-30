@@ -5,18 +5,20 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(request: NextRequest) {
   try {
-    const { rewardId, bidAmount, message, companyId, userId } = await request.json()
+    const { itemId, teamId, teamName, bidAmount, message, userId, userName } = await request.json()
 
-    if (!rewardId || !bidAmount || !companyId || !userId) {
+    if (!itemId || !teamId || !bidAmount || !userId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Call the place_vault_bid function
-    const { data, error } = await supabase.rpc("place_vault_bid", {
-      p_reward_id: rewardId,
-      p_company_id: companyId,
-      p_user_id: userId,
+    // Call the place_team_bid function
+    const { data, error } = await supabase.rpc("place_team_bid", {
+      p_item_id: itemId,
+      p_team_id: teamId,
+      p_team_name: teamName,
       p_bid_amount: bidAmount,
+      p_user_id: userId,
+      p_user_name: userName,
       p_bid_message: message || null,
     })
 
@@ -26,26 +28,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: data.error }, { status: 400 })
     }
 
-    // Generate Orion narration based on bid intensity
-    const orionNarrations = [
-      "A bold move from the shadows! The vault trembles with anticipation...",
-      "The bidding war intensifies! Who will claim this treasure?",
-      "Fascinating... another contender enters the fray!",
-      "The vault's energy surges! This item calls to many souls...",
-      "Impressive dedication! The legacy grows stronger with each bid...",
+    // Generate excitement messages based on bid activity
+    const excitementMessages = [
+      "🔥 The competition heats up! Another team enters the fray!",
+      "⚡ Bold move! The leaderboard is shifting!",
+      "🎯 Direct hit! This item is getting serious attention!",
+      "🚀 The bidding war intensifies! Who will claim victory?",
+      "💎 A worthy challenger appears! The stakes are rising!",
     ]
 
-    const narration = orionNarrations[Math.floor(Math.random() * orionNarrations.length)]
-
-    // Update the auction log with Orion's narration
-    await supabase.from("agentvault_auction_logs").update({ orion_narration: narration }).eq("id", data.bid_id)
+    const randomMessage = excitementMessages[Math.floor(Math.random() * excitementMessages.length)]
 
     return NextResponse.json({
       success: true,
-      bidId: data.bid_id,
-      anonymizedName: data.anonymized_name,
-      newCurrentBid: data.new_current_bid,
-      orionNarration: narration,
+      isEdit: data.is_edit,
+      newTopBid: data.new_top_bid,
+      bidCount: data.bid_count,
+      excitementMessage: randomMessage,
+      actionType: data.is_edit ? "edited" : "placed",
     })
   } catch (error) {
     console.error("AgentVault bid error:", error)
