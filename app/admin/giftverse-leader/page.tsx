@@ -1,138 +1,124 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useUser } from "@/hooks/use-user"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
+import { Separator } from "@/components/ui/separator"
 import {
-  Brain,
   Mic,
   MicOff,
   Volume2,
   VolumeX,
   Settings,
+  Brain,
+  EyeOff,
   Activity,
-  Heart,
-  Zap,
+  TrendingUp,
   Users,
+  Heart,
+  Gift,
+  Zap,
+  Shield,
   BarChart3,
   MessageSquare,
-  Shield,
-  Play,
-  RotateCcw,
-  EyeOff,
+  Headphones,
 } from "lucide-react"
 import { toast } from "sonner"
 
 interface VoiceSettings {
   selected_voice: string
   voice_speed: number
-  voice_pitch: number
   auto_speak: boolean
-  stealth_logging: boolean
+  stealth_mode: boolean
   analysis_mode: boolean
 }
 
 interface IntelligenceData {
-  emotional_trends?: any
-  gifting_patterns?: any
-  user_behavior?: any
-  feature_performance?: any
-  platform_health?: any
+  emotional?: any
+  gifting?: any
+  performance?: any
+  users?: any
+  system?: any
 }
 
-export default function GiftverseLeaderDashboard() {
-  const { profile, loading } = useUser()
-  const router = useRouter()
+export default function GiftverseLeaderPage() {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [sessionId] = useState(`session-${Date.now()}`)
-  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [transcript, setTranscript] = useState("")
+  const [response, setResponse] = useState("")
+  const [sessionId] = useState(`giftverse_${Date.now()}`)
+  const [settings, setSettings] = useState<VoiceSettings>({
     selected_voice: "avelyn",
     voice_speed: 1.0,
-    voice_pitch: 1.0,
     auto_speak: true,
-    stealth_logging: false,
+    stealth_mode: false,
     analysis_mode: false,
   })
-  const [intelligenceData, setIntelligenceData] = useState<IntelligenceData>({})
-  const [currentCommand, setCurrentCommand] = useState("")
-  const [lastResponse, setLastResponse] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [intelligence, setIntelligence] = useState<IntelligenceData>({})
+  const [textInput, setTextInput] = useState("")
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Redirect non-admin users
-  useEffect(() => {
-    if (!loading && (!profile || !profile.admin_role)) {
-      router.push("/dashboard")
-      toast.error("Access denied. Giftverse Leader requires admin privileges.")
-    }
-  }, [profile, loading, router])
+  // Mock admin ID - in real app, get from auth context
+  const adminId = "admin-user-id"
 
-  // Load voice settings and initial intelligence
   useEffect(() => {
-    if (profile?.admin_role) {
-      loadVoiceSettings()
-      loadIntelligenceData("comprehensive")
-    }
-  }, [profile])
+    loadSettings()
+    loadIntelligence("overview")
+  }, [])
 
-  const loadVoiceSettings = async () => {
+  const loadSettings = async () => {
     try {
-      const response = await fetch(`/api/admin/giftverse-leader/settings?adminId=${profile?.id}`)
+      const response = await fetch(`/api/admin/giftverse-leader/settings?adminId=${adminId}`)
       const data = await response.json()
       if (data.success) {
-        setVoiceSettings(data.settings)
+        setSettings(data.settings)
       }
     } catch (error) {
-      console.error("Failed to load voice settings:", error)
+      console.error("Failed to load settings:", error)
     }
   }
 
-  const updateVoiceSettings = async (newSettings: Partial<VoiceSettings>) => {
+  const updateSettings = async (newSettings: Partial<VoiceSettings>) => {
     try {
-      const updatedSettings = { ...voiceSettings, ...newSettings }
+      const updatedSettings = { ...settings, ...newSettings }
       const response = await fetch("/api/admin/giftverse-leader/settings", {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          adminId: profile?.id,
-          settings: updatedSettings,
-        }),
+        body: JSON.stringify({ adminId, settings: updatedSettings }),
       })
 
       const data = await response.json()
       if (data.success) {
-        setVoiceSettings(data.settings)
-        toast.success("Voice settings updated")
+        setSettings(data.settings)
+        toast.success("Settings updated successfully")
       }
     } catch (error) {
-      console.error("Failed to update voice settings:", error)
+      console.error("Failed to update settings:", error)
       toast.error("Failed to update settings")
     }
   }
 
-  const loadIntelligenceData = async (type: string) => {
+  const loadIntelligence = async (type: string) => {
     try {
-      const response = await fetch(`/api/admin/giftverse-leader/intelligence?adminId=${profile?.id}&type=${type}`)
+      const response = await fetch(`/api/admin/giftverse-leader/intelligence?adminId=${adminId}&type=${type}`)
       const data = await response.json()
       if (data.success) {
-        setIntelligenceData(data.data)
+        setIntelligence(data.data)
       }
     } catch (error) {
-      console.error("Failed to load intelligence data:", error)
+      console.error("Failed to load intelligence:", error)
     }
   }
 
@@ -162,7 +148,7 @@ export default function GiftverseLeaderDashboard() {
 
       mediaRecorder.start()
       setIsListening(true)
-      toast.success("Listening... Speak your command to the Giftverse Mastermind")
+      toast.success("Listening... Speak your command")
     } catch (error) {
       console.error("Failed to start listening:", error)
       toast.error("Failed to access microphone")
@@ -176,8 +162,9 @@ export default function GiftverseLeaderDashboard() {
     }
   }
 
-  const processVoiceCommand = async (action: string, audioData?: string, textInput?: string) => {
+  const processVoiceCommand = async (action: string, audioData?: string, textCommand?: string) => {
     setIsProcessing(true)
+
     try {
       const response = await fetch("/api/admin/giftverse-leader/voice", {
         method: "POST",
@@ -185,31 +172,36 @@ export default function GiftverseLeaderDashboard() {
         body: JSON.stringify({
           action,
           audioData,
-          textInput,
+          textInput: textCommand,
           sessionId,
-          adminId: profile?.id,
+          adminId,
         }),
       })
 
       const data = await response.json()
+
       if (data.success) {
+        if (data.transcript) {
+          setTranscript(data.transcript)
+        }
         if (data.spoken_response) {
-          setLastResponse(data.spoken_response)
-          if (voiceSettings.auto_speak) {
+          setResponse(data.spoken_response)
+          if (settings.auto_speak) {
             await speakResponse(data.spoken_response)
           }
         }
-        if (data.transcript) {
-          setCurrentCommand(data.transcript)
-        }
+
+        // Handle next actions
         if (data.next_action) {
-          await executeNextAction(data.next_action)
+          handleNextAction(data.next_action)
         }
+
+        toast.success("Command processed successfully")
       } else {
-        toast.error(data.error || "Voice processing failed")
+        toast.error(data.error || "Failed to process command")
       }
     } catch (error) {
-      console.error("Voice command processing failed:", error)
+      console.error("Voice command error:", error)
       toast.error("Failed to process voice command")
     } finally {
       setIsProcessing(false)
@@ -218,6 +210,7 @@ export default function GiftverseLeaderDashboard() {
 
   const speakResponse = async (text: string) => {
     setIsSpeaking(true)
+
     try {
       const response = await fetch("/api/admin/giftverse-leader/voice", {
         method: "POST",
@@ -226,510 +219,472 @@ export default function GiftverseLeaderDashboard() {
           action: "text_to_speech",
           textInput: text,
           sessionId,
-          adminId: profile?.id,
+          adminId,
         }),
       })
 
       const data = await response.json()
+
       if (data.success && data.audioData) {
         const audio = new Audio(`data:audio/wav;base64,${data.audioData}`)
         audioRef.current = audio
+
         audio.onended = () => setIsSpeaking(false)
+        audio.onerror = () => {
+          setIsSpeaking(false)
+          toast.error("Failed to play audio response")
+        }
+
         await audio.play()
       }
     } catch (error) {
-      console.error("Text-to-speech failed:", error)
+      console.error("Text-to-speech error:", error)
       setIsSpeaking(false)
+      toast.error("Failed to generate speech")
     }
   }
 
-  const executeNextAction = async (action: string) => {
+  const handleNextAction = (action: string) => {
     switch (action) {
       case "render_emotional_insights_chart":
-        await loadIntelligenceData("emotional_trends")
+        loadIntelligence("emotional_trends")
         break
       case "render_gifting_patterns_dashboard":
-        await loadIntelligenceData("gifting_patterns")
+        loadIntelligence("gifting_patterns")
         break
       case "render_feature_performance_metrics":
-        await loadIntelligenceData("feature_performance")
+        loadIntelligence("feature_performance")
         break
       case "render_badge_analytics":
-        toast.success("Badge analytics updated")
+        loadIntelligence("user_behavior")
         break
-      case "execute_xp_boost":
-        toast.success("XP boost activated platform-wide!")
+      case "update_voice_settings":
+        loadSettings()
         break
       default:
         console.log("Unknown action:", action)
     }
   }
 
-  const handleTextCommand = async () => {
-    if (currentCommand.trim()) {
-      await processVoiceCommand("process_command", undefined, currentCommand)
+  const handleTextCommand = () => {
+    if (textInput.trim()) {
+      processVoiceCommand("process_command", undefined, textInput)
+      setTextInput("")
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-600">Initializing Giftverse Mastermind...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!profile?.admin_role) {
-    return null // Will redirect
+  const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setIsSpeaking(false)
+    }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl flex items-center justify-center shadow-lg">
-              <Brain className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-white">Giftverse Leader AI™</h1>
-              <p className="text-purple-200">Strategic Intelligence Dashboard • Welcome, {profile.name || "Admin"}</p>
-              <Badge variant="outline" className="mt-2 text-purple-200 border-purple-300">
-                Voice-Interactive AI • Session: {sessionId.slice(-8)}
-              </Badge>
-            </div>
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <Brain className="h-8 w-8 text-purple-400" />
+            <h1 className="text-4xl font-bold text-white">Giftverse Leader AI Dashboard</h1>
+            <Badge variant="secondary" className="bg-purple-600 text-white">
+              <Shield className="h-3 w-3 mr-1" />
+              Admin Only
+            </Badge>
           </div>
+          <p className="text-purple-200 text-lg">
+            Voice-Interactive Strategic Intelligence for the AgentGift.AI Ecosystem
+          </p>
 
-          <div className="flex items-center space-x-3">
-            {voiceSettings.stealth_logging && (
-              <Badge variant="secondary" className="bg-gray-800 text-gray-300">
-                <EyeOff className="w-3 h-3 mr-1" />
+          {/* Status Indicators */}
+          <div className="flex items-center justify-center gap-4">
+            {settings.stealth_mode && (
+              <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                <EyeOff className="h-3 w-3 mr-1" />
                 Stealth Mode
               </Badge>
             )}
-            {voiceSettings.analysis_mode && (
-              <Badge variant="secondary" className="bg-blue-800 text-blue-200">
-                <BarChart3 className="w-3 h-3 mr-1" />
+            {settings.analysis_mode && (
+              <Badge variant="outline" className="border-blue-500 text-blue-400">
+                <BarChart3 className="h-3 w-3 mr-1" />
                 Analysis Mode
               </Badge>
             )}
+            <Badge variant="outline" className="border-green-500 text-green-400">
+              <Activity className="h-3 w-3 mr-1" />
+              System Online
+            </Badge>
           </div>
         </div>
 
-        {/* Voice Control Panel */}
-        <Card className="bg-black/20 border-purple-500/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5" />
-              <span>Voice Command Center</span>
-            </CardTitle>
-            <CardDescription className="text-purple-200">
-              Speak directly to the Giftverse Mastermind or type your strategic commands
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={isListening ? stopListening : startListening}
-                disabled={isProcessing}
-                className={`${
-                  isListening ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"
-                } text-white`}
-              >
-                {isListening ? (
-                  <>
-                    <MicOff className="w-4 h-4 mr-2" />
-                    Stop Listening
-                  </>
-                ) : (
-                  <>
-                    <Mic className="w-4 h-4 mr-2" />
-                    Start Voice Command
-                  </>
-                )}
-              </Button>
-
-              <Button
-                onClick={() => speakResponse(lastResponse)}
-                disabled={!lastResponse || isSpeaking}
-                variant="outline"
-                className="border-purple-400 text-purple-200 hover:bg-purple-800"
-              >
-                {isSpeaking ? (
-                  <>
-                    <VolumeX className="w-4 h-4 mr-2" />
-                    Speaking...
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-4 h-4 mr-2" />
-                    Repeat Response
-                  </>
-                )}
-              </Button>
-
-              <div className="flex items-center space-x-2 text-purple-200">
-                <span className="text-sm">Voice:</span>
-                <Select
-                  value={voiceSettings.selected_voice}
-                  onValueChange={(value) => updateVoiceSettings({ selected_voice: value })}
-                >
-                  <SelectTrigger className="w-32 bg-purple-800 border-purple-600 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="avelyn">Avelyn (Warm)</SelectItem>
-                    <SelectItem value="galen">Galen (Analytical)</SelectItem>
-                    <SelectItem value="sage">Sage (Wise)</SelectItem>
-                    <SelectItem value="echo">Echo (Professional)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-purple-200">Text Command Input</Label>
-              <div className="flex space-x-2">
-                <Textarea
-                  value={currentCommand}
-                  onChange={(e) => setCurrentCommand(e.target.value)}
-                  placeholder="Type your command to the Giftverse Mastermind..."
-                  className="bg-purple-900/50 border-purple-600 text-white placeholder-purple-300"
-                  rows={2}
-                />
-                <Button
-                  onClick={handleTextCommand}
-                  disabled={!currentCommand.trim() || isProcessing}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  {isProcessing ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-
-            {lastResponse && (
-              <Alert className="bg-purple-900/30 border-purple-500">
-                <Brain className="h-4 w-4" />
-                <AlertTitle className="text-purple-200">Giftverse Mastermind Response</AlertTitle>
-                <AlertDescription className="text-purple-100 mt-2">{lastResponse}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Intelligence Dashboard */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-black/20 border-purple-500/30">
-            <TabsTrigger value="overview" className="text-purple-200 data-[state=active]:bg-purple-600">
-              Overview
+        <Tabs defaultValue="voice" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-black/20 backdrop-blur-sm">
+            <TabsTrigger value="voice" className="data-[state=active]:bg-purple-600">
+              <Headphones className="h-4 w-4 mr-2" />
+              Voice Control
             </TabsTrigger>
-            <TabsTrigger value="emotional" className="text-purple-200 data-[state=active]:bg-purple-600">
-              Emotional Intel
+            <TabsTrigger value="intelligence" className="data-[state=active]:bg-purple-600">
+              <Brain className="h-4 w-4 mr-2" />
+              Intelligence
             </TabsTrigger>
-            <TabsTrigger value="gifting" className="text-purple-200 data-[state=active]:bg-purple-600">
-              Gifting Patterns
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-purple-600">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Analytics
             </TabsTrigger>
-            <TabsTrigger value="performance" className="text-purple-200 data-[state=active]:bg-purple-600">
-              Performance
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="text-purple-200 data-[state=active]:bg-purple-600">
+            <TabsTrigger value="settings" className="data-[state=active]:bg-purple-600">
+              <Settings className="h-4 w-4 mr-2" />
               Settings
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-black/20 border-purple-500/30">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-200">Platform Health</CardTitle>
-                  <Activity className="h-4 w-4 text-purple-400" />
+          {/* Voice Control Tab */}
+          <TabsContent value="voice" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Voice Interface */}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Voice Interface
+                  </CardTitle>
+                  <CardDescription className="text-purple-200">
+                    Speak directly to the Giftverse Mastermind AI
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {intelligenceData.platform_health?.health_status === "excellent" ? "98.7%" : "94.2%"}
+                <CardContent className="space-y-4">
+                  {/* Voice Controls */}
+                  <div className="flex items-center justify-center gap-4">
+                    <Button
+                      size="lg"
+                      onClick={isListening ? stopListening : startListening}
+                      disabled={isProcessing || isSpeaking}
+                      className={`${
+                        isListening ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"
+                      } text-white`}
+                    >
+                      {isListening ? (
+                        <>
+                          <MicOff className="h-5 w-5 mr-2" />
+                          Stop Listening
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="h-5 w-5 mr-2" />
+                          Start Listening
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      size="lg"
+                      onClick={isSpeaking ? stopSpeaking : () => speakResponse(response)}
+                      disabled={!response || isProcessing}
+                      variant="outline"
+                      className="border-purple-500 text-purple-300 hover:bg-purple-600/20"
+                    >
+                      {isSpeaking ? (
+                        <>
+                          <VolumeX className="h-5 w-5 mr-2" />
+                          Stop Speaking
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-5 w-5 mr-2" />
+                          Speak Response
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <p className="text-xs text-purple-300">System performance</p>
+
+                  {/* Processing Indicator */}
+                  {(isProcessing || isListening || isSpeaking) && (
+                    <div className="text-center space-y-2">
+                      <Progress value={isProcessing ? 50 : isListening ? 25 : 75} className="w-full" />
+                      <p className="text-purple-300 text-sm">
+                        {isListening && "🎤 Listening for your command..."}
+                        {isProcessing && "🧠 Processing your request..."}
+                        {isSpeaking && "🔊 Speaking response..."}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Text Input Alternative */}
+                  <Separator className="bg-purple-500/20" />
+                  <div className="space-y-2">
+                    <Label className="text-purple-200">Or type your command:</Label>
+                    <div className="flex gap-2">
+                      <Textarea
+                        placeholder="Type your strategic command here..."
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        className="bg-black/30 border-purple-500/30 text-white placeholder:text-purple-300"
+                        rows={2}
+                      />
+                      <Button
+                        onClick={handleTextCommand}
+                        disabled={!textInput.trim() || isProcessing}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        <Zap className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-black/20 border-purple-500/30">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-200">Emotional Resonance</CardTitle>
-                  <Heart className="h-4 w-4 text-pink-400" />
+              {/* Conversation History */}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardHeader>
+                  <CardTitle className="text-white">Conversation</CardTitle>
+                  <CardDescription className="text-purple-200">
+                    Current session: {sessionId.split("_")[1]}
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {intelligenceData.emotional_trends?.average_intensity?.toFixed(1) || "4.2"}
+                <CardContent className="space-y-4">
+                  {transcript && (
+                    <div className="space-y-2">
+                      <Label className="text-purple-300">Your Command:</Label>
+                      <div className="bg-blue-900/30 p-3 rounded-lg border border-blue-500/20">
+                        <p className="text-blue-200">{transcript}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {response && (
+                    <div className="space-y-2">
+                      <Label className="text-purple-300">AI Response:</Label>
+                      <div className="bg-purple-900/30 p-3 rounded-lg border border-purple-500/20">
+                        <p className="text-purple-200">{response}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!transcript && !response && (
+                    <div className="text-center py-8 text-purple-400">
+                      <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Ready to receive your strategic commands...</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Intelligence Tab */}
+          <TabsContent value="intelligence" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Quick Intelligence Cards */}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Heart className="h-8 w-8 text-pink-400" />
+                    <div>
+                      <p className="text-sm text-purple-300">Top Emotion</p>
+                      <p className="text-lg font-bold text-white">{intelligence.emotional?.topEmotion || "Joy"}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-purple-300">Average intensity score</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-black/20 border-purple-500/30">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-200">Active Features</CardTitle>
-                  <Zap className="h-4 w-4 text-yellow-400" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {Object.keys(intelligenceData.feature_performance?.feature_metrics || {}).length || 36}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Gift className="h-8 w-8 text-green-400" />
+                    <div>
+                      <p className="text-sm text-purple-300">Gifting Actions</p>
+                      <p className="text-lg font-bold text-white">{intelligence.gifting?.totalActions || "1,247"}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-purple-300">Features in use</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-black/20 border-purple-500/30">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-200">Daily Active Users</CardTitle>
-                  <Users className="h-4 w-4 text-blue-400" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {intelligenceData.user_behavior?.daily_active_users || "1,247"}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-8 w-8 text-blue-400" />
+                    <div>
+                      <p className="text-sm text-purple-300">Daily Active</p>
+                      <p className="text-lg font-bold text-white">{intelligence.users?.dailyActive || "892"}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-purple-300">Engaged users today</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-8 w-8 text-yellow-400" />
+                    <div>
+                      <p className="text-sm text-purple-300">System Health</p>
+                      <p className="text-lg font-bold text-white">{intelligence.system?.health || "Excellent"}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {intelligenceData.strategic_summary && (
-              <Card className="bg-black/20 border-purple-500/30">
+            {/* Intelligence Actions */}
+            <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+              <CardHeader>
+                <CardTitle className="text-white">Strategic Intelligence Commands</CardTitle>
+                <CardDescription className="text-purple-200">Quick access to key intelligence reports</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button
+                    onClick={() => loadIntelligence("emotional_trends")}
+                    variant="outline"
+                    className="border-pink-500 text-pink-300 hover:bg-pink-600/20"
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    Emotional Trends
+                  </Button>
+                  <Button
+                    onClick={() => loadIntelligence("gifting_patterns")}
+                    variant="outline"
+                    className="border-green-500 text-green-300 hover:bg-green-600/20"
+                  >
+                    <Gift className="h-4 w-4 mr-2" />
+                    Gifting Patterns
+                  </Button>
+                  <Button
+                    onClick={() => loadIntelligence("feature_performance")}
+                    variant="outline"
+                    className="border-blue-500 text-blue-300 hover:bg-blue-600/20"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    Feature Performance
+                  </Button>
+                  <Button
+                    onClick={() => loadIntelligence("platform_health")}
+                    variant="outline"
+                    className="border-yellow-500 text-yellow-300 hover:bg-yellow-600/20"
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Platform Health
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+              <CardHeader>
+                <CardTitle className="text-white">Platform Analytics</CardTitle>
+                <CardDescription className="text-purple-200">
+                  Comprehensive platform performance metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-purple-400">
+                  <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg mb-2">Analytics Dashboard</p>
+                  <p className="text-sm">Use voice commands to generate specific analytics reports</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Voice Settings */}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
                 <CardHeader>
-                  <CardTitle className="text-white">Strategic Intelligence Summary</CardTitle>
+                  <CardTitle className="text-white">Voice Assistant Settings</CardTitle>
+                  <CardDescription className="text-purple-200">
+                    Customize your AI voice interaction experience
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="text-purple-200 font-medium mb-2">Key Insights</h4>
-                    <ul className="space-y-1">
-                      {intelligenceData.strategic_summary.key_insights?.map((insight, index) => (
-                        <li key={index} className="text-purple-100 text-sm">
-                          • {insight}
-                        </li>
-                      ))}
-                    </ul>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-purple-200">Voice Assistant</Label>
+                    <Select
+                      value={settings.selected_voice}
+                      onValueChange={(value) => updateSettings({ selected_voice: value })}
+                    >
+                      <SelectTrigger className="bg-black/30 border-purple-500/30 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="avelyn">Avelyn (Warm & Friendly)</SelectItem>
+                        <SelectItem value="galen">Galen (Deep & Analytical)</SelectItem>
+                        <SelectItem value="sage">Sage (Wise & Measured)</SelectItem>
+                        <SelectItem value="echo">Echo (Clear & Professional)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
-                    <h4 className="text-purple-200 font-medium mb-2">Strategic Recommendations</h4>
-                    <ul className="space-y-1">
-                      {intelligenceData.strategic_summary.strategic_recommendations?.map((rec, index) => (
-                        <li key={index} className="text-purple-100 text-sm">
-                          • {rec}
-                        </li>
-                      ))}
-                    </ul>
+
+                  <div className="space-y-2">
+                    <Label className="text-purple-200">Voice Speed: {settings.voice_speed}x</Label>
+                    <Slider
+                      value={[settings.voice_speed]}
+                      onValueChange={([value]) => updateSettings({ voice_speed: value })}
+                      min={0.5}
+                      max={2.0}
+                      step={0.1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label className="text-purple-200">Auto-speak responses</Label>
+                    <Switch
+                      checked={settings.auto_speak}
+                      onCheckedChange={(checked) => updateSettings({ auto_speak: checked })}
+                    />
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </TabsContent>
 
-          <TabsContent value="emotional" className="space-y-6">
-            <Card className="bg-black/20 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white">Emotional Intelligence Analysis</CardTitle>
-                <CardDescription className="text-purple-200">
-                  Real-time emotional trends and resonance patterns across the Giftverse
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {intelligenceData.emotional_trends ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-purple-200 font-medium mb-2">Emotion Distribution</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {Object.entries(intelligenceData.emotional_trends.emotion_distribution || {})
-                          .slice(0, 8)
-                          .map(([emotion, count]) => (
-                            <div key={emotion} className="text-center">
-                              <div className="text-lg font-bold text-white">{count}</div>
-                              <div className="text-sm text-purple-300 capitalize">{emotion}</div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-purple-200 font-medium mb-2">Average Emotional Intensity</h4>
-                      <Progress
-                        value={(intelligenceData.emotional_trends.average_intensity || 0) * 20}
-                        className="w-full"
-                      />
-                      <p className="text-sm text-purple-300 mt-1">
-                        {intelligenceData.emotional_trends.average_intensity?.toFixed(2) || "0.00"} / 5.0
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-purple-300">Loading emotional intelligence data...</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="gifting" className="space-y-6">
-            <Card className="bg-black/20 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white">Gifting Pattern Analysis</CardTitle>
-                <CardDescription className="text-purple-200">
-                  Platform-wide gifting trends and feature usage patterns
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {intelligenceData.gifting_patterns ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-purple-200 font-medium mb-2">Feature Popularity</h4>
-                      <div className="space-y-2">
-                        {Object.entries(intelligenceData.gifting_patterns.feature_popularity || {})
-                          .sort(([, a], [, b]) => b - a)
-                          .slice(0, 5)
-                          .map(([feature, usage]) => (
-                            <div key={feature} className="flex justify-between items-center">
-                              <span className="text-purple-200 capitalize">{feature.replace(/-/g, " ")}</span>
-                              <Badge variant="outline" className="text-purple-300 border-purple-500">
-                                {usage} uses
-                              </Badge>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-purple-200 font-medium mb-2">Platform Metrics</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-white">
-                            {intelligenceData.gifting_patterns.total_credits_used || 0}
-                          </div>
-                          <div className="text-sm text-purple-300">Credits Used (7 days)</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-white">
-                            {intelligenceData.gifting_patterns.vault_activity || 0}
-                          </div>
-                          <div className="text-sm text-purple-300">Vault Bids</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-purple-300">Loading gifting pattern data...</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="performance" className="space-y-6">
-            <Card className="bg-black/20 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white">Feature Performance Metrics</CardTitle>
-                <CardDescription className="text-purple-200">
-                  Detailed performance analysis of all platform features
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {intelligenceData.feature_performance ? (
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-purple-200 font-medium mb-2">Top Performing Features</h4>
-                      <div className="space-y-2">
-                        {intelligenceData.feature_performance.top_features?.slice(0, 5).map(([feature, metrics]) => (
-                          <div key={feature} className="flex justify-between items-center p-2 bg-purple-900/30 rounded">
-                            <span className="text-purple-200 capitalize">{feature.replace(/-/g, " ")}</span>
-                            <div className="text-right">
-                              <div className="text-white font-medium">{metrics.total_uses} uses</div>
-                              <div className="text-purple-300 text-sm">{metrics.unique_users} users</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-purple-300">Loading performance data...</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="bg-black/20 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center space-x-2">
-                  <Settings className="w-5 h-5" />
-                  <span>Giftverse Mastermind Settings</span>
-                </CardTitle>
-                <CardDescription className="text-purple-200">
-                  Configure voice assistant behavior and analysis modes
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
+              {/* System Settings */}
+              <Card className="bg-black/20 backdrop-blur-sm border-purple-500/20">
+                <CardHeader>
+                  <CardTitle className="text-white">System Settings</CardTitle>
+                  <CardDescription className="text-purple-200">Advanced system configuration options</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <Label className="text-purple-200">Auto-Speak Responses</Label>
+                    <div className="space-y-1">
+                      <Label className="text-purple-200">Stealth Mode</Label>
+                      <p className="text-sm text-purple-400">Discrete logging for sensitive operations</p>
+                    </div>
                     <Switch
-                      checked={voiceSettings.auto_speak}
-                      onCheckedChange={(checked) => updateVoiceSettings({ auto_speak: checked })}
+                      checked={settings.stealth_mode}
+                      onCheckedChange={(checked) => updateSettings({ stealth_mode: checked })}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-purple-200">Stealth Logging Mode</Label>
-                    <Switch
-                      checked={voiceSettings.stealth_logging}
-                      onCheckedChange={(checked) => updateVoiceSettings({ stealth_logging: checked })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-purple-200">Analysis Mode</Label>
-                    <Switch
-                      checked={voiceSettings.analysis_mode}
-                      onCheckedChange={(checked) => updateVoiceSettings({ analysis_mode: checked })}
-                    />
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-purple-200">Voice Speed</Label>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-purple-300 text-sm">0.5x</span>
-                      <input
-                        type="range"
-                        min="0.5"
-                        max="2.0"
-                        step="0.1"
-                        value={voiceSettings.voice_speed}
-                        onChange={(e) => updateVoiceSettings({ voice_speed: Number.parseFloat(e.target.value) })}
-                        className="flex-1"
-                      />
-                      <span className="text-purple-300 text-sm">2.0x</span>
-                      <Badge variant="outline" className="text-purple-300 border-purple-500">
-                        {voiceSettings.voice_speed}x
-                      </Badge>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="text-purple-200">Analysis Mode</Label>
+                      <p className="text-sm text-purple-400">Enhanced intelligence processing</p>
+                    </div>
+                    <Switch
+                      checked={settings.analysis_mode}
+                      onCheckedChange={(checked) => updateSettings({ analysis_mode: checked })}
+                    />
+                  </div>
+
+                  <Separator className="bg-purple-500/20" />
+
+                  <div className="space-y-2">
+                    <Label className="text-purple-200">Session Information</Label>
+                    <div className="bg-black/30 p-3 rounded-lg border border-purple-500/20">
+                      <p className="text-sm text-purple-300">Session ID: {sessionId}</p>
+                      <p className="text-sm text-purple-300">Admin ID: {adminId}</p>
+                      <p className="text-sm text-purple-300">Status: Active</p>
                     </div>
                   </div>
-                </div>
-
-                <Alert className="bg-purple-900/30 border-purple-500">
-                  <Shield className="h-4 w-4" />
-                  <AlertTitle className="text-purple-200">Security Notice</AlertTitle>
-                  <AlertDescription className="text-purple-100">
-                    All voice interactions are encrypted and logged for security purposes. Stealth mode disables visual
-                    indicators but maintains security logging. Only verified admins can access the Giftverse Mastermind.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
-
-        {/* Footer */}
-        <div className="text-center text-purple-300 text-sm italic border-t border-purple-500/30 pt-6">
-          "I am the voice of the Giftverse - strategic, intelligent, and always listening. Through me, you command the
-          emotional intelligence of thousands and shape the future of meaningful connections."
-        </div>
       </div>
     </div>
   )

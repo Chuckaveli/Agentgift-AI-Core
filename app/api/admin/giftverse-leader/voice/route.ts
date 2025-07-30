@@ -4,9 +4,12 @@ import OpenAI from "openai"
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-})
+// Initialize OpenAI client only when needed
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +41,7 @@ export async function POST(request: NextRequest) {
     if (action === "speech_to_text" && audioData) {
       // Convert speech to text using Whisper
       const audioBuffer = Buffer.from(audioData, "base64")
+      const openai = getOpenAIClient()
       const transcription = await openai.audio.transcriptions.create({
         file: new File([audioBuffer], "audio.wav", { type: "audio/wav" }),
         model: "whisper-1",
@@ -63,6 +67,7 @@ export async function POST(request: NextRequest) {
       logData = aiResponse.logs
     } else if (action === "text_to_speech" && textInput) {
       // Convert text to speech
+      const openai = getOpenAIClient()
       const speech = await openai.audio.speech.create({
         model: "tts-1",
         voice: getOpenAIVoice(voiceSettings?.selected_voice || "avelyn"),
