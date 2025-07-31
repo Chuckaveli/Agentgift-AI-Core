@@ -55,6 +55,7 @@ import {
   Bell,
   Shield,
   Brain,
+  Activity,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import Link from "next/link"
@@ -130,6 +131,12 @@ const navigationItems = [
     icon: BarChart3,
     href: "/admin",
     isActive: true,
+  },
+  {
+    title: "Visual Analytics",
+    icon: Activity,
+    href: "/admin/visual-analytics",
+    badge: "Live",
   },
   {
     title: "Giftverse Leader",
