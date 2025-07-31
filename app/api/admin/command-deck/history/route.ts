@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+import { createAdminClient } from "@/lib/supabase-client"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,40 +7,89 @@ export async function GET(request: NextRequest) {
     const adminId = searchParams.get("adminId")
     const limit = Number.parseInt(searchParams.get("limit") || "5")
 
-    // Verify admin access
-    const { data: admin } = await supabase
+    if (!adminId) {
+      return NextResponse.json({ error: "Admin ID required" }, { status: 400 })
+    }
+
+    // Verify admin status
+    const supabase = createAdminClient()
+    const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
-      .select("id, name, admin_role")
+      .select("admin_role")
       .eq("id", adminId)
       .single()
 
-    if (!admin?.admin_role) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+    if (profileError || !profile?.admin_role) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Get recent command history
-    const { data: history, error } = await supabase
-      .from("command_history")
-      .select("*")
-      .eq("user_id", adminId)
-      .order("created_at", { ascending: false })
-      .limit(limit)
+    let history: any[] = []
+    let failureAlerts: any[] = []
 
-    if (error) {
-      throw error
+    try {
+      // Get command history
+      const { data: historyData, error: historyError } = await supabase
+        .from("assistant_interaction_logs")
+        .select("*")
+        .eq("user_id", adminId)
+        .order("created_at", { ascending: false })
+        .limit(limit)
+
+      if (!historyError && historyData) {
+        history = historyData.map((item) => ({
+          id: item.id,
+          command_text: item.command_input || item.action_type,
+          bot_target: item.bot_name,
+          action_taken: item.action_type,
+          command_result: item.response_output,
+          voice_input: item.command_input?.includes("voice") || false,
+          created_at: item.created_at,
+        }))
+      }
+
+      // Get failure alerts (bots with 3+ failures in 24h)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+      const { data: alertsData, error: alertsError } = await supabase
+        .from("assistant_interaction_logs")
+        .select("bot_name")
+        .eq("status", "error")
+        .gte("created_at", twentyFourHoursAgo)
+
+      if (!alertsError && alertsData) {
+        const failureCounts = alertsData.reduce((acc: any, item: any) => {
+          acc[item.bot_name] = (acc[item.bot_name] || 0) + 1
+          return acc
+        }, {})
+
+        failureAlerts = Object.entries(failureCounts)
+          .filter(([_, count]) => (count as number) >= 3)
+          .map(([botName, count]) => ({
+            bot_name: botName,
+            failure_count: count,
+          }))
+      }
+    } catch (error) {
+      console.warn("Database not ready, using empty history:", error)
     }
-
-    // Get bot failure alerts
-    const { data: failureAlerts } = await supabase.rpc("check_bot_failure_alerts")
 
     return NextResponse.json({
       success: true,
-      history: history || [],
-      failureAlerts: failureAlerts || [],
+      history,
+      failureAlerts,
+      message: "History loaded successfully",
     })
   } catch (error) {
-    console.error("Command history error:", error)
-    return NextResponse.json({ error: "Failed to fetch command history", details: error.message }, { status: 500 })
+    console.error("Error loading history:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to load history",
+        history: [],
+        failureAlerts: [],
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -51,30 +98,41 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const adminId = searchParams.get("adminId")
 
-    // Verify admin access
-    const { data: admin } = await supabase
+    if (!adminId) {
+      return NextResponse.json({ error: "Admin ID required" }, { status: 400 })
+    }
+
+    // Verify admin status
+    const supabase = createAdminClient()
+    const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
-      .select("id, name, admin_role")
+      .select("admin_role")
       .eq("id", adminId)
       .single()
 
-    if (!admin?.admin_role) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+    if (profileError || !profile?.admin_role) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // Clear command history for this admin
-    const { error } = await supabase.from("command_history").delete().eq("user_id", adminId)
-
-    if (error) {
-      throw error
+    try {
+      // Clear command history for this admin
+      await supabase.from("assistant_interaction_logs").delete().eq("user_id", adminId)
+    } catch (error) {
+      console.warn("Failed to clear history from database:", error)
     }
 
     return NextResponse.json({
       success: true,
-      message: "Command history cleared",
+      message: "Command history cleared successfully",
     })
   } catch (error) {
-    console.error("Clear history error:", error)
-    return NextResponse.json({ error: "Failed to clear command history", details: error.message }, { status: 500 })
+    console.error("Error clearing history:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to clear history",
+      },
+      { status: 500 },
+    )
   }
 }

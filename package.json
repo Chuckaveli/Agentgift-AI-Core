@@ -39,6 +39,7 @@
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
+    "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@tensorflow-models/face-detection": "latest",
     "@tensorflow-models/face-landmarks-detection": "latest",
