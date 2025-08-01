@@ -1,122 +1,85 @@
 "use client"
 
 import { VaultSoloPanel } from "@/components/vault/vault-solo-panel"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Coins, Zap, Volume2 } from "lucide-react"
+import { VaultGiftBidPanel } from "@/components/vault/vault-gift-bid-panel"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Coins, Trophy, Zap, Crown } from "lucide-react"
 
 export default function VaultSoloPage() {
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      {/* Page Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <Coins className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <Crown className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                AgentVault™
+              </h1>
+              <p className="text-muted-foreground">Solo Operations Center</p>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold">VaultSolo</h1>
-          <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
-            AGT → VibeCoins
-          </Badge>
-        </div>
-        <p className="text-lg text-muted-foreground mb-4">
-          Convert your AGT tokens into VibeCoins for AgentVault™ bidding
-        </p>
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Volume2 className="w-4 h-4" />
-          <span>Powered by Zyxen Voice AI</span>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Conversion Panel */}
-        <div className="lg:col-span-2">
-          <VaultSoloPanel />
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Convert AGT tokens to VibeCoins or compete in exclusive gift auctions with Zyxen's voice guidance
+          </p>
         </div>
 
-        {/* Info Sidebar */}
-        <div className="space-y-6">
-          <Card>
+        {/* Main Content */}
+        <Tabs defaultValue="convert" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+            <TabsTrigger value="convert" className="flex items-center gap-2">
+              <Coins className="w-4 h-4" />
+              Token Conversion
+            </TabsTrigger>
+            <TabsTrigger value="bidding" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Gift Bidding
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="convert" className="mt-8">
+            <VaultSoloPanel />
+          </TabsContent>
+
+          <TabsContent value="bidding" className="mt-8">
+            <VaultGiftBidPanel />
+          </TabsContent>
+        </Tabs>
+
+        {/* Features Overview */}
+        <div className="grid md:grid-cols-3 gap-6 mt-12">
+          <Card className="text-center">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-500" />
-                How It Works
-              </CardTitle>
+              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-2">
+                <Coins className="w-6 h-6 text-yellow-600" />
+              </div>
+              <CardTitle className="text-lg">Token Conversion</CardTitle>
+              <CardDescription>Convert AGT tokens to VibeCoins at optimal rates</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-purple-600">1</span>
-                </div>
-                <div>
-                  <div className="font-medium">Enter AGT Amount</div>
-                  <div className="text-muted-foreground">Specify how many AGT tokens to convert</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-purple-600">2</span>
-                </div>
-                <div>
-                  <div className="font-medium">Instant Conversion</div>
-                  <div className="text-muted-foreground">1 AGT = 10 VibeCoins at current rate</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-purple-600">3</span>
-                </div>
-                <div>
-                  <div className="font-medium">Zyxen Confirmation</div>
-                  <div className="text-muted-foreground">Voice AI confirms your successful conversion</div>
-                </div>
-              </div>
-            </CardContent>
           </Card>
 
-          <Card>
+          <Card className="text-center">
             <CardHeader>
-              <CardTitle>VibeCoins Usage</CardTitle>
-              <CardDescription>What you can do with VibeCoins</CardDescription>
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
+                <Trophy className="w-6 h-6 text-purple-600" />
+              </div>
+              <CardTitle className="text-lg">Competitive Bidding</CardTitle>
+              <CardDescription>Bid on exclusive gifts across different tiers</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span>Bid in AgentVault™ auctions</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span>Purchase premium gift experiences</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                <span>Unlock exclusive team rewards</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                <span>Access special seasonal events</span>
-              </div>
-            </CardContent>
           </Card>
 
-          <Card>
+          <Card className="text-center">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Volume2 className="w-5 h-5 text-blue-500" />
-                Zyxen Voice AI
-              </CardTitle>
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
+                <Zap className="w-6 h-6 text-blue-600" />
+              </div>
+              <CardTitle className="text-lg">Zyxen Integration</CardTitle>
+              <CardDescription>AI voice responses and tier-based animations</CardDescription>
             </CardHeader>
-            <CardContent className="text-sm">
-              <p className="text-muted-foreground mb-3">
-                Every successful conversion triggers Zyxen, our specialized vault AI, to confirm your transaction with a
-                personalized voice message.
-              </p>
-              <Badge variant="outline" className="text-xs">
-                Voice ID: etYoGZvfOzWen08VcK5h
-              </Badge>
-            </CardContent>
           </Card>
         </div>
       </div>
