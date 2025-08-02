@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@mediapipe/face_mesh": "latest",
     "@radix-ui/react-accordion": "latest",
@@ -53,6 +54,7 @@
     "cmdk": "latest",
     "date-fns": "latest",
     "embla-carousel-react": "latest",
+    "framer-motion": "latest",
     "input-otp": "latest",
     "lottie-react": "latest",
     "lottie-web": "latest",
