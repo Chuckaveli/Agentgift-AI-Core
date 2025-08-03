@@ -1,10 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { Deno } from "https://deno.land/std@0.168.0/runtime.ts" // Declare Deno variable
+import { Deno } from "https://deno.land/std@0.168.0/node/global.ts" // Declare Deno variable
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}
+
+interface GiftSuggestionRequest {
+  recipient_profile?: {
+    age?: number
+    gender?: string
+    interests?: string[]
+    relationship?: string
+    personality_traits?: string[]
+    cultural_background?: string
+  }
+  occasion?: string
+  budget_range?: {
+    min: number
+    max: number
+  }
+  emotional_context?: {
+    current_mood?: string
+    desired_outcome?: string
+    emotional_tags?: string[]
+  }
+  user_preferences?: {
+    gift_categories?: string[]
+    avoid_categories?: string[]
+    personalization_level?: "low" | "medium" | "high"
+  }
+  context?: {
+    urgency?: "low" | "medium" | "high"
+    delivery_method?: "physical" | "digital" | "experience"
+    group_gift?: boolean
+  }
+}
+
+interface GiftSuggestion {
+  id: string
+  title: string
+  description: string
+  category: string
+  price_range: {
+    min: number
+    max: number
+  }
+  emotional_impact_score: number
+  personalization_score: number
+  confidence_score: number
+  reasoning: string
+  tags: string[]
+  purchase_links?: {
+    platform: string
+    url: string
+    price: number
+  }[]
+  customization_options?: string[]
+  delivery_info?: {
+    estimated_time: string
+    shipping_options: string[]
+  }
 }
 
 serve(async (req) => {
@@ -16,8 +73,15 @@ serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      },
     )
 
+    // Authenticate user
     const authHeader = req.headers.get("Authorization")
     if (!authHeader) {
       throw new Error("No authorization header")
@@ -33,39 +97,36 @@ serve(async (req) => {
       throw new Error("Invalid authentication")
     }
 
-    const { recipient_info, occasion, budget_range, emotional_context, cultural_context, assistant_id } =
-      await req.json()
+    // Get user profile for tier checking
+    const { data: userProfile } = await supabaseClient.from("user_profiles").select("*").eq("id", user.id).single()
 
-    // Log the interaction
-    await supabaseClient.from("assistant_interactions").insert({
+    if (!userProfile) {
+      throw new Error("User profile not found")
+    }
+
+    const requestData: GiftSuggestionRequest = await req.json()
+
+    // Generate gift suggestions using AI
+    const suggestions = await generateGiftSuggestions(requestData, userProfile, supabaseClient)
+
+    // Log the interaction for analytics
+    await supabaseClient.from("gift_suggestion_logs").insert({
       user_id: user.id,
-      assistant_id: assistant_id || "gift_suggestion_engine",
-      input_message: JSON.stringify({ recipient_info, occasion, budget_range }),
-      user_tier: "Pro", // Will be fetched from user profile
-      user_xp_level: 1,
+      request_data: requestData,
+      suggestions_count: suggestions.length,
+      user_tier: userProfile.tier,
+      created_at: new Date().toISOString(),
     })
 
-    // Generate gift suggestions based on input
-    const suggestions = await generateGiftSuggestions({
-      recipient_info,
-      occasion,
-      budget_range,
-      emotional_context,
-      cultural_context,
-    })
-
-    // Award XP for using the engine
-    await supabaseClient.rpc("add_user_xp", {
-      user_id: user.id,
-      xp_amount: 15,
-      reason: "Used Gift Suggestion Engine",
-    })
+    // Award XP for using the gift engine
+    await awardXPForGiftSuggestion(user.id, suggestions.length, supabaseClient)
 
     return new Response(
       JSON.stringify({
         success: true,
         suggestions,
-        generated_at: new Date().toISOString(),
+        user_tier: userProfile.tier,
+        suggestions_remaining: calculateRemainingUsage(userProfile),
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,81 +149,238 @@ serve(async (req) => {
   }
 })
 
-async function generateGiftSuggestions(params: any) {
-  // Mock gift suggestion logic - replace with actual AI/ML logic
-  const { recipient_info, occasion, budget_range, emotional_context, cultural_context } = params
+async function generateGiftSuggestions(
+  request: GiftSuggestionRequest,
+  userProfile: any,
+  supabaseClient: any,
+): Promise<GiftSuggestion[]> {
+  // Get existing gift data from database
+  const { data: giftDatabase } = await supabaseClient
+    .from("gift_suggestions_database")
+    .select("*")
+    .eq("is_active", true)
 
-  const baseSuggestions = [
+  // Apply AI-powered filtering and ranking
+  const basePrompt = `
+    Generate personalized gift suggestions based on:
+    
+    Recipient Profile:
+    - Age: ${request.recipient_profile?.age || "Unknown"}
+    - Gender: ${request.recipient_profile?.gender || "Unknown"}
+    - Interests: ${request.recipient_profile?.interests?.join(", ") || "Unknown"}
+    - Relationship: ${request.recipient_profile?.relationship || "Unknown"}
+    - Personality: ${request.recipient_profile?.personality_traits?.join(", ") || "Unknown"}
+    - Cultural Background: ${request.recipient_profile?.cultural_background || "Unknown"}
+    
+    Occasion: ${request.occasion || "General"}
+    Budget: $${request.budget_range?.min || 0} - $${request.budget_range?.max || 1000}
+    
+    Emotional Context:
+    - Current Mood: ${request.emotional_context?.current_mood || "Unknown"}
+    - Desired Outcome: ${request.emotional_context?.desired_outcome || "Unknown"}
+    - Emotional Tags: ${request.emotional_context?.emotional_tags?.join(", ") || "Unknown"}
+    
+    User Preferences:
+    - Preferred Categories: ${request.user_preferences?.gift_categories?.join(", ") || "Any"}
+    - Avoid Categories: ${request.user_preferences?.avoid_categories?.join(", ") || "None"}
+    - Personalization Level: ${request.user_preferences?.personalization_level || "medium"}
+    
+    Context:
+    - Urgency: ${request.context?.urgency || "medium"}
+    - Delivery Method: ${request.context?.delivery_method || "physical"}
+    - Group Gift: ${request.context?.group_gift ? "Yes" : "No"}
+    
+    Please provide 5-10 highly personalized gift suggestions with detailed reasoning.
+  `
+
+  // Use OpenAI API for intelligent suggestions
+  const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: `You are the AgentGift.ai Gift Engine Mastermind, an expert at generating highly personalized gift suggestions. 
+          You understand emotional intelligence, cultural sensitivity, and the psychology of gift-giving. 
+          Always provide practical, thoughtful suggestions with clear reasoning.`,
+        },
+        {
+          role: "user",
+          content: basePrompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  })
+
+  if (!openaiResponse.ok) {
+    throw new Error("Failed to generate AI suggestions")
+  }
+
+  const aiResult = await openaiResponse.json()
+  const aiSuggestions = aiResult.choices[0]?.message?.content || ""
+
+  // Parse AI response and combine with database suggestions
+  const suggestions: GiftSuggestion[] = await parseAndEnhanceSuggestions(
+    aiSuggestions,
+    request,
+    giftDatabase || [],
+    userProfile,
+  )
+
+  // Apply tier-based filtering
+  return applyTierFiltering(suggestions, userProfile.tier)
+}
+
+async function parseAndEnhanceSuggestions(
+  aiResponse: string,
+  request: GiftSuggestionRequest,
+  giftDatabase: any[],
+  userProfile: any,
+): Promise<GiftSuggestion[]> {
+  // This would parse the AI response and enhance with database data
+  // For now, returning mock enhanced suggestions
+  const mockSuggestions: GiftSuggestion[] = [
     {
-      id: "gift_1",
-      name: "Personalized Photo Album",
-      description: "A custom photo album with memories and personal touches",
-      price_range: "$25-50",
-      emotional_match: 95,
-      cultural_appropriateness: 100,
-      occasion_relevance: 90,
-      tags: ["personal", "memories", "heartfelt"],
+      id: "gift_001",
+      title: "Personalized Star Map",
+      description: "Custom star map showing the night sky from a meaningful date and location",
+      category: "Personalized Keepsakes",
+      price_range: { min: 35, max: 85 },
+      emotional_impact_score: 9.2,
+      personalization_score: 9.8,
+      confidence_score: 8.7,
+      reasoning:
+        "Based on the romantic relationship and high personalization preference, this gift creates a lasting memory tied to a specific moment in time.",
+      tags: ["romantic", "personalized", "meaningful", "keepsake"],
+      purchase_links: [
+        {
+          platform: "Etsy",
+          url: "https://etsy.com/star-maps",
+          price: 45,
+        },
+      ],
+      customization_options: ["Date selection", "Location input", "Custom message", "Frame options"],
+      delivery_info: {
+        estimated_time: "3-5 business days",
+        shipping_options: ["Standard", "Express", "Digital Download"],
+      },
     },
     {
-      id: "gift_2",
-      name: "Artisan Coffee Subscription",
-      description: "Monthly delivery of premium coffee from around the world",
-      price_range: "$30-60",
-      emotional_match: 80,
-      cultural_appropriateness: 95,
-      occasion_relevance: 85,
-      tags: ["subscription", "gourmet", "experience"],
-    },
-    {
-      id: "gift_3",
-      name: "Custom Star Map",
-      description: "A map of the stars from a meaningful date and location",
-      price_range: "$40-80",
-      emotional_match: 100,
-      cultural_appropriateness: 100,
-      occasion_relevance: 95,
-      tags: ["romantic", "personalized", "unique"],
+      id: "gift_002",
+      title: "Artisanal Coffee Subscription",
+      description: "3-month subscription to small-batch, ethically sourced coffee from around the world",
+      category: "Food & Beverage",
+      price_range: { min: 60, max: 120 },
+      emotional_impact_score: 7.8,
+      personalization_score: 6.5,
+      confidence_score: 8.2,
+      reasoning:
+        "Perfect for coffee enthusiasts who appreciate quality and discovery. The subscription aspect extends the gift experience over time.",
+      tags: ["coffee", "subscription", "artisanal", "discovery"],
+      purchase_links: [
+        {
+          platform: "Blue Bottle Coffee",
+          url: "https://bluebottlecoffee.com/subscriptions",
+          price: 85,
+        },
+      ],
+      customization_options: ["Roast preference", "Grind type", "Delivery frequency"],
+      delivery_info: {
+        estimated_time: "Next business day for first shipment",
+        shipping_options: ["Monthly delivery", "Bi-weekly delivery"],
+      },
     },
   ]
 
-  // Filter and score based on input parameters
-  return baseSuggestions
-    .filter((suggestion) => {
-      // Budget filtering logic
-      const [minPrice, maxPrice] = suggestion.price_range
-        .replace("$", "")
-        .split("-")
-        .map((p) => Number.parseInt(p))
-      const [userMin, userMax] = budget_range
-        ? budget_range.split("-").map((p: string) => Number.parseInt(p.replace("$", "")))
-        : [0, 1000]
-
-      return maxPrice >= userMin && minPrice <= userMax
-    })
-    .map((suggestion) => ({
-      ...suggestion,
-      overall_score: Math.round(
-        (suggestion.emotional_match + suggestion.cultural_appropriateness + suggestion.occasion_relevance) / 3,
-      ),
-      reasoning: generateReasoning(suggestion, params),
-    }))
-    .sort((a, b) => b.overall_score - a.overall_score)
+  return mockSuggestions
 }
 
-function generateReasoning(suggestion: any, params: any) {
-  const reasons = []
-
-  if (suggestion.emotional_match > 90) {
-    reasons.push("Perfect emotional resonance with recipient")
+function applyTierFiltering(suggestions: GiftSuggestion[], userTier: string): GiftSuggestion[] {
+  const tierLimits = {
+    Free: 3,
+    Pro: 7,
+    "Pro+": 10,
+    Enterprise: -1, // Unlimited
   }
 
-  if (suggestion.cultural_appropriateness > 95) {
-    reasons.push("Culturally sensitive and appropriate")
+  const limit = tierLimits[userTier as keyof typeof tierLimits] || 3
+
+  return suggestions
+    .sort((a, b) => b.confidence_score - a.confidence_score)
+    .slice(0, limit)
+    .map((suggestion) => {
+      // Add tier-specific enhancements
+      if (userTier === "Pro+" || userTier === "Enterprise") {
+        suggestion.purchase_links = suggestion.purchase_links || []
+        suggestion.customization_options = suggestion.customization_options || []
+      }
+
+      if (userTier === "Free") {
+        // Remove some premium features for free tier
+        delete suggestion.purchase_links
+        delete suggestion.delivery_info
+      }
+
+      return suggestion
+    })
+}
+
+async function awardXPForGiftSuggestion(userId: string, suggestionsCount: number, supabaseClient: any) {
+  const baseXP = 5
+  const bonusXP = Math.min(suggestionsCount * 2, 20) // Max 20 bonus XP
+
+  const totalXP = baseXP + bonusXP
+
+  await supabaseClient.from("xp_logs").insert({
+    user_id: userId,
+    xp_amount: totalXP,
+    reason: `Gift suggestions generated (${suggestionsCount} suggestions)`,
+    feature_used: "gift_suggestion_engine",
+  })
+
+  // Update user profile XP
+  const { data: currentProfile } = await supabaseClient
+    .from("user_profiles")
+    .select("xp, level")
+    .eq("id", userId)
+    .single()
+
+  if (currentProfile) {
+    const newXP = currentProfile.xp + totalXP
+    const newLevel = Math.floor(newXP / 150) + 1
+
+    await supabaseClient
+      .from("user_profiles")
+      .update({
+        xp: newXP,
+        level: newLevel,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId)
+  }
+}
+
+function calculateRemainingUsage(userProfile: any): number {
+  const tierLimits = {
+    Free: 5,
+    Pro: 25,
+    "Pro+": 100,
+    Enterprise: -1, // Unlimited
   }
 
-  if (suggestion.occasion_relevance > 90) {
-    reasons.push(`Ideal for ${params.occasion || "this occasion"}`)
-  }
+  const limit = tierLimits[userProfile.tier as keyof typeof tierLimits] || 5
 
-  return reasons.join(". ")
+  if (limit === -1) return -1 // Unlimited
+
+  // This would check actual usage from database
+  // For now, returning mock data
+  const usedToday = 2 // Mock usage
+  return Math.max(0, limit - usedToday)
 }
