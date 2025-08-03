@@ -2,86 +2,62 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  try {
+    // Check if we have the required environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn("Supabase environment variables not configured, skipping auth middleware")
+      return supabaseResponse
+    }
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
-        set(name: string, value: string, options: any) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: any) {
-          request.cookies.set({
-            name,
-            value: "",
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: "",
-            ...options,
-          })
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
-    },
-  )
+    })
 
-  // Only check auth for admin routes
-  const adminRoutes = ["/admin", "/api/admin"]
-  const isAdminRoute = adminRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
+    // Refresh session if expired - required for Server Components
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (isAdminRoute) {
-    try {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
-
-      if (error || !user) {
-        return NextResponse.redirect(new URL("/login", request.url))
+    // Protect admin routes
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      if (!user) {
+        const redirectUrl = new URL("/login", request.url)
+        redirectUrl.searchParams.set("redirect", request.nextUrl.pathname)
+        return NextResponse.redirect(redirectUrl)
       }
 
-      // Check if user is admin
-      const { data: profile } = await supabase.from("user_profiles").select("admin_role").eq("id", user.id).single()
+      // Check if user has admin role (you can customize this logic)
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
-      if (!profile?.admin_role) {
+      if (profile?.role !== "admin") {
         return NextResponse.redirect(new URL("/dashboard", request.url))
       }
-    } catch (error) {
-      // If there's any error, redirect to login for admin routes
-      return NextResponse.redirect(new URL("/login", request.url))
     }
-  }
 
-  return response
+    return supabaseResponse
+  } catch (error) {
+    console.error("Middleware error:", error)
+    // Continue without auth if there's an error
+    return supabaseResponse
+  }
 }
 
 export const config = {
@@ -93,6 +69,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|public|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

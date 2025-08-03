@@ -1,91 +1,51 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createClient } from "@supabase/supabase-js"
-
-// Create Supabase client with fallback values for build time
-const createSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co"
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key"
-
-  return createClient(supabaseUrl, supabaseAnonKey)
-}
-
-interface CompanyData {
-  id: string
-  name: string
-  xp: number
-  level: number
-  badges: number
-  employees: number
-}
+import { createClient } from "@/lib/supabase-client"
+import { useEffect, useState } from "react"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 export function useSupabase() {
-  const [companyData, setCompanyData] = useState<CompanyData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate API call with mock data
-    const fetchCompanyData = async () => {
-      try {
-        setLoading(true)
+    try {
+      const client = createClient()
+      setSupabase(client)
 
-        // Check if we have real Supabase credentials
-        const hasRealCredentials =
-          process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://demo.supabase.co"
-
-        if (!hasRealCredentials) {
-          // Use mock data when no real credentials
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-
-          const mockData: CompanyData = {
-            id: "1",
-            name: "AgentGift.ai",
-            xp: 9200,
-            level: 9,
-            badges: 156,
-            employees: 247,
-          }
-
-          setCompanyData(mockData)
-          setLoading(false)
-          return
+      // Test the connection
+      client.auth.getSession().then(({ error }) => {
+        if (error) {
+          setError(error.message)
+          setIsConnected(false)
+        } else {
+          setIsConnected(true)
+          setError(null)
         }
-
-        // Real Supabase call would go here
-        const supabase = createSupabaseClient()
-        // ... real implementation
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred")
-      } finally {
-        setLoading(false)
-      }
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to initialize Supabase client")
+      setIsConnected(false)
     }
-
-    fetchCompanyData()
   }, [])
 
-  const updateCompanyXP = async (newXP: number) => {
+  const retry = () => {
+    setError(null)
     try {
-      // In a real app, this would update Supabase
-      if (companyData) {
-        setCompanyData({
-          ...companyData,
-          xp: newXP,
-          level: Math.floor(newXP / 1000),
-        })
-      }
+      const client = createClient()
+      setSupabase(client)
+      setIsConnected(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update XP")
+      setError(err instanceof Error ? err.message : "Failed to initialize Supabase client")
+      setIsConnected(false)
     }
   }
 
   return {
-    companyData,
-    loading,
+    supabase,
+    isConnected,
     error,
-    updateCompanyXP,
-    supabase: createSupabaseClient(),
+    retry,
   }
 }

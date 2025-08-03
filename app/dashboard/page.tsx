@@ -1,324 +1,221 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useSupabase } from "@/hooks/use-supabase"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Gift, Heart, Users, Sparkles, TrendingUp, Star, Crown, Zap, Target, Calendar, Globe } from "lucide-react"
-import Link from "next/link"
-import { FeatureTile } from "@/components/global/feature-tile"
-import { XPTracker } from "@/components/global/xp-tracker"
-import { ToastBadgeNotifier } from "@/components/global/toast-badge-notifier"
-import { TIERS, type GlobalUser } from "@/lib/global-logic"
-import { useCulturalContext } from "@/components/cultural/cultural-context"
-import LocaleHolidayService, { type LocaleHoliday } from "@/lib/fetchLocaleHolidayData"
-
-// Mock user data - in real app, this would come from auth/database
-const mockUser: GlobalUser = {
-  id: "user_123",
-  email: "user@example.com",
-  name: "Gift Agent",
-  tier: TIERS.PREMIUM_SPY,
-  xp: 1250,
-  level: 8,
-  credits: 150,
-  prestige_level: null,
-  badges: ["first_steps", "getting_started"],
-  created_at: "2024-01-01",
-  updated_at: "2024-01-15",
-}
-
-const features = [
-  {
-    title: "Gift Gut Check™",
-    description: "Trust your instincts with AI-powered gift validation",
-    icon: <Heart className="w-6 h-6 text-white" />,
-    href: "/features/gift-gut-check",
-    requiredTier: TIERS.PREMIUM_SPY,
-    gradient: "from-red-500 to-pink-500",
-    isNew: true,
-  },
-  {
-    title: "Agent Gifty™",
-    description: "Create QR code gift drops for surprise reveals",
-    icon: <Gift className="w-6 h-6 text-white" />,
-    href: "/features/agent-gifty",
-    requiredTier: TIERS.PRO_AGENT,
-    gradient: "from-purple-500 to-pink-500",
-  },
-  {
-    title: "Emotion Tags",
-    description: "Tag gifts with emotions for perfect matching",
-    icon: <Sparkles className="w-6 h-6 text-white" />,
-    href: "/features/emotion-tags",
-    requiredTier: TIERS.PREMIUM_SPY,
-    gradient: "from-yellow-500 to-orange-500",
-  },
-  {
-    title: "Gift DNA Quiz",
-    description: "Discover your unique gifting personality",
-    icon: <Target className="w-6 h-6 text-white" />,
-    href: "/features/gift-dna-quiz",
-    requiredTier: TIERS.FREE_AGENT,
-    gradient: "from-blue-500 to-cyan-500",
-  },
-  {
-    title: "Group Splitter",
-    description: "Smart group gift coordination and splitting",
-    icon: <Users className="w-6 h-6 text-white" />,
-    href: "/features/group-splitter",
-    requiredTier: TIERS.PREMIUM_SPY,
-    gradient: "from-green-500 to-teal-500",
-  },
-  {
-    title: "Gift Reveal Viewer",
-    description: "Experience magical gift reveals and reactions",
-    icon: <Star className="w-6 h-6 text-white" />,
-    href: "/features/gift-reveal-viewer",
-    requiredTier: TIERS.FREE_AGENT,
-    gradient: "from-indigo-500 to-purple-500",
-  },
-]
+import { Skeleton } from "@/components/ui/skeleton"
+import { AlertCircle, CheckCircle, RefreshCw, Zap, Users, Gift, TrendingUp } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<GlobalUser>(mockUser)
-  const [upcomingHolidays, setUpcomingHolidays] = useState<LocaleHoliday[]>([])
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, action: "Completed Gift Gut Check", time: "2 hours ago", xp: 25 },
-    { id: 2, action: "Unlocked 'Getting Started' badge", time: "1 day ago", xp: 50 },
-    { id: 3, action: "Created Agent Gifty drop", time: "3 days ago", xp: 30 },
-  ])
+  const { supabase, isConnected, error, retry } = useSupabase()
 
-  const { currentLocale, culturalPreferences } = useCulturalContext()
-
-  useEffect(() => {
-    loadHolidayData()
-  }, [currentLocale])
-
-  const loadHolidayData = async () => {
-    try {
-      const holidays = await LocaleHolidayService.fetchUpcomingHolidays(currentLocale, 30)
-      setUpcomingHolidays(holidays)
-    } catch (error) {
-      console.error("Error loading holiday data:", error)
-    }
+  // Mock data for demonstration
+  const mockStats = {
+    totalGifts: 1247,
+    activeUsers: 892,
+    conversionRate: 23.4,
+    revenue: 45678,
   }
 
-  const getHolidayBannerStyle = (holiday: LocaleHoliday) => {
-    const primaryColor = holiday.color_themes[0] || "purple"
-    const secondaryColor = holiday.color_themes[1] || "pink"
-
-    const colorMap: Record<string, string> = {
-      red: "from-red-500 to-red-600",
-      green: "from-green-500 to-green-600",
-      blue: "from-blue-500 to-blue-600",
-      purple: "from-purple-500 to-purple-600",
-      orange: "from-orange-500 to-orange-600",
-      gold: "from-yellow-500 to-yellow-600",
-      pink: "from-pink-500 to-pink-600",
-    }
-
-    return colorMap[primaryColor] || "from-purple-500 to-pink-500"
-  }
+  const mockRecentActivity = [
+    { id: 1, user: "Sarah M.", action: "Generated gift ideas", time: "2 minutes ago" },
+    { id: 2, user: "John D.", action: "Completed purchase", time: "5 minutes ago" },
+    { id: 3, user: "Emma L.", action: "Shared gift list", time: "8 minutes ago" },
+    { id: 4, user: "Mike R.", action: "Used AI Concierge", time: "12 minutes ago" },
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
-      <ToastBadgeNotifier />
-
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Cultural Holiday Banners */}
-        {upcomingHolidays.length > 0 && (
-          <div className="space-y-4">
-            {upcomingHolidays.slice(0, 2).map((holiday) => (
-              <Card
-                key={holiday.id}
-                className={`bg-gradient-to-r ${getHolidayBannerStyle(holiday)} text-white border-0`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                        <Calendar className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold">{holiday.name}</h3>
-                        <p className="text-white/90">{holiday.cultural_significance}</p>
-                        <p className="text-sm text-white/80">
-                          {new Date(holiday.date).toLocaleDateString(currentLocale, {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge className="bg-white/20 text-white border-white/30 mb-2">
-                        {LocaleHolidayService.getHolidayXPBonus(holiday)}x XP Bonus
-                      </Badge>
-                      <div>
-                        <Button
-                          asChild
-                          variant="secondary"
-                          className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                        >
-                          <Link href={`/culture/${holiday.country_code.toLowerCase()}`}>Explore Traditions</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              AgentGift.ai Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">Welcome to your culturally intelligent gifting platform</p>
           </div>
+
+          {/* Connection Status */}
+          <div className="flex items-center gap-2">
+            {isConnected ? (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Connected
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                Disconnected
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert className="border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <div className="flex justify-between items-center">
+                <span>{error}</span>
+                <Button variant="outline" size="sm" onClick={retry} className="ml-4 bg-transparent">
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Retry
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            Welcome back, {user.name}! 🎁
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">Ready to create some gift magic today?</p>
-          {culturalPreferences && (
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <Globe className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-500">Culturally adapted for {culturalPreferences.locale}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Star className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.level}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Current Level</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.xp}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total XP</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Gift className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.credits}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Credits</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Crown className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.badges.length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Badges</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* XP Tracker */}
-        <XPTracker xp={user.xp} level={user.level} prestigeLevel={user.prestige_level} />
-
-        {/* Quick Actions */}
+        {/* Configuration Status */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-              Quick Actions
+              <Zap className="w-5 h-5 text-purple-600" />
+              System Configuration
             </CardTitle>
+            <CardDescription>Current environment and service status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button
-                asChild
-                className="h-20 flex flex-col gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                <Link href="/features/gift-gut-check">
-                  <Heart className="w-6 h-6" />
-                  <span className="text-sm">Gut Check</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex flex-col gap-2 bg-transparent">
-                <Link href="/features/agent-gifty">
-                  <Gift className="w-6 h-6" />
-                  <span className="text-sm">Agent Gifty</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex flex-col gap-2 bg-transparent">
-                <Link href="/features/gift-dna-quiz">
-                  <Target className="w-6 h-6" />
-                  <span className="text-sm">DNA Quiz</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex flex-col gap-2 bg-transparent">
-                <Link href="/pricing">
-                  <Crown className="w-6 h-6" />
-                  <span className="text-sm">Upgrade</span>
-                </Link>
-              </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium">Supabase</span>
+                <Badge variant={process.env.NEXT_PUBLIC_SUPABASE_URL ? "default" : "destructive"}>
+                  {process.env.NEXT_PUBLIC_SUPABASE_URL ? "Configured" : "Missing"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium">ElevenLabs</span>
+                <Badge variant="secondary">Server-side</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium">Whisper</span>
+                <Badge variant="secondary">Server-side</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium">Make.com</span>
+                <Badge variant="default">Ready</Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Feature Grid */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">All Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature) => (
-              <FeatureTile
-                key={feature.title}
-                title={feature.title}
-                description={feature.description}
-                icon={feature.icon}
-                href={feature.href}
-                userTier={user.tier}
-                requiredTier={feature.requiredTier}
-                gradient={feature.gradient}
-                isNew={feature.isNew}
-              />
-            ))}
-          </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Total Gifts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">{mockStats.totalGifts.toLocaleString()}</span>
+                <Gift className="w-6 h-6 opacity-80" />
+              </div>
+              <p className="text-xs opacity-80 mt-1">+12% from last month</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-pink-500 to-pink-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Active Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">{mockStats.activeUsers.toLocaleString()}</span>
+                <Users className="w-6 h-6 opacity-80" />
+              </div>
+              <p className="text-xs opacity-80 mt-1">+8% from last week</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Conversion Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">{mockStats.conversionRate}%</span>
+                <TrendingUp className="w-6 h-6 opacity-80" />
+              </div>
+              <p className="text-xs opacity-80 mt-1">+2.1% from last month</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium opacity-90">Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">${mockStats.revenue.toLocaleString()}</span>
+                <Zap className="w-6 h-6 opacity-80" />
+              </div>
+              <p className="text-xs opacity-80 mt-1">+15% from last month</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              Recent Activity
-            </CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest user interactions and system events</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">{activity.action}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{activity.time}</div>
+            {isConnected ? (
+              <div className="space-y-4">
+                {mockRecentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{activity.user}</p>
+                      <p className="text-gray-600 text-xs">{activity.action}</p>
+                    </div>
+                    <span className="text-xs text-gray-500">{activity.time}</span>
                   </div>
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    +{activity.xp} XP
-                  </Badge>
-                </div>
-              ))}
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common administrative tasks and shortcuts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+                <Gift className="w-6 h-6 text-purple-600" />
+                <span className="font-medium">View All Features</span>
+                <span className="text-xs text-gray-500">Manage platform features</span>
+              </Button>
+              <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+                <Users className="w-6 h-6 text-pink-600" />
+                <span className="font-medium">User Management</span>
+                <span className="text-xs text-gray-500">Manage user accounts</span>
+              </Button>
+              <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2 bg-transparent">
+                <TrendingUp className="w-6 h-6 text-indigo-600" />
+                <span className="font-medium">Analytics</span>
+                <span className="text-xs text-gray-500">View detailed reports</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
