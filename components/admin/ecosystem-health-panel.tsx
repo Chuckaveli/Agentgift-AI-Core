@@ -1,432 +1,425 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import {
-  Activity,
-  Users,
-  Bot,
-  Zap,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  RefreshCw,
-  Star,
-  Gauge,
-  XCircle,
-  AlertCircle,
-  Info,
-} from "lucide-react"
-import { toast } from "sonner"
-import {
-  fetchEcosystemHealth,
-  getHealthScoreColor,
-  getHealthScoreGradient,
-  getAlertColor,
-  formatResponseTime,
-  calculateTrendDirection,
-} from "@/lib/ecosystem-health"
+import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { RefreshCw, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle, XCircle, Users, Bot, Clock, AlertCircle } from 'lucide-react'
+import { fetchEcosystemHealth, getHealthScoreColor, getHealthScoreGradient, getAlertColor, formatResponseTime, calculateTrendDirection } from "@/lib/ecosystem-health"
 
-interface EcosystemHealthData {
-  healthScore: number
-  activeUsers: number
-  activeAssistants: number
-  avgApiResponseTime: number
-  errorRate: number
-  systemAlerts: Array<{
-    id: string
-    type: "error" | "warning" | "info"
-    message: string
-    timestamp: string
-    severity: "high" | "medium" | "low"
-  }>
-  topAssistants: Array<{
-    id: string
-    name: string
-    usage: number
-    satisfaction: number
-    apiCost: number
-    category: string
-  }>
-  usageTrends: Array<{
-    date: string
-    interactions: number
-    uniqueUsers: number
-    avgResponseTime: number
-  }>
-  featureStats: Array<{
-    name: string
-    usageCount: number
-    uniqueUsers: number
-    adoptionRate: number
-    category: string
-  }>
-  satisfactionAverages: {
-    overall: number
-    byAssistant: Array<{
-      id: string
-      name: string
-      satisfaction: number
-    }>
-  }
-  lastUpdated: string
-  metricsSummary: {
-    totalInteractions24h: number
-    totalFeatures: number
-    avgSessionDuration: number
-    peakUsageHour: number
-  }
+interface EcosystemHealthPanelProps {
+  autoRefresh?: boolean
+  refreshInterval?: number
 }
 
-const CHART_COLORS = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"]
-
-export function EcosystemHealthPanel() {
-  const [data, setData] = useState<EcosystemHealthData | null>(null)
+export function EcosystemHealthPanel({ autoRefresh = true, refreshInterval = 15000 }: EcosystemHealthPanelProps) {
+  const [healthData, setHealthData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [autoRefresh, setAutoRefresh] = useState(true)
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  const loadHealthData = useCallback(async (showRefreshing = false) => {
+  const fetchData = async () => {
     try {
-      if (showRefreshing) setRefreshing(true)
-      else setLoading(true)
-
-      const healthData = await fetchEcosystemHealth()
-      setData(healthData)
-      setLastRefresh(new Date())
-
-      if (showRefreshing) {
-        toast.success("Ecosystem health data refreshed")
-      }
-    } catch (error) {
-      console.error("Error loading ecosystem health:", error)
-      toast.error("Failed to load ecosystem health data")
+      setLoading(true)
+      setError(null)
+      
+      const data = await fetchEcosystemHealth()
+      setHealthData(data)
+      setLastUpdated(new Date())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch ecosystem health")
+      console.error("Ecosystem health fetch error:", err)
     } finally {
       setLoading(false)
-      setRefreshing(false)
     }
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   useEffect(() => {
-    loadHealthData()
-  }, [loadHealthData])
+    if (autoRefresh && refreshInterval > 0) {
+      const interval = setInterval(fetchData, refreshInterval)
+      return () => clearInterval(interval)
+    }
+  }, [autoRefresh, refreshInterval])
 
-  useEffect(() => {
-    if (!autoRefresh) return
-
-    const interval = setInterval(() => {
-      loadHealthData(true)
-    }, 15000) // Refresh every 15 seconds
-
-    return () => clearInterval(interval)
-  }, [autoRefresh, loadHealthData])
-
-  const handleManualRefresh = () => {
-    loadHealthData(true)
+  const getTrendIcon = (direction: "up" | "down" | "stable") => {
+    switch (direction) {
+      case "up":
+        return <TrendingUp className="h-4 w-4 text-emerald-600" />
+      case "down":
+        return <TrendingDown className="h-4 w-4 text-red-600" />
+      default:
+        return <Minus className="h-4 w-4 text-gray-600" />
+    }
   }
 
-  const toggleAutoRefresh = () => {
-    setAutoRefresh(!autoRefresh)
-    toast.info(autoRefresh ? "Auto-refresh disabled" : "Auto-refresh enabled")
+  const getHealthIcon = (score: number) => {
+    if (score >= 90) return <CheckCircle className="h-6 w-6 text-emerald-600" />
+    if (score >= 75) return <AlertCircle className="h-6 w-6 text-yellow-600" />
+    return <XCircle className="h-6 w-6 text-red-600" />
   }
 
-  if (loading || !data) {
+  if (loading && !healthData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-32" />
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+            Ecosystem Health Monitor
+          </h2>
+          <div className="animate-spin">
+            <RefreshCw className="h-5 w-5" />
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
-                <Skeleton className="h-16 w-full" />
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
               </CardContent>
             </Card>
           ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="h-64 w-full" />
-            </CardContent>
-          </Card>
         </div>
       </div>
     )
   }
 
-  const trendDirection = calculateTrendDirection(data.usageTrends)
-  const TrendIcon = trendDirection === "up" ? TrendingUp : trendDirection === "down" ? TrendingDown : Minus
+  if (error) {
+    return (
+      <Alert className="border-red-500 bg-red-50">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription className="text-red-800">
+          {error}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchData}
+            className="ml-2"
+          >
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (!healthData) return null
+
+  const trendDirection = calculateTrendDirection(healthData.usageTrends || [])
+  const pieChartData = healthData.featureStats?.slice(0, 6).map((feature: any, index: number) => ({
+    name: feature.name,
+    value: feature.usageCount,
+    color: `hsl(${280 + index * 30}, 70%, 60%)`
+  })) || []
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             Ecosystem Health Monitor
           </h2>
-          <p className="text-muted-foreground text-sm">Last updated: {lastRefresh?.toLocaleTimeString() || "Never"}</p>
+          <p className="text-gray-600 mt-1">
+            Real-time system performance and user engagement metrics
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="text-sm text-gray-500">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"
-            onClick={toggleAutoRefresh}
-            className={autoRefresh ? "bg-green-50 border-green-200" : ""}
+            onClick={fetchData}
+            disabled={loading}
+            className="hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 transition-all duration-300"
           >
-            <Activity className={`h-4 w-4 mr-2 ${autoRefresh ? "text-green-600" : ""}`} />
-            Auto-refresh {autoRefresh ? "ON" : "OFF"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={refreshing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* System Health Score */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={`p-3 rounded-full bg-gradient-to-r ${getHealthScoreGradient(data.healthScore)}`}>
-                <Gauge className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">System Health Score</h3>
-                <p className={`text-3xl font-bold ${getHealthScoreColor(data.healthScore)}`}>{data.healthScore}%</p>
-                <p className="text-sm text-muted-foreground">
-                  {data.healthScore >= 90
-                    ? "Excellent"
-                    : data.healthScore >= 75
-                      ? "Good"
-                      : data.healthScore >= 60
-                        ? "Fair"
-                        : "Poor"}{" "}
-                  system performance
-                </p>
-              </div>
+      {/* System Alerts */}
+      {healthData.systemAlerts && healthData.systemAlerts.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-gray-900">System Alerts</h3>
+          {healthData.systemAlerts.map((alert: any) => (
+            <Alert key={alert.id} className={getAlertColor(alert.type)}>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="flex items-center justify-between">
+                  <span>{alert.message}</span>
+                  <Badge variant={alert.severity === 'high' ? 'destructive' : alert.severity === 'medium' ? 'default' : 'secondary'}>
+                    {alert.severity}
+                  </Badge>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ))}
+        </div>
+      )}
+
+      {/* Health Score Overview */}
+      <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            {getHealthIcon(healthData.healthScore)}
+            <span className="text-xl">Overall System Health</span>
+            {getTrendIcon(trendDirection)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-4xl font-bold">
+              <span className={getHealthScoreColor(healthData.healthScore)}>
+                {healthData.healthScore}%
+              </span>
             </div>
             <div className="text-right">
-              <div className="flex items-center space-x-2 mb-2">
-                <TrendIcon
-                  className={`h-4 w-4 ${
-                    trendDirection === "up"
-                      ? "text-green-600"
-                      : trendDirection === "down"
-                        ? "text-red-600"
-                        : "text-gray-600"
-                  }`}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {trendDirection === "up" ? "Trending up" : trendDirection === "down" ? "Trending down" : "Stable"}
-                </span>
+              <div className="text-sm text-gray-600">Status</div>
+              <div className={`font-semibold ${getHealthScoreColor(healthData.healthScore)}`}>
+                {healthData.healthScore >= 90 ? 'Excellent' : 
+                 healthData.healthScore >= 75 ? 'Good' : 
+                 healthData.healthScore >= 60 ? 'Fair' : 'Poor'}
               </div>
-              <Progress value={data.healthScore} className="w-32" />
             </div>
           </div>
+          <Progress 
+            value={healthData.healthScore} 
+            className="h-3"
+            style={{
+              background: `linear-gradient(to right, ${getHealthScoreGradient(healthData.healthScore)})`
+            }}
+          />
         </CardContent>
       </Card>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white hover:shadow-xl transition-all duration-300 group">
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-lg transition-all duration-300 group">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm font-medium">Active Users</p>
-                <p className="text-2xl font-bold">{data.activeUsers.toLocaleString()}</p>
-                <p className="text-blue-100 text-xs">Last 24 hours</p>
+                <p className="text-sm font-medium text-blue-700">Active Users</p>
+                <p className="text-3xl font-bold text-blue-900">{healthData.activeUsers}</p>
+                <p className="text-xs text-blue-600 mt-1">Last 24 hours</p>
               </div>
-              <Users className="h-8 w-8 text-blue-200 group-hover:scale-110 transition-transform" />
+              <Users className="h-8 w-8 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-indigo-500 text-white hover:shadow-xl transition-all duration-300 group">
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-100 border-purple-200 hover:shadow-lg transition-all duration-300 group">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm font-medium">Active Assistants</p>
-                <p className="text-2xl font-bold">{data.activeAssistants}</p>
-                <p className="text-purple-100 text-xs">Currently responding</p>
+                <p className="text-sm font-medium text-purple-700">Active Assistants</p>
+                <p className="text-3xl font-bold text-purple-900">{healthData.activeAssistants}</p>
+                <p className="text-xs text-purple-600 mt-1">Currently responding</p>
               </div>
-              <Bot className="h-8 w-8 text-purple-200 group-hover:scale-110 transition-transform" />
+              <Bot className="h-8 w-8 text-purple-600 group-hover:scale-110 transition-transform duration-300" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white hover:shadow-xl transition-all duration-300 group">
+        <Card className="bg-gradient-to-br from-emerald-50 to-teal-100 border-emerald-200 hover:shadow-lg transition-all duration-300 group">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-sm font-medium">Response Time</p>
-                <p className="text-2xl font-bold">{data.avgApiResponseTime}ms</p>
-                <p className="text-emerald-100 text-xs">{formatResponseTime(data.avgApiResponseTime).split(" ")[1]}</p>
+                <p className="text-sm font-medium text-emerald-700">Response Time</p>
+                <p className="text-3xl font-bold text-emerald-900">{healthData.avgApiResponseTime}ms</p>
+                <p className="text-xs text-emerald-600 mt-1">{formatResponseTime(healthData.avgApiResponseTime)}</p>
               </div>
-              <Zap className="h-8 w-8 text-emerald-200 group-hover:scale-110 transition-transform" />
+              <Clock className="h-8 w-8 text-emerald-600 group-hover:scale-110 transition-transform duration-300" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-500 to-orange-500 text-white hover:shadow-xl transition-all duration-300 group">
+        <Card className="bg-gradient-to-br from-orange-50 to-red-100 border-orange-200 hover:shadow-lg transition-all duration-300 group">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-yellow-100 text-sm font-medium">Error Rate</p>
-                <p className="text-2xl font-bold">{data.errorRate.toFixed(1)}%</p>
-                <p className="text-yellow-100 text-xs">
-                  {data.errorRate < 1 ? "Excellent" : data.errorRate < 5 ? "Good" : "Needs attention"}
+                <p className="text-sm font-medium text-orange-700">Error Rate</p>
+                <p className="text-3xl font-bold text-orange-900">{healthData.errorRate.toFixed(1)}%</p>
+                <p className="text-xs text-orange-600 mt-1">
+                  {healthData.errorRate < 1 ? 'Excellent' : healthData.errorRate < 5 ? 'Good' : 'Needs attention'}
                 </p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-yellow-200 group-hover:scale-110 transition-transform" />
+              <AlertCircle className="h-8 w-8 text-orange-600 group-hover:scale-110 transition-transform duration-300" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Grid */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Usage Trends */}
-        <Card className="border-0 shadow-lg">
+        {/* Usage Trends Chart */}
+        <Card className="hover:shadow-lg transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5" />
-              <span>Usage Trends (7 Days)</span>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              Usage Trends (7 Days)
             </CardTitle>
+            <CardDescription>Daily interactions and unique users</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data.usageTrends}>
+              <AreaChart data={healthData.usageTrends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#666"
+                  fontSize={12}
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis stroke="#666" fontSize={12} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="interactions" 
+                  stroke="#8b5cf6" 
+                  fill="url(#colorInteractions)" 
+                  strokeWidth={2}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="uniqueUsers" 
+                  stroke="#ec4899" 
+                  fill="url(#colorUsers)" 
+                  strokeWidth={2}
+                />
                 <defs>
-                  <linearGradient id="interactionsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0.1} />
+                  <linearGradient id="colorInteractions" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
                   </linearGradient>
-                  <linearGradient id="usersGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1} />
+                  <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0.1}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="interactions"
-                  stroke="#ec4899"
-                  fillOpacity={1}
-                  fill="url(#interactionsGradient)"
-                  name="Interactions"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="uniqueUsers"
-                  stroke="#8b5cf6"
-                  fillOpacity={1}
-                  fill="url(#usersGradient)"
-                  name="Unique Users"
-                />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Feature Adoption */}
-        <Card className="border-0 shadow-lg">
+        {/* Feature Usage Chart */}
+        <Card className="hover:shadow-lg transition-all duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Activity className="h-5 w-5" />
-              <span>Feature Adoption Rates</span>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart className="h-5 w-5 text-pink-600" />
+              Feature Adoption
             </CardTitle>
+            <CardDescription>Top features by usage count</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.featureStats.slice(0, 8)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip formatter={(value) => [`${value}%`, "Adoption Rate"]} />
-                <Bar dataKey="adoptionRate" fill="#8b5cf6" />
-              </BarChart>
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Top Assistants Performance */}
-      <Card className="border-0 shadow-lg">
+      {/* Top Assistants Table */}
+      <Card className="hover:shadow-lg transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bot className="h-5 w-5" />
-            <span>Top Assistant Performance</span>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-purple-600" />
+            Top Performing Assistants
           </CardTitle>
+          <CardDescription>Ranked by usage, satisfaction, and performance</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Assistant</th>
-                  <th className="text-left p-2">Category</th>
-                  <th className="text-left p-2">Usage</th>
-                  <th className="text-left p-2">Satisfaction</th>
-                  <th className="text-left p-2">API Cost</th>
-                  <th className="text-left p-2">Status</th>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Assistant</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Usage</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Satisfaction</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">API Cost</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Category</th>
                 </tr>
               </thead>
               <tbody>
-                {data.topAssistants.slice(0, 8).map((assistant) => (
-                  <tr
-                    key={assistant.id}
-                    className="border-b hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 transition-colors"
-                  >
-                    <td className="p-2">
-                      <div className="font-medium">{assistant.name}</div>
-                      <div className="text-xs text-muted-foreground">{assistant.id.slice(0, 12)}...</div>
-                    </td>
-                    <td className="p-2">
-                      <Badge variant="outline">{assistant.category}</Badge>
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="text-sm font-medium">{assistant.usage.toLocaleString()}</div>
-                        <Progress
-                          value={(assistant.usage / Math.max(...data.topAssistants.map((a) => a.usage))) * 100}
-                          className="w-16 h-2"
-                        />
+                {healthData.topAssistants?.slice(0, 5).map((assistant: any, index: number) => (
+                  <tr key={assistant.id} className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${index === 0 ? 'from-yellow-400 to-orange-500' : index === 1 ? 'from-gray-300 to-gray-500' : index === 2 ? 'from-orange-400 to-red-500' : 'from-purple-400 to-pink-500'} flex items-center justify-center text-white font-bold text-sm`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{assistant.name}</div>
+                          <div className="text-sm text-gray-500">{assistant.id}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="p-2">
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">{assistant.satisfaction.toFixed(1)}</span>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{assistant.usage}</span>
+                        <span className="text-sm text-gray-500">interactions</span>
                       </div>
                     </td>
-                    <td className="p-2">
-                      <span className="text-sm font-medium">${assistant.apiCost.toFixed(2)}</span>
-                    </td>
-                    <td className="p-2">
-                      <div className="flex items-center space-x-1">
-                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className="text-xs text-green-600">Active</span>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{assistant.satisfaction.toFixed(1)}</span>
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={`text-sm ${i < Math.floor(assistant.satisfaction) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                              ★
+                            </span>
+                          ))}
+                        </div>
                       </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="font-semibold text-gray-900">${assistant.apiCost.toFixed(2)}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
+                        {assistant.category}
+                      </Badge>
                     </td>
                   </tr>
                 ))}
@@ -436,118 +429,29 @@ export function EcosystemHealthPanel() {
         </CardContent>
       </Card>
 
-      {/* System Alerts */}
-      {data.systemAlerts.length > 0 && (
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5" />
-              <span>System Alerts</span>
-              <Badge variant="destructive">{data.systemAlerts.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.systemAlerts.map((alert) => {
-                const AlertIcon = alert.type === "error" ? XCircle : alert.type === "warning" ? AlertCircle : Info
-
-                return (
-                  <div key={alert.id} className={`p-3 rounded-lg border-l-4 ${getAlertColor(alert.type)}`}>
-                    <div className="flex items-start space-x-3">
-                      <AlertIcon className="h-5 w-5 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">{alert.message}</p>
-                          <Badge
-                            variant={
-                              alert.severity === "high"
-                                ? "destructive"
-                                : alert.severity === "medium"
-                                  ? "default"
-                                  : "secondary"
-                            }
-                          >
-                            {alert.severity}
-                          </Badge>
-                        </div>
-                        <p className="text-xs opacity-75 mt-1">{new Date(alert.timestamp).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Metrics Summary */}
-      <Card className="border-0 shadow-lg">
+      {/* Summary Stats */}
+      <Card className="bg-gradient-to-br from-gray-50 to-purple-50 border-purple-200">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Gauge className="h-5 w-5" />
-            <span>24-Hour Summary</span>
-          </CardTitle>
+          <CardTitle>24-Hour Summary</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-lg bg-gradient-to-r from-pink-50 to-purple-50">
-              <p className="text-2xl font-bold text-pink-600">{data.metricsSummary.totalInteractions24h}</p>
-              <p className="text-sm text-muted-foreground">Total Interactions</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{healthData.metricsSummary?.totalInteractions24h || 0}</div>
+              <div className="text-sm text-gray-600">Total Interactions</div>
             </div>
-            <div className="text-center p-4 rounded-lg bg-gradient-to-r from-purple-50 to-indigo-50">
-              <p className="text-2xl font-bold text-purple-600">{data.metricsSummary.totalFeatures}</p>
-              <p className="text-sm text-muted-foreground">Active Features</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-pink-600">{healthData.metricsSummary?.totalFeatures || 0}</div>
+              <div className="text-sm text-gray-600">Active Features</div>
             </div>
-            <div className="text-center p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-cyan-50">
-              <p className="text-2xl font-bold text-indigo-600">
-                {Math.round(data.metricsSummary.avgSessionDuration)}s
-              </p>
-              <p className="text-sm text-muted-foreground">Avg Session</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-indigo-600">{Math.round(healthData.metricsSummary?.avgSessionDuration || 0)}s</div>
+              <div className="text-sm text-gray-600">Avg Session</div>
             </div>
-            <div className="text-center p-4 rounded-lg bg-gradient-to-r from-cyan-50 to-teal-50">
-              <p className="text-2xl font-bold text-cyan-600">{data.metricsSummary.peakUsageHour}:00</p>
-              <p className="text-sm text-muted-foreground">Peak Hour</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-600">{healthData.metricsSummary?.peakUsageHour || 0}:00</div>
+              <div className="text-sm text-gray-600">Peak Hour</div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Satisfaction Overview */}
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Star className="h-5 w-5" />
-            <span>Satisfaction Overview</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-3xl font-bold text-yellow-600">{data.satisfactionAverages.overall}</p>
-              <p className="text-sm text-muted-foreground">Overall Satisfaction</p>
-            </div>
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-6 w-6 ${
-                    i < Math.floor(data.satisfactionAverages.overall) ? "text-yellow-500 fill-current" : "text-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            {data.satisfactionAverages.byAssistant.slice(0, 5).map((assistant) => (
-              <div key={assistant.id} className="flex items-center justify-between">
-                <span className="text-sm font-medium">{assistant.name}</span>
-                <div className="flex items-center space-x-2">
-                  <Progress value={assistant.satisfaction * 20} className="w-20 h-2" />
-                  <span className="text-sm text-muted-foreground w-8">{assistant.satisfaction.toFixed(1)}</span>
-                </div>
-              </div>
-            ))}
           </div>
         </CardContent>
       </Card>
