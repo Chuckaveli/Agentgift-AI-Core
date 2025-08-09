@@ -1,63 +1,36 @@
-import { createServerClient } from "@supabase/ssr"
-import { NextResponse, type NextRequest } from "next/server"
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
 
-  try {
-    // Check if we have the required environment variables
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // Refresh session if expired - required for Server Components
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn("Supabase environment variables not configured, skipping auth middleware")
-      return supabaseResponse
-    }
+  // Protected routes that require authentication
+  const protectedRoutes = ["/dashboard", "/admin", "/settings", "/profile"]
+  const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
 
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
-        },
-      },
-    })
-
-    // Refresh session if expired - required for Server Components
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    // Protect admin routes
-    if (request.nextUrl.pathname.startsWith("/admin")) {
-      if (!user) {
-        const redirectUrl = new URL("/login", request.url)
-        redirectUrl.searchParams.set("redirect", request.nextUrl.pathname)
-        return NextResponse.redirect(redirectUrl)
-      }
-
-      // Check if user has admin role (you can customize this logic)
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-      if (profile?.role !== "admin") {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
-      }
-    }
-
-    return supabaseResponse
-  } catch (error) {
-    console.error("Middleware error:", error)
-    // Continue without auth if there's an error
-    return supabaseResponse
+  // If accessing a protected route without a session, redirect to sign in
+  if (isProtectedRoute && !session) {
+    const redirectUrl = new URL("/auth/signin", req.url)
+    redirectUrl.searchParams.set("redirect", req.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
   }
+
+  // If accessing auth pages while already signed in, redirect to dashboard
+  const authRoutes = ["/auth/signin", "/auth/signup"]
+  const isAuthRoute = authRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
+
+  if (isAuthRoute && session) {
+    return NextResponse.redirect(new URL("/dashboard", req.url))
+  }
+
+  return res
 }
 
 export const config = {

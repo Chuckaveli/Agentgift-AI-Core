@@ -5,7 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "@/components/ui/sonner"
-import ClientLayout from "./ClientLayout"
+import Navbar from "@/components/Navbar"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://agentgift.ai"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://agentgift.ai"),
   alternates: {
     canonical: "/",
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     title: "AgentGift.ai - AI-Powered Gift Intelligence Platform",
     description:
       "Transform your gifting experience with AI-powered recommendations, cultural intelligence, and personalized insights.",
-    url: "https://agentgift.ai",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://agentgift.ai",
     siteName: "AgentGift.ai",
     images: [
       {
@@ -71,9 +71,6 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  verification: {
-    google: "your-google-verification-code",
-  },
     generator: 'v0.dev'
 }
 
@@ -86,7 +83,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ClientLayout>{children}</ClientLayout>
+          <Navbar />
+          {children}
           <Toaster />
           <SonnerToaster />
         </ThemeProvider>
