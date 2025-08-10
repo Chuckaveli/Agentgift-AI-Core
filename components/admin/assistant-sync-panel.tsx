@@ -447,8 +447,7 @@ export function AssistantSyncPanel() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Edge Function URL</label>
                   <div className="p-2 bg-gray-100 rounded text-sm font-mono">
-                    {process.env.NEXT_PUBLIC_SUPABASE_URL?.replace("https://", "").split(".")[0]}
-                    .functions.supabase.co/sync_assistants
+                    {process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync_assistants
                   </div>
                 </div>
 

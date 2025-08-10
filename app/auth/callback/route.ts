@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const code = url.searchParams.get("code")
+  const redirect = url.searchParams.get("redirect") || "/dashboard"
 
   if (code) {
     const cookieStore = cookies()
@@ -18,5 +19,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL("/dashboard", url.origin))
+  return NextResponse.redirect(new URL(redirect, url.origin))
 }

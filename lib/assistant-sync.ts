@@ -341,9 +341,8 @@ export const syncAssistantsToRegistry = async (assistants?: AssistantSyncData[])
       throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured")
     }
 
-    // Extract project ID from URL
-    const projectId = supabaseUrl.replace("https://", "").split(".")[0]
-    const edgeFunctionUrl = `https://${projectId}.functions.supabase.co/sync_assistants`
+    // Build Edge Function URL using Supabase project URL
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/sync_assistants`
 
     console.log("[AGAI SYNC] Starting assistant registry sync...", {
       assistants_count: assistantsToSync.length,
@@ -396,8 +395,7 @@ export const fetchAssistantRegistry = async (): Promise<any> => {
       throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured")
     }
 
-    const projectId = supabaseUrl.replace("https://", "").split(".")[0]
-    const edgeFunctionUrl = `https://${projectId}.functions.supabase.co/sync_assistants`
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/sync_assistants`
 
     const response = await fetch(edgeFunctionUrl, {
       method: "GET",

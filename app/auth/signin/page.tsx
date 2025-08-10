@@ -5,10 +5,19 @@ import { ThemeSupa } from "@supabase/auth-ui-shared"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import Link from "next/link"
 import { Gift } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 
 const supabase = createClientComponentClient()
 
 export default function SignInPage() {
+  const searchParams = useSearchParams()
+  const redirectPath = searchParams.get("redirect") || "/dashboard"
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL || ""
+  const redirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -66,7 +75,7 @@ export default function SignInPage() {
                 message: "text-sm text-red-600 mt-2",
               },
             }}
-            redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
+            redirectTo={redirectTo}
             showLinks={false}
           />
 
