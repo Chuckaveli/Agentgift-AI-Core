@@ -233,11 +233,15 @@ export class FutureIntegrations {
     return true
   }
 }
-
 // Placeholder Components for Future Features
 export const FuturePlaceholders = {
   VoiceAgentInterface: () => (
-    <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+    <div
+      className={
+        "p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 " +
+        "dark:border-gray-600"
+      }
+    >
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Voice Agent System</h3>
       <p className="text-gray-600 dark:text-gray-400 mb-4">
         Coming Soon: AI voice assistants for personalized gifting guidance
@@ -247,7 +251,12 @@ export const FuturePlaceholders = {
   ),
 
   CampaignManager: () => (
-    <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+    <div
+      className={
+        "p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 " +
+        "dark:border-gray-600"
+      }
+    >
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Gift Campaigns</h3>
       <p className="text-gray-600 dark:text-gray-400 mb-4">
         Coming Soon: Automated gift campaigns and emotional triggers
@@ -257,17 +266,31 @@ export const FuturePlaceholders = {
   ),
 
   SocialIntegration: () => (
-    <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+    <div
+      className={
+        "p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 " +
+        "dark:border-gray-600"
+      }
+    >
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Social Media Integration</h3>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">Coming Soon: Omni-channel social media management</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
+        Coming Soon: Omni-channel social media management
+      </p>
       <div className="text-sm text-gray-500">Platforms: Instagram, TikTok, LinkedIn, Pinterest</div>
     </div>
   ),
 
   AdvancedFilters: () => (
-    <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+    <div
+      className={
+        "p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 " +
+        "dark:border-gray-600"
+      }
+    >
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Advanced Filters</h3>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">Coming Soon: Unlockable AI-powered gift filters</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
+        Coming Soon: Unlockable AI-powered gift filters
+      </p>
       <div className="text-sm text-gray-500">Features: Emotion AI, Personality Deep Dive, Trend Predictor</div>
     </div>
   ),
