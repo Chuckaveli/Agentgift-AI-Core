@@ -7,14 +7,11 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Globe, Bell, Languages, TestTube } from "lucide-react"
-import { useCulturalContext } from "@/components/cultural/cultural-context"
-import { usePersona } from "@/components/persona/persona-context"
+import { Button } from "@/components/ui/button"
+import { Globe, Bell, Languages, TestTube, Save, RotateCcw } from "lucide-react"
+import { toast } from "sonner"
 
 export default function SettingsPage() {
-  const { currentLocale, culturalPreferences, setLocale } = useCulturalContext()
-  const { currentPersona, personas, setPersona } = usePersona()
-
   const [settings, setSettings] = useState({
     culturalAdaptation: true,
     holidayReminders: true,
@@ -39,14 +36,16 @@ export default function SettingsPage() {
   const handleSaveSettings = async () => {
     setIsLoading(true)
     try {
-      // In a real app, save to Supabase user profile
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       localStorage.setItem("agentgift_cultural_settings", JSON.stringify(settings))
       setIsSaved(true)
+      toast.success("Settings saved successfully!")
       setTimeout(() => setIsSaved(false), 3000)
     } catch (error) {
       console.error("Error saving settings:", error)
+      toast.error("Failed to save settings")
     } finally {
       setIsLoading(false)
     }
@@ -63,13 +62,18 @@ export default function SettingsPage() {
       respectCulturalTaboos: true,
       enableHolidayXPBonus: true,
     })
+    toast.info("Settings reset to defaults")
   }
 
   useEffect(() => {
     // Load saved settings
     const savedSettings = localStorage.getItem("agentgift_cultural_settings")
     if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+      try {
+        setSettings(JSON.parse(savedSettings))
+      } catch (error) {
+        console.error("Error loading settings:", error)
+      }
     }
   }, [])
 
@@ -121,14 +125,14 @@ export default function SettingsPage() {
                       Your cultural and language preferences
                     </p>
                     <Badge variant="outline" className="text-sm">
-                      {currentLocale} - {culturalPreferences?.locale}
+                      🇺🇸 en-US - United States
                     </Badge>
                   </div>
                   <div>
                     <Label className="text-base font-medium">Current Persona</Label>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Your AI assistant personality</p>
                     <Badge variant="outline" className="text-sm">
-                      {currentPersona?.name} - {currentPersona?.specialty}
+                      🎁 Gift Concierge - Gifting Expert
                     </Badge>
                   </div>
                 </div>
@@ -240,12 +244,28 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+
+                <Separator />
+
+                <div className="flex gap-4">
+                  <Button onClick={handleSaveSettings} disabled={isLoading} className="flex items-center gap-2">
+                    <Save className="w-4 h-4" />
+                    {isLoading ? "Saving..." : isSaved ? "Saved!" : "Save Settings"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetToDefaults}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset to Defaults
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="personas" className="space-y-6">
-            {/* Persona Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -254,35 +274,12 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {personas.map((persona) => (
-                    <div
-                      key={persona.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        currentPersona?.id === persona.id
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                      onClick={() => setPersona(persona.id)}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
-                          {persona.name[0]}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{persona.name}</h3>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">{persona.specialty}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-gray-600 dark:text-gray-400">Persona settings will be available soon.</p>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
-            {/* Notification Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -290,12 +287,13 @@ export default function SettingsPage() {
                   Notification Preferences
                 </CardTitle>
               </CardHeader>
-              <CardContent>{/* Placeholder for Notification Settings */}</CardContent>
+              <CardContent>
+                <p className="text-gray-600 dark:text-gray-400">Notification settings will be available soon.</p>
+              </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="testing" className="space-y-6">
-            {/* Testing Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -303,7 +301,9 @@ export default function SettingsPage() {
                   Testing Preferences
                 </CardTitle>
               </CardHeader>
-              <CardContent>{/* Placeholder for Testing Settings */}</CardContent>
+              <CardContent>
+                <p className="text-gray-600 dark:text-gray-400">Testing settings will be available soon.</p>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>

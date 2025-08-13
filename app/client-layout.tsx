@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +38,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import Image from "next/image"
+import { Navbar } from "@/components/Navbar"
+import { MobileFooterNav } from "@/components/navigation/mobile-footer-nav"
+import { GamificationProvider } from "@/components/layout/gamification-provider"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -63,13 +65,24 @@ interface AppLayoutProps {
   children: React.ReactNode
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+const AppLayout = ({ children }: AppLayoutProps) => {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
   const isActive = (href: string) => pathname === href
@@ -274,15 +287,18 @@ export function AppLayout({ children }: AppLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 md:ml-64">
-          <div className="container py-6">{children}</div>
-        </main>
+    <GamificationProvider>
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 md:ml-64 pb-16 md:pb-0">
+            <div className="container py-6">{children}</div>
+          </main>
+        </div>
+        {isMobile && <MobileFooterNav />}
       </div>
-    </div>
+    </GamificationProvider>
   )
 }
 

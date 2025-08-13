@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Search, Sparkles, Gift, Star, Filter } from "lucide-react"
+import { ArrowLeft, Search, Sparkles, Gift, Star, Filter, Heart, Globe } from "lucide-react"
 import Link from "next/link"
 import { EmotionalFilterEngine } from "@/components/filters/emotional-filter-engine"
+import { SmartSearchForm } from "@/components/features/smart-search-form"
 import type { UserTier } from "@/lib/feature-access"
 
 // Mock user data - in real app this would come from auth/context
@@ -154,7 +155,70 @@ export default function SmartSearchPage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6 pb-24 md:pb-6">
+      <div className="container mx-auto px-4 py-6 pb-24 md:pb-6 max-w-6xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Smart Gift Search</h1>
+          <p className="text-muted-foreground">
+            Let our AI find the perfect gift based on your description and preferences
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Sparkles className="h-4 w-4" />
+                AI-Powered
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Advanced AI analyzes your description to find meaningful gifts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Heart className="h-4 w-4" />
+                Emotional Match
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Scores gifts based on emotional impact and thoughtfulness</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Globe className="h-4 w-4" />
+                Cultural Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Considers cultural context and appropriateness</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Search className="h-4 w-4" />
+                Smart Filtering
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Filters by budget, relationship, and occasion automatically
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <SmartSearchForm />
+
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">

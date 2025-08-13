@@ -1,10 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     const { text, voice_id } = await request.json()
 
-    // Validate required environment variables
+    // Validate required environment variables (SERVER-SIDE ONLY)
     const apiKey = process.env.ELEVENLABS_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: "ElevenLabs API key not configured" }, { status: 500 })

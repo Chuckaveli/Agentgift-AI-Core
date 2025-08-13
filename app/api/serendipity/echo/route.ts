@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -61,7 +63,7 @@ function generateEchoGifts(originalRevelation: any) {
     "Self-Care": [
       {
         giftName: "Mindful Breathing Necklace",
-        reasoning: "A discreet reminder to pause and breathe during overwhelming moments.",
+        reasoning: "A discrete reminder to pause and breathe during overwhelming moments.",
         emotionalBenefit: "Anxiety management, presence",
         category: "Wellness",
         connection: "Complements your comfort needs",

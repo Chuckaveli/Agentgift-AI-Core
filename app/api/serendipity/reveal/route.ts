@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
@@ -120,11 +122,12 @@ function generateAffirmations(emotionalState: string, occasionType: string) {
     ],
   }
 
-  const key = `${emotionalState.toLowerCase()}-${occasionType.toLowerCase().replace(" ", "")}`
+  // FIXED: Use regex to remove ALL whitespace, not just single spaces
+  const key = `${emotionalState.toLowerCase()}-${occasionType.toLowerCase().replace(/\s+/g, "")}`
   return affirmationSets[key as keyof typeof affirmationSets] || affirmationSets.default
 }
 
-async function generateGiftSuggestion(inputs: {
+export async function generateGiftSuggestion(inputs: {
   occasion_type: string
   emotional_state: string
   recent_life_event?: string
@@ -171,6 +174,7 @@ async function generateGiftSuggestion(inputs: {
     },
   }
 
-  const key = `${inputs.emotional_state.toLowerCase()}-${inputs.occasion_type.toLowerCase().replace(" ", "")}`
+  // FIXED: Use regex to remove ALL whitespace, not just single spaces
+  const key = `${inputs.emotional_state.toLowerCase()}-${inputs.occasion_type.toLowerCase().replace(/\s+/g, "")}`
   return giftDatabase[key as keyof typeof giftDatabase] || giftDatabase.default
 }

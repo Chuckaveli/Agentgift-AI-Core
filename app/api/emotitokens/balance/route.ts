@@ -1,82 +1,90 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
-export async function GET(request: NextRequest) {
+export const dynamic = "force-dynamic"
+
+export async function GET() {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Check if user has employee access
-    const { data: profile } = await supabase.from("user_profiles").select("tier").eq("id", session.user.id).single()
-
-    if (!profile || !["premium_spy", "pro_agent", "agent_00g", "admin", "super_admin"].includes(profile.tier)) {
-      return NextResponse.json({ error: "Employee access required" }, { status: 403 })
-    }
-
     const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
 
-    // Initialize tokens for user if not exists
-    await supabase.rpc("initialize_monthly_tokens", {
-      user_uuid: session.user.id,
-      target_month: currentMonth,
-    })
+    // Mock token balances
+    const mockBalances = [
+      {
+        id: "1",
+        user_id: "mock-user-id",
+        token_type_id: "compassion",
+        balance: 25,
+        allocated: 50,
+        month_year: currentMonth,
+        emoti_token_types: {
+          token_name: "compassion",
+          display_name: "Compassion Token",
+          emoji: "💝",
+          description: "Recognize acts of kindness and empathy",
+          color_hex: "#ec4899",
+          xp_value: 10,
+        },
+      },
+      {
+        id: "2",
+        user_id: "mock-user-id",
+        token_type_id: "wisdom",
+        balance: 18,
+        allocated: 30,
+        month_year: currentMonth,
+        emoti_token_types: {
+          token_name: "wisdom",
+          display_name: "Wisdom Token",
+          emoji: "🧠",
+          description: "Acknowledge great insights and knowledge sharing",
+          color_hex: "#8b5cf6",
+          xp_value: 15,
+        },
+      },
+      {
+        id: "3",
+        user_id: "mock-user-id",
+        token_type_id: "energy",
+        balance: 32,
+        allocated: 40,
+        month_year: currentMonth,
+        emoti_token_types: {
+          token_name: "energy",
+          display_name: "Energy Token",
+          emoji: "⚡",
+          description: "Celebrate enthusiasm and motivation",
+          color_hex: "#10b981",
+          xp_value: 8,
+        },
+      },
+    ]
 
-    // Get user's current token balances
-    const { data: balances, error: balancesError } = await supabase
-      .from("emoti_token_balances")
-      .select(`
-        *,
-        emoti_token_types (
-          token_name,
-          display_name,
-          emoji,
-          description,
-          color_hex,
-          xp_value
-        )
-      `)
-      .eq("user_id", session.user.id)
-      .eq("month_year", currentMonth)
+    const mockSentTokens = [
+      {
+        id: "1",
+        sender_id: "mock-user-id",
+        receiver_id: "other-user-1",
+        token_type_id: "compassion",
+        amount: 3,
+        message: "Thanks for helping with the project!",
+        created_at: new Date().toISOString(),
+        emoti_token_types: { display_name: "Compassion Token", emoji: "💝" },
+        receiver: { email: "colleague@example.com" },
+      },
+    ]
 
-    if (balancesError) {
-      console.error("Error fetching balances:", balancesError)
-      return NextResponse.json({ error: "Failed to fetch token balances" }, { status: 500 })
-    }
-
-    // Get user's transaction history for current month
-    const { data: sentTokens, error: sentError } = await supabase
-      .from("emoti_token_transactions")
-      .select(`
-        *,
-        emoti_token_types (display_name, emoji),
-        receiver:user_profiles!emoti_token_transactions_receiver_id_fkey (email)
-      `)
-      .eq("sender_id", session.user.id)
-      .eq("month_year", currentMonth)
-      .order("created_at", { ascending: false })
-
-    const { data: receivedTokens, error: receivedError } = await supabase
-      .from("emoti_token_transactions")
-      .select(`
-        *,
-        emoti_token_types (display_name, emoji),
-        sender:user_profiles!emoti_token_transactions_sender_id_fkey (email)
-      `)
-      .eq("receiver_id", session.user.id)
-      .eq("month_year", currentMonth)
-      .order("created_at", { ascending: false })
-
-    if (sentError || receivedError) {
-      console.error("Error fetching transactions:", sentError || receivedError)
-      return NextResponse.json({ error: "Failed to fetch transaction history" }, { status: 500 })
-    }
+    const mockReceivedTokens = [
+      {
+        id: "2",
+        sender_id: "other-user-2",
+        receiver_id: "mock-user-id",
+        token_type_id: "wisdom",
+        amount: 2,
+        message: "Great insight in the meeting!",
+        created_at: new Date(Date.now() - 60000).toISOString(),
+        emoti_token_types: { display_name: "Wisdom Token", emoji: "🧠" },
+        sender: { email: "manager@example.com" },
+      },
+    ]
 
     // Calculate days until reset
     const now = new Date()
@@ -84,9 +92,9 @@ export async function GET(request: NextRequest) {
     const daysUntilReset = Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
     return NextResponse.json({
-      balances: balances || [],
-      sent_tokens: sentTokens || [],
-      received_tokens: receivedTokens || [],
+      balances: mockBalances,
+      sent_tokens: mockSentTokens,
+      received_tokens: mockReceivedTokens,
       current_month: currentMonth,
       days_until_reset: daysUntilReset,
     })
