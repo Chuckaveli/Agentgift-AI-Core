@@ -299,7 +299,7 @@ export function VaultSoloPanel() {
               converting ||
               !agtAmount ||
               Number.parseFloat(agtAmount) <= 0 ||
-              (userBalance && Number.parseFloat(agtAmount) > userBalance.agt_tokens)
+              (userBalance ? Number.parseFloat(agtAmount) > userBalance.agt_tokens : false)
             }
             className="w-full relative overflow-hidden"
             size="lg"
