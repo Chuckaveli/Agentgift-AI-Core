@@ -1,28 +1,23 @@
--- Create the get_auction_status function that's missing
-CREATE OR REPLACE FUNCTION public.get_auction_status()
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    result json;
+-- Create the get_auction_status function for AgentVault
+CREATE OR REPLACE FUNCTION get_auction_status()
+RETURNS TABLE (
+  total_items INTEGER,
+  active_auctions INTEGER,
+  total_bids INTEGER,
+  highest_bid DECIMAL,
+  ending_soon INTEGER
+) AS $$
 BEGIN
-    -- Return mock auction status data
-    SELECT json_build_object(
-        'is_live', true,
-        'phase', 'active',
-        'season', '2024-winter',
-        'time_remaining', '2 days 14 hours',
-        'next_auction', (NOW() + INTERVAL '7 days')::timestamp,
-        'total_participants', 23,
-        'active_items', 8,
-        'total_bids', 47
-    ) INTO result;
-    
-    RETURN result;
+  -- Return mock data for now - replace with real queries when tables exist
+  RETURN QUERY SELECT 
+    25 as total_items,
+    8 as active_auctions,
+    156 as total_bids,
+    89.99::DECIMAL as highest_bid,
+    3 as ending_soon;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
--- Grant execute permission
-GRANT EXECUTE ON FUNCTION public.get_auction_status() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_auction_status() TO anon;
+-- Grant execute permissions
+GRANT EXECUTE ON FUNCTION get_auction_status() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_auction_status() TO anon;
