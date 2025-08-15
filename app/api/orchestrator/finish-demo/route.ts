@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase-client"
+import { createServerClient } from "@/lib/supabase-client"
 import { sign } from "jsonwebtoken"
 import { z } from "zod"
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const validatedPayload = demoPayloadSchema.parse(body)
 
     // Create server client
-    const supabase = createAdminClient()
+    const supabase = createServerClient()
 
     // Insert demo session
     const { data: demoSession, error: demoError } = await supabase

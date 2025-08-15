@@ -1,24 +1,37 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getServerClient } from "@/lib/supabase/clients"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getServerClient()
+
+    // Check authentication
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { text, voice_id } = await request.json()
 
-    // Validate required environment variables (SERVER-SIDE ONLY)
+    if (!text) {
+      return NextResponse.json({ error: "Text is required" }, { status: 400 })
+    }
+
+    // Use server-side ElevenLabs API key
     const apiKey = process.env.ELEVENLABS_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: "ElevenLabs API key not configured" }, { status: 500 })
     }
 
-    // Validate input
-    if (!text || !voice_id) {
-      return NextResponse.json({ error: "Text and voice_id are required" }, { status: 400 })
-    }
+    // Default voice IDs from environment
+    const defaultVoiceId = voice_id || process.env.ELEVENLABS_VOICE_AVELYN_ID
 
-    // Call ElevenLabs API
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${defaultVoiceId}`, {
       method: "POST",
       headers: {
         Accept: "audio/mpeg",
@@ -36,12 +49,9 @@ export async function POST(request: NextRequest) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error("ElevenLabs API error:", errorText)
-      return NextResponse.json({ error: "Failed to generate speech" }, { status: response.status })
+      throw new Error("ElevenLabs API request failed")
     }
 
-    // Return the audio data
     const audioBuffer = await response.arrayBuffer()
 
     return new NextResponse(audioBuffer, {
@@ -51,7 +61,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Voice generation error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("ElevenLabs API error:", error)
+    return NextResponse.json({ error: "Failed to generate speech" }, { status: 500 })
   }
 }

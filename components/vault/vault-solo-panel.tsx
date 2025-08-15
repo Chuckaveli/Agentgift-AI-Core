@@ -20,10 +20,13 @@ import {
   Loader2,
 } from "lucide-react"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "@supabase/supabase-js"
 
 // Supabase client setup
-const supabase = createClient()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
+)
 
 interface UserBalance {
   agt_tokens: number

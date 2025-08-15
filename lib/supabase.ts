@@ -1,24 +1,11 @@
-import { createClientComponentClient, createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { createClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
-import type { Database } from "@/types/supabase"
+import { getBrowserClient, getServerClient, getAdminClient } from "@/lib/supabase/clients"
 
-// Client-side Supabase client
-export const createClientSupabase = () => createClientComponentClient<Database>()
-
-// Server-side Supabase client
-export const createServerSupabase = () => createServerComponentClient<Database>({ cookies })
-
-// Admin Supabase client (for server-side operations that need elevated permissions)
-export const createAdminSupabase = () =>
-  createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
+// Re-export the clients for backward compatibility
+export const createClientSupabase = getBrowserClient
+export const createServerSupabase = getServerClient
+export const createAdminSupabase = getAdminClient
 
 // Type exports
-export type SupabaseClient = ReturnType<typeof createClientSupabase>
-export type SupabaseServerClient = ReturnType<typeof createServerSupabase>
-export type SupabaseAdminClient = ReturnType<typeof createAdminSupabase>
+export type SupabaseClient = ReturnType<typeof getBrowserClient>
+export type SupabaseServerClient = ReturnType<typeof getServerClient>
+export type SupabaseAdminClient = ReturnType<typeof getAdminClient>

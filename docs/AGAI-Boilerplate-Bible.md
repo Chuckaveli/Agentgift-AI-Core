@@ -123,7 +123,8 @@
 // middleware.ts - Protects routes globally
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
-import { protectedRoutes } from '@/lib/protected-routes'
+
+const protectedRoutes = ["/dashboard", "/admin", "/features", "/business"]
 const adminRoutes = ["/admin", "/api/admin"]
 
 export async function middleware(req: NextRequest) {
@@ -141,9 +142,6 @@ export async function middleware(req: NextRequest) {
   return res
 }
 \`\`\`
-
-The list of protected routes is centralized in `lib/protected-routes.ts` and shared with middleware and tests so any new route requiring authentication only needs to be added in one place.
-
 
 #### API Route Protection
 \`\`\`typescript

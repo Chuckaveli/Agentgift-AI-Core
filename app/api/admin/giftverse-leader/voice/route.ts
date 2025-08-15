@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase-client"
+import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
 
-const supabase = createAdminClient()
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
 // Initialize OpenAI client only when needed
 function getOpenAIClient() {

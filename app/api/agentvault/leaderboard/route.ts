@@ -1,12 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase-client"
+import { getAdminClient } from "@/lib/supabase/clients"
 
 export const dynamic = "force-dynamic"
 
-const supabase = createAdminClient()
-
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getAdminClient()
     const { searchParams } = new URL(request.url)
     const itemId = searchParams.get("itemId")
 

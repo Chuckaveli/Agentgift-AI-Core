@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { env } from "./env"
+import { getServerClient } from "@/lib/supabase/clients"
 
 export function getSupabaseServer() {
   const cookieStore = cookies()
@@ -24,3 +25,7 @@ export function getSupabaseServer() {
     },
   })
 }
+
+// Backward compatibility export
+export const createServerSupabaseClient = getServerClient
+export default getServerClient

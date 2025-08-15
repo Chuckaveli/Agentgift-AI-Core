@@ -1,27 +1,36 @@
-// lib/supabase/clients.ts
-"use server";
+import { createClient } from "@supabase/supabase-js"
+import { cookies } from "next/headers"
 
-import { cookies } from "next/headers";
-import { createBrowserClient, createServerClient } from "@supabase/ssr";
-import { env } from "@/lib/env";
-
-const url = env.NEXT_PUBLIC_SUPABASE_URL;
-const anon = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!url) {
-  throw new Error("Environment variable NEXT_PUBLIC_SUPABASE_URL is not defined");
-}
-
-if (!anon) {
-  throw new Error("Environment variable NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined");
-}
-
-export function getBrowserClient() {
-  // use in "use client" components
-  return createBrowserClient(url, anon);
-}
-
+// Server-side client for API routes and server components
 export function getServerClient() {
-  // use in RSC, route handlers, and server actions
-  return createServerClient(url, anon, { cookies });
+  const cookieStore = cookies()
+
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+      set(name: string, value: string, options: any) {
+        cookieStore.set({ name, value, ...options })
+      },
+      remove(name: string, options: any) {
+        cookieStore.set({ name, value: "", ...options })
+      },
+    },
+  })
+}
+
+// Browser client for client components
+export function getBrowserClient() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+}
+
+// Admin client for elevated permissions
+export function getAdminClient() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 }

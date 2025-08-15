@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase-client"
+import { createClient } from "@supabase/supabase-js"
 
-const supabase = createAdminClient()
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
+)
 
 export async function GET() {
   try {

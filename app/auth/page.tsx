@@ -1,83 +1,81 @@
-"use client";
+"use client"
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { getBrowserClient } from "@/lib/supabase/clients";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Gift, Heart, Star } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { Auth } from "@supabase/auth-ui-react"
+import { ThemeSupa } from "@supabase/auth-ui-shared"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Sparkles, Gift, Heart, Star } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export default function AuthPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // init browser client once
-  const supabase = useMemo(() => getBrowserClient(), []);
-
-  const [loading, setLoading] = useState(true);
-  const [redirectTo, setRedirectTo] = useState("/dashboard");
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = createClientComponentClient()
+  const [loading, setLoading] = useState(true)
+  const [redirectTo, setRedirectTo] = useState("/dashboard")
 
   useEffect(() => {
-    // Read ?redirect=... and persist for 10 minutes
-    const redirect = searchParams.get("redirect");
+    // Get redirect parameter and store in cookie
+    const redirect = searchParams.get("redirect")
     if (redirect) {
-      setRedirectTo(redirect);
-      document.cookie = `redirect_to=${redirect}; path=/; max-age=600`;
+      setRedirectTo(redirect)
+      document.cookie = `redirect_to=${redirect}; path=/; max-age=600` // 10 minutes
     }
 
+    // Check if user is already authenticated
     const checkAuth = async () => {
       const {
         data: { session },
-      } = await supabase.auth.getSession();
-
+      } = await supabase.auth.getSession()
       if (session) {
-        await triggerOnboarding();
-        router.push(redirect ?? "/dashboard");
-        return;
+        // User is already logged in, trigger onboarding and redirect
+        await triggerOnboarding()
+        router.push(redirectTo)
       }
-      setLoading(false);
-    };
+      setLoading(false)
+    }
 
-    checkAuth();
+    checkAuth()
 
-    // Listen for auth changes and redirect after sign-in
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session) {
-        await triggerOnboarding();
-        router.push(redirect ?? redirectTo);
+        await triggerOnboarding()
+        router.push(redirectTo)
       }
-    });
+    })
 
-    return () => {
-      data.subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, router, searchParams]); // redirectTo is derived from searchParams
+    return () => subscription.unsubscribe()
+  }, [supabase, router, redirectTo, searchParams])
 
   const triggerOnboarding = async () => {
     try {
-      const res = await fetch("/api/orchestrator/onboard", { method: "POST", headers: { "Content-Type": "application/json" } });
-      if (!res.ok) console.error("Onboarding failed:", await res.text());
-    } catch (err) {
-      console.error("Onboarding error:", err);
-    }
-  };
+      const response = await fetch("/api/orchestrator/onboard", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
 
-  // Build redirectTo for Supabase Auth UI callback (preserve redirect param)
-  const nextParam = searchParams.get("redirect") || "/dashboard";
-  const authCallback = `${SITE_URL}/auth/callback?next=${encodeURIComponent(nextParam)}`;
+      if (!response.ok) {
+        console.error("Onboarding failed:", await response.text())
+      }
+    } catch (error) {
+      console.error("Onboarding error:", error)
+    }
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
-    );
+    )
   }
 
   return (
@@ -145,24 +143,63 @@ export default function AuthPage() {
                       inputBorderHover: "#8b5cf6",
                       inputBorderFocus: "#8b5cf6",
                     },
-                    borderWidths: { buttonBorderWidth: "1px", inputBorderWidth: "1px" },
-                    radii: { borderRadiusButton: "8px", buttonBorderRadius: "8px", inputBorderRadius: "8px" },
+                    borderWidths: {
+                      buttonBorderWidth: "1px",
+                      inputBorderWidth: "1px",
+                    },
+                    radii: {
+                      borderRadiusButton: "8px",
+                      buttonBorderRadius: "8px",
+                      inputBorderRadius: "8px",
+                    },
                   },
                 },
                 className: {
                   container: "space-y-4",
                   button: cn(
                     "transition-all duration-200 hover:shadow-lg hover:scale-[1.02]",
-                    "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
                   ),
                   input: "transition-all duration-200 focus:ring-2 focus:ring-purple-500/20",
                 },
               }}
               providers={["google", "apple"]}
-              redirectTo={authCallback}
+              redirectTo={`${window.location.origin}/auth/callback`}
               onlyThirdPartyProviders={false}
               magicLink={true}
               showLinks={false}
+              localization={{
+                variables: {
+                  sign_in: {
+                    email_label: "Email address",
+                    password_label: "Password",
+                    button_label: "Sign in to AgentGift",
+                    loading_button_label: "Signing in...",
+                    social_provider_text: "Continue with {{provider}}",
+                    link_text: "Already have an account? Sign in",
+                    email_input_placeholder: "Your email address",
+                    password_input_placeholder: "Your password",
+                  },
+                  sign_up: {
+                    email_label: "Email address",
+                    password_label: "Create password",
+                    button_label: "Join AgentGift",
+                    loading_button_label: "Creating account...",
+                    social_provider_text: "Continue with {{provider}}",
+                    link_text: "Don't have an account? Sign up",
+                    email_input_placeholder: "Your email address",
+                    password_input_placeholder: "Create a password",
+                  },
+                  magic_link: {
+                    email_input_label: "Email address",
+                    email_input_placeholder: "Your email address",
+                    button_label: "Send magic link",
+                    loading_button_label: "Sending magic link...",
+                    link_text: "Send a magic link email",
+                    confirmation_text: "Check your email for the login link",
+                  },
+                },
+              }}
             />
           </CardContent>
         </Card>
@@ -187,5 +224,5 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

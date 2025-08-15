@@ -1,16 +1,26 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerClient } from "@/lib/supabase/clients"
 
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const supabase = getServerClient()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
 
     // Mock token balances
     const mockBalances = [
       {
         id: "1",
-        user_id: "mock-user-id",
+        user_id: session.user.id,
         token_type_id: "compassion",
         balance: 25,
         allocated: 50,
@@ -26,7 +36,7 @@ export async function GET() {
       },
       {
         id: "2",
-        user_id: "mock-user-id",
+        user_id: session.user.id,
         token_type_id: "wisdom",
         balance: 18,
         allocated: 30,
@@ -42,7 +52,7 @@ export async function GET() {
       },
       {
         id: "3",
-        user_id: "mock-user-id",
+        user_id: session.user.id,
         token_type_id: "energy",
         balance: 32,
         allocated: 40,
@@ -61,7 +71,7 @@ export async function GET() {
     const mockSentTokens = [
       {
         id: "1",
-        sender_id: "mock-user-id",
+        sender_id: session.user.id,
         receiver_id: "other-user-1",
         token_type_id: "compassion",
         amount: 3,
@@ -76,7 +86,7 @@ export async function GET() {
       {
         id: "2",
         sender_id: "other-user-2",
-        receiver_id: "mock-user-id",
+        receiver_id: session.user.id,
         token_type_id: "wisdom",
         amount: 2,
         message: "Great insight in the meeting!",
@@ -91,12 +101,23 @@ export async function GET() {
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
     const daysUntilReset = Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
+    // Mock balance data
+    const mockBalance = {
+      user_id: session.user.id,
+      balance: 2500,
+      pending_balance: 150,
+      total_earned: 5000,
+      total_spent: 2350,
+      last_updated: new Date().toISOString(),
+    }
+
     return NextResponse.json({
       balances: mockBalances,
       sent_tokens: mockSentTokens,
       received_tokens: mockReceivedTokens,
       current_month: currentMonth,
       days_until_reset: daysUntilReset,
+      balance: mockBalance,
     })
   } catch (error) {
     console.error("Error in EmotiTokens balance API:", error)
