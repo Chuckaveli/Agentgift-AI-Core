@@ -1,8 +1,6 @@
-"use client"
-
 // Jest setup file for additional configuration
-import "@testing-library/jest-dom"
-import jest from "jest"
+/* eslint-disable @typescript-eslint/no-var-requires */
+require("@testing-library/jest-dom")
 
 // Mock Next.js router
 jest.mock("next/router", () => ({
