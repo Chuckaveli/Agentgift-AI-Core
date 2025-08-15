@@ -8,7 +8,13 @@ export async function POST(request: NextRequest) {
     const supabase = createRouteHandlerClient({ cookies })
     const {
       data: { session },
+      error,
     } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error("Error retrieving session:", error)
+      throw error
+    }
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -40,7 +46,13 @@ export async function GET(request: NextRequest) {
     const supabase = createRouteHandlerClient({ cookies })
     const {
       data: { session },
+      error,
     } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error("Error retrieving session:", error)
+      throw error
+    }
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

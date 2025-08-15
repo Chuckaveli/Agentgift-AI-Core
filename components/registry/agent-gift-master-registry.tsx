@@ -178,7 +178,13 @@ export function AgentGiftMasterRegistry({ className = "", showAdminControls = fa
     try {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession()
+
+      if (error) {
+        console.error("Error retrieving session:", error)
+        throw error
+      }
 
       if (session?.user) {
         const { data: profile } = await supabase.from("user_profiles").select("*").eq("id", session.user.id).single()
@@ -206,7 +212,13 @@ export function AgentGiftMasterRegistry({ className = "", showAdminControls = fa
 
       const {
         data: { session },
+        error: sessionError,
       } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error("Error retrieving session:", sessionError)
+        throw sessionError
+      }
 
       // Call Edge Function with filters
       const { data, error } = await supabase.functions.invoke("agentgift_features_query", {

@@ -14,6 +14,10 @@ export const createTRPCContext = async (opts: { req?: Request }) => {
     error,
   } = await supabase.auth.getSession()
 
+  if (error) {
+    console.error("Error retrieving session:", error)
+  }
+
   return {
     supabase,
     adminSupabase,

@@ -38,16 +38,28 @@ export default function AuthPage() {
     }
 
     const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-      if (session) {
-        await triggerOnboarding();
-        router.push(redirect ?? "/dashboard");
-        return;
+        if (error) {
+          console.error("Error retrieving session:", error);
+          setLoading(false);
+          return;
+        }
+
+        if (session) {
+          await triggerOnboarding();
+          router.push(redirect ?? "/dashboard");
+          return;
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("checkAuth error:", error);
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAuth();
