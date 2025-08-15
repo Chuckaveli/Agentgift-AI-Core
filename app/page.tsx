@@ -18,7 +18,8 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
-import { Gift, Heart, Sparkles, Clock, ArrowRight, CheckCircle, Users, Zap, Target } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Gift, Heart, Sparkles, Clock, ArrowRight, CheckCircle, Users, Zap, Target, Loader2 } from "lucide-react"
 
 interface GiftSuggestion {
   name: string
@@ -27,6 +28,8 @@ interface GiftSuggestion {
   price: string
   category: string
   confidence: number
+  imageUrl?: string
+  purchaseUrl?: string
 }
 
 interface FormData {
@@ -38,12 +41,22 @@ interface FormData {
   hobbies: string
 }
 
+interface SignupData {
+  email: string
+  password: string
+}
+
 export default function LandingPage() {
+  const { toast } = useToast()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [showSignUp, setShowSignUp] = useState(false)
+  const [isSigningUp, setIsSigningUp] = useState(false)
+  const [sessionId, setSessionId] = useState<string>("")
+  const [giftSuggestions, setGiftSuggestions] = useState<GiftSuggestion[]>([])
+
   const [formData, setFormData] = useState<FormData>({
     recipientName: "",
     relationship: "",
@@ -53,35 +66,10 @@ export default function LandingPage() {
     hobbies: "",
   })
 
-  const [giftSuggestions] = useState<GiftSuggestion[]>([
-    {
-      name: "Personalized Star Map",
-      match: 94,
-      reasoning:
-        "Perfect for someone who values meaningful moments. This custom star map shows exactly how the sky looked on their birthday, combining their love for quality time with a beautiful keepsake.",
-      price: "$45-65",
-      category: "Sentimental",
-      confidence: 94,
-    },
-    {
-      name: "Artisan Coffee Subscription",
-      match: 89,
-      reasoning:
-        "Ideal for coffee lovers who appreciate quality experiences. Each month brings new flavors to discover together, perfect for someone whose love language is quality time.",
-      price: "$25-40/month",
-      category: "Experience",
-      confidence: 89,
-    },
-    {
-      name: "Custom Photo Book",
-      match: 87,
-      reasoning:
-        "A thoughtful way to celebrate your relationship through shared memories. This tangible gift speaks to their love language while showcasing your journey together.",
-      price: "$30-50",
-      category: "Memory",
-      confidence: 87,
-    },
-  ])
+  const [signupData, setSignupData] = useState<SignupData>({
+    email: "",
+    password: "",
+  })
 
   const loveLanguages = [
     { id: "words", label: "Words of Affirmation", description: "Verbal appreciation and encouragement" },
@@ -120,16 +108,46 @@ export default function LandingPage() {
     }
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1)
     } else {
+      // Submit questionnaire
       setIsProcessing(true)
-      // Simulate AI processing
-      setTimeout(() => {
+
+      try {
+        const response = await fetch("/api/gift-questionnaire", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to generate gift suggestions")
+        }
+
+        setSessionId(data.sessionId)
+        setGiftSuggestions(data.suggestions)
         setIsProcessing(false)
         setShowResults(true)
-      }, 3000)
+
+        toast({
+          title: "Perfect matches found! 🎁",
+          description: `We found ${data.suggestions.length} personalized gift suggestions for ${formData.recipientName}.`,
+        })
+      } catch (error) {
+        console.error("Questionnaire error:", error)
+        setIsProcessing(false)
+        toast({
+          title: "Oops! Something went wrong",
+          description: "Please try again. Our AI is usually much faster!",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -137,11 +155,63 @@ export default function LandingPage() {
     setShowSignUp(true)
   }
 
+  const handleSignUp = async () => {
+    if (!signupData.email || !signupData.password) {
+      toast({
+        title: "Missing information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSigningUp(true)
+
+    try {
+      const response = await fetch("/api/gift-questionnaire/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...signupData,
+          sessionId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create account")
+      }
+
+      toast({
+        title: "Welcome to AgentGift! 🎉",
+        description: data.message,
+      })
+
+      // Close modal and redirect to dashboard
+      setIsModalOpen(false)
+      window.location.href = "/dashboard"
+    } catch (error: any) {
+      console.error("Signup error:", error)
+      toast({
+        title: "Signup failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSigningUp(false)
+    }
+  }
+
   const resetModal = () => {
     setCurrentStep(1)
     setShowResults(false)
     setShowSignUp(false)
     setIsProcessing(false)
+    setSessionId("")
+    setGiftSuggestions([])
     setFormData({
       recipientName: "",
       relationship: "",
@@ -150,12 +220,16 @@ export default function LandingPage() {
       interests: [],
       hobbies: "",
     })
+    setSignupData({
+      email: "",
+      password: "",
+    })
   }
 
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.recipientName && formData.relationship && formData.birthday
+        return formData.recipientName && formData.relationship
       case 2:
         return formData.loveLanguage
       case 3:
@@ -218,7 +292,7 @@ export default function LandingPage() {
                     {showSignUp
                       ? "Create your free account to access these personalized recommendations"
                       : showResults
-                        ? "Based on your inputs, here are your top matches"
+                        ? `Based on your inputs, here are your top matches for ${formData.recipientName}`
                         : isProcessing
                           ? "Analyzing personality, interests, and emotional preferences..."
                           : "Quick questions to find the perfect gift"}
@@ -235,7 +309,7 @@ export default function LandingPage() {
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
                     <p className="text-lg font-medium mb-2">Analyzing your inputs...</p>
-                    <p className="text-gray-600">Finding gifts that match their personality</p>
+                    <p className="text-gray-600">Finding gifts that match {formData.recipientName}'s personality</p>
                   </div>
                 )}
 
@@ -243,22 +317,49 @@ export default function LandingPage() {
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg">
                       <h3 className="font-semibold text-lg mb-2">🎯 Your Results Are Ready!</h3>
-                      <p className="text-gray-600">We found 3 perfect matches with 87-94% compatibility scores.</p>
+                      <p className="text-gray-600">
+                        We found {giftSuggestions.length} perfect matches with{" "}
+                        {Math.max(...giftSuggestions.map((g) => g.match))}% compatibility score for{" "}
+                        {formData.recipientName}.
+                      </p>
                     </div>
 
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" placeholder="your@email.com" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={signupData.email}
+                          onChange={(e) => setSignupData((prev) => ({ ...prev, email: e.target.value }))}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="password">Create Password</Label>
-                        <Input id="password" type="password" placeholder="Choose a secure password" />
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="Choose a secure password"
+                          value={signupData.password}
+                          onChange={(e) => setSignupData((prev) => ({ ...prev, password: e.target.value }))}
+                        />
                       </div>
                     </div>
 
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                      Get My Gift Recommendations
+                    <Button
+                      onClick={handleSignUp}
+                      disabled={isSigningUp}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      {isSigningUp ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Account...
+                        </>
+                      ) : (
+                        "Get My Gift Recommendations"
+                      )}
                     </Button>
 
                     <p className="text-xs text-gray-500 text-center">

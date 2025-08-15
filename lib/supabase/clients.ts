@@ -1,36 +1,33 @@
-import { createClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
+import { createClient as createBrowserClient } from "@/lib/supabase-client"
 
-// Server-side client for API routes and server components
+// Browser-safe client functions
+export function getClient() {
+  return createBrowserClient()
+}
+
 export function getServerClient() {
-  const cookieStore = cookies()
+  // In browser context, use browser client
+  if (typeof window !== "undefined") {
+    return createBrowserClient()
+  }
 
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options: any) {
-        cookieStore.set({ name, value, ...options })
-      },
-      remove(name: string, options: any) {
-        cookieStore.set({ name, value: "", ...options })
-      },
-    },
-  })
+  // In server context, dynamically import server client
+  const { createServerClient } = require("@/lib/supabase-server")
+  return createServerClient()
 }
 
-// Browser client for client components
-export function getBrowserClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-}
-
-// Admin client for elevated permissions
 export function getAdminClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
+  // In browser context, use browser client
+  if (typeof window !== "undefined") {
+    console.warn("Admin client not available in browser context")
+    return createBrowserClient()
+  }
+
+  // In server context, dynamically import admin client
+  const { createAdminClient } = require("@/lib/supabase-server")
+  return createAdminClient()
 }
+
+// Add the missing export that was causing deployment errors
+export const getBrowserClient = getClient
+</merged_code>

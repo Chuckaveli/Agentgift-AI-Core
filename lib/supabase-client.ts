@@ -1,10 +1,23 @@
-// Backward compatibility exports - redirects to new client structure
-import { getBrowserClient, getServerClient, getAdminClient } from "@/lib/supabase/clients"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
-// Named exports for backward compatibility
-export const createClient = getBrowserClient
-export const createServerClient = getServerClient
-export const createAdminClient = getAdminClient
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Default export
-export default getBrowserClient
+// Browser client for client-side operations
+export function createClient() {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
+}
+
+// Browser-safe fallback functions (these will use the browser client)
+export function createServerClient() {
+  console.warn("createServerClient called from browser context, using browser client instead")
+  return createClient()
+}
+
+export function createAdminClient() {
+  console.warn("createAdminClient called from browser context, using browser client instead")
+  return createClient()
+}
+
+// Default export for backward compatibility
+export default createClient()
