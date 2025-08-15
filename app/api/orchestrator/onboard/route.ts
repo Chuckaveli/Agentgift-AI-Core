@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+// ✅ our single source of truth
+import { getServerClient } from "@/lib/supabase/clients";
 import { verify } from "jsonwebtoken";
-import { getServerClient } from "@/lib/supabase/clients"; // <- our one true way
 
 export async function POST() {
   try {
-    const cookieStore = cookies();
     const supabase = getServerClient();
 
-    // 1) Auth: require a logged-in user
     const {
       data: { user },
       error: authError,
