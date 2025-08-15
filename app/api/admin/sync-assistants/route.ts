@@ -1,13 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { syncAssistantsToRegistry, AGENTGIFT_ASSISTANTS } from "@/lib/assistant-sync"
+import { env } from "@/lib/env.server"
+import { syncAssistantsToRegistry } from "@/lib/assistant-sync"
+import { AGENTGIFT_ASSISTANTS } from "@/lib/assistant-registry"
 
 // This API route provides server-side access to the sync function
 // It ensures the service role key is only used on the server
 export async function POST(request: NextRequest) {
   try {
     // Verify admin access
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
     // Get the authorization header
     const authHeader = request.headers.get("authorization")
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Verify admin access (same as POST)
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
     const authHeader = request.headers.get("authorization")
     if (!authHeader) {

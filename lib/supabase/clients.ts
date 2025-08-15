@@ -3,7 +3,7 @@
 
 import { cookies } from "next/headers";
 import { createBrowserClient, createServerClient } from "@supabase/ssr";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const anon = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

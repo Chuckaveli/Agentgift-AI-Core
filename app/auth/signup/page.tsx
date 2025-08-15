@@ -5,6 +5,7 @@ import { ThemeSupa } from "@supabase/auth-ui-shared"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import Link from "next/link"
 import { Gift } from "lucide-react"
+import { env } from "@/lib/env.client"
 
 const supabase = createClientComponentClient()
 
@@ -66,7 +67,7 @@ export default function SignUpPage() {
                 message: "text-sm text-red-600 mt-2",
               },
             }}
-            redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
+            redirectTo={`${env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
             showLinks={false}
           />
 

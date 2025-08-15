@@ -3,12 +3,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { PersonaCulturalAdaptationService, type PersonaCulturalAdaptation } from "@/lib/persona-cultural-adaptation"
+import { env } from "@/lib/env.client"
 import { useCulturalContext } from "@/components/cultural/cultural-context"
 
 // Initialize Supabase client
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
+  env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
 )
 
 export interface PersonaTheme {

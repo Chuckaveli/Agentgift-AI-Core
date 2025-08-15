@@ -5,12 +5,14 @@ export interface MakeWebhookPayload {
   timestamp: string
 }
 
+import { env } from "@/lib/env.server"
+
 export async function triggerMakeWebhook(
   type: MakeWebhookPayload["type"],
   data: Record<string, any>,
   userId?: string,
 ): Promise<void> {
-  const webhookUrl = process.env.MAKE_WEBHOOK_URL
+  const webhookUrl = env.MAKE_WEBHOOK_URL
 
   if (!webhookUrl) {
     console.warn("MAKE_WEBHOOK_URL not configured, skipping webhook trigger")

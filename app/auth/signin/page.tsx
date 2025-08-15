@@ -10,14 +10,15 @@ import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Gift } from "lucide-react";
+import { env } from "@/lib/env.client";
 
 // init browser client (works in client components)
 const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  env.NEXT_PUBLIC_SUPABASE_URL!,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE_URL = env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default function SignInPage() {
   const search = useSearchParams();

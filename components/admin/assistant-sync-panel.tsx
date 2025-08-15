@@ -10,8 +10,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
-import { AGENTGIFT_ASSISTANTS } from "@/lib/assistant-sync"
+import { AGENTGIFT_ASSISTANTS } from "@/lib/assistant-registry"
 import { createClient } from "@/lib/supabase-client"
+import { env } from "@/lib/env.client"
 
 interface SyncResult {
   success: boolean
@@ -447,7 +448,7 @@ export function AssistantSyncPanel() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Edge Function URL</label>
                   <div className="p-2 bg-gray-100 rounded text-sm font-mono">
-                    {process.env.NEXT_PUBLIC_SUPABASE_URL?.replace("https://", "").split(".")[0]}
+                    {env.NEXT_PUBLIC_SUPABASE_URL?.replace("https://", "").split(".")[0]}
                     .functions.supabase.co/sync_assistants
                   </div>
                 </div>
