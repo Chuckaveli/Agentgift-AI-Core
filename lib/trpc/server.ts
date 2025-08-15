@@ -1,12 +1,12 @@
 import { initTRPC, TRPCError } from "@trpc/server"
 import { z } from "zod"
-import { createServerSupabase, createAdminSupabase } from "@/lib/supabase"
+import { createServerClient, createAdminClient } from "@/lib/supabase-client"
 import superjson from "superjson"
 
 // Create context for tRPC
 export const createTRPCContext = async (opts: { req?: Request }) => {
-  const supabase = createServerSupabase()
-  const adminSupabase = createAdminSupabase()
+  const supabase = createServerClient()
+  const adminSupabase = createAdminClient()
 
   // Get user session
   const {

@@ -1,8 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server"
-import { getSupabaseServer } from "@/lib/supabaseServer"
+import { createServerClient } from "@/lib/supabase-client"
 
 export async function createContext() {
-  const supabase = getSupabaseServer()
+  const supabase = createServerClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
