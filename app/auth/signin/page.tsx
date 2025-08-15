@@ -2,12 +2,21 @@
 
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// ⬇️ replace this:
+// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// ⬆️ with this:
+import { createBrowserClient } from "@supabase/ssr";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Gift } from "lucide-react";
 
-const supabase = createClientComponentClient();
+// init browser client (works in client components)
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default function SignInPage() {
@@ -37,7 +46,7 @@ export default function SignInPage() {
           <Auth
             supabaseClient={supabase}
             view="sign_in"
-            providers={["google", "apple"]} // remove "apple" if not fully configured in Supabase
+            providers={["google", "apple"]} // remove "apple" if not fully configured
             appearance={{
               theme: ThemeSupa,
               variables: {
@@ -65,7 +74,6 @@ export default function SignInPage() {
                 message: "text-sm text-red-600 mt-2",
               },
             }}
-            /** The key line: always your canonical domain + callback + next */
             redirectTo={callbackUrl}
             showLinks={false}
           />
