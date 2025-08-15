@@ -1,6 +1,7 @@
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { protectedRoutes } from "@/lib/protected-routes"
 
 export async function middleware(req: NextRequest) {
   // Skip middleware for static files and API routes that don't need auth
@@ -24,19 +25,8 @@ export async function middleware(req: NextRequest) {
     } = await supabase.auth.getSession()
 
     // Protected routes that require authentication
-    const protectedRoutes = [
-      "/dashboard",
-      "/admin",
-      "/settings",
-      "/agent-gifty",
-      "/smart-search",
-      "/gift-dna",
-      "/badges",
-      "/emotitokens",
-      "/agentvault",
-      "/assistants",
-      "/registry",
-    ]
+    // Centralized in lib/protected-routes.ts so new routes
+    // only need to be added in one place
 
     // Check if the current path is protected
     const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
