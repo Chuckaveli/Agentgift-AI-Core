@@ -54,7 +54,12 @@ export function AssistantSyncPanel() {
       // Get current user token
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession()
+      if (error) {
+        console.error("Error retrieving session:", error)
+        throw error
+      }
       if (!session) {
         throw new Error("Authentication required")
       }
@@ -100,7 +105,12 @@ export function AssistantSyncPanel() {
 
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession()
+      if (error) {
+        console.error("Error retrieving session:", error)
+        throw error
+      }
       if (!session) return
 
       const response = await fetch("/api/admin/sync-assistants", {

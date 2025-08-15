@@ -44,6 +44,10 @@ export function withAuth<T extends any[]>(
         error: sessionError,
       } = await supabase.auth.getSession()
 
+      if (sessionError) {
+        console.error("Error retrieving session:", sessionError)
+      }
+
       if (sessionError || !session) {
         return NextResponse.json({ error: "Authentication required", redirect: "/login" }, { status: 401 })
       }
@@ -174,7 +178,13 @@ export async function requireAuth(): Promise<AuthenticatedUser | null> {
 
     const {
       data: { session },
+      error,
     } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error("Error retrieving session:", error)
+      return null
+    }
     if (!session) return null
 
     const { data: profile } = await supabase.from("user_profiles").select("*").eq("id", session.user.id).single()

@@ -69,7 +69,13 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
     // Check authentication
     const {
       data: { session },
+      error,
     } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error("Error retrieving session:", error)
+      throw error
+    }
 
     if (!session) {
       return {

@@ -22,7 +22,13 @@ export async function middleware(req: NextRequest) {
     // Refresh session if expired - required for Server Components
     const {
       data: { session },
+      error,
     } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error("Error retrieving session:", error)
+      throw error
+    }
 
     // Protected routes that require authentication
     // Centralized in lib/protected-routes.ts so new routes
