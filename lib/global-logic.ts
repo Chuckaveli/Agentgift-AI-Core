@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(
@@ -341,3 +341,4 @@ export class CompanyXPEngine {
     }
   }
 }
+

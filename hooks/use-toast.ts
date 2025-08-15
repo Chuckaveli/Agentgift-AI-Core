@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 // Inspired by react-hot-toast library
 import * as React from "react"
 
@@ -192,3 +192,4 @@ function useToast() {
 }
 
 export { useToast, toast }
+

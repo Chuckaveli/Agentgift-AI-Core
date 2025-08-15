@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 export interface Season {
   name: string
   startDate: string
@@ -189,3 +189,4 @@ export function testSeasonalTriggers(): void {
   const greeting = getSeasonalGreeting()
   console.log(`Current Greeting: ${greeting.emoji} ${greeting.message}`)
 }
+

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { AGENTGIFT_ASSISTANTS } from "@/lib/assistant-sync"
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "@/lib/supabase/clients"
 
 interface SyncResult {
   success: boolean
@@ -502,3 +502,4 @@ export function AssistantSyncPanel() {
     </div>
   )
 }
+

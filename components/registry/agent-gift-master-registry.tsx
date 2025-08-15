@@ -26,7 +26,7 @@ import {
   Crown,
   Star,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "@/lib/supabase/clients"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -628,3 +628,4 @@ export function AgentGiftMasterRegistry({ className = "", showAdminControls = fa
     </div>
   )
 }
+

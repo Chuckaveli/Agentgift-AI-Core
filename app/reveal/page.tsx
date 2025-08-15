@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState, useEffect } from "react"
 import { ArrowLeft, Play, Pause, Volume2, VolumeX, Heart, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -388,3 +388,4 @@ export default function RevealPage() {
     </div>
   )
 }
+

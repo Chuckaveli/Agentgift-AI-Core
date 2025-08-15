@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -641,3 +641,4 @@ export default function EmotiTokensPage() {
     </div>
   )
 }
+

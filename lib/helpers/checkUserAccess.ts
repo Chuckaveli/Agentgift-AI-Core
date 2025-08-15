@@ -1,8 +1,8 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import React from "react"
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createBrowserClient } from "@supabase/ssr"
 import type { Database } from "@/types/supabase"
 
 export interface AccessCheckResult {
@@ -63,7 +63,7 @@ export const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
 }
 
 export async function checkUserAccess(featureName: string): Promise<AccessCheckResult> {
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createBrowserClient<Database>()
 
   try {
     // Check authentication
@@ -176,3 +176,4 @@ export function useUserAccess(featureName: string) {
 
   return { accessResult, loading, refetch: () => checkUserAccess(featureName) }
 }
+

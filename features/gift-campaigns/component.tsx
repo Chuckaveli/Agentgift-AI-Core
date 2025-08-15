@@ -1,4 +1,5 @@
-"use client"
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { TIERS, type UserTier } from "@/lib/global-logic"
 
 interface CampaignTemplate {
@@ -82,3 +83,4 @@ const campaignTemplates: CampaignTemplate[] = [
 ]
 
 // ** rest of code here **
+

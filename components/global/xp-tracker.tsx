@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -115,3 +115,4 @@ export function XPTracker({ xp, level, prestigeLevel, showDetails = true, compac
     </Card>
   )
 }
+

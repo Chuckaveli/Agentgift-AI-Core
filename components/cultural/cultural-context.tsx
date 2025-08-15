@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
@@ -569,3 +569,4 @@ export function getRegionLocales(region: string): CulturalLocale[] {
 export function getLocaleByCode(code: string): CulturalLocale | undefined {
   return AVAILABLE_LOCALES.find((locale) => locale.code === code)
 }
+

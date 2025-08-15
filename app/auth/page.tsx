@@ -1,8 +1,8 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createBrowserClient } from "@supabase/ssr"
 import { Auth } from "@supabase/auth-ui-react"
 import { ThemeSupa } from "@supabase/auth-ui-shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 export default function AuthPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient()
   const [loading, setLoading] = useState(true)
   const [redirectTo, setRedirectTo] = useState("/dashboard")
 
@@ -226,3 +226,4 @@ export default function AuthPage() {
     </div>
   )
 }
+

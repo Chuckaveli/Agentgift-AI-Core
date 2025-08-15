@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -163,3 +163,4 @@ export function XPProgressWidget({ currentXP, level, lifetimeXP, transactions = 
     </Card>
   )
 }
+

@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import {
@@ -101,3 +101,4 @@ export function useFeatureAccess(feature: FeatureKey) {
     refreshAccess: checkAccess,
   }
 }
+

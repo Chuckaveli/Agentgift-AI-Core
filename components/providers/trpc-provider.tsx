@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import type React from "react"
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -17,3 +17,4 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     </trpc.Provider>
   )
 }
+

@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useEffect } from "react"
 import { toast } from "sonner"
 import { Trophy, Star, Zap } from "lucide-react"
@@ -90,3 +90,4 @@ export const triggerLevelUp = (newLevel: number) => {
 export const triggerPrestige = (prestigeLevel: string) => {
   window.dispatchEvent(new CustomEvent("prestige", { detail: { prestigeLevel } }))
 }
+

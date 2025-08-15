@@ -43,7 +43,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "@/lib/supabase/clients"
 import { toast } from "sonner"
 
 // Types
@@ -1033,3 +1033,4 @@ export function AssistantHubPanel({ className = "", showAdminControls = false }:
     </TooltipProvider>
   )
 }
+

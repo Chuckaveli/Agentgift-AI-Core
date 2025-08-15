@@ -1,7 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-
 const REFLECTION_QUOTES = [
   "Perfect matches show how deeply you understand each other's hearts.",
   "Every match reveals the invisible threads that connect your souls.",
@@ -20,7 +17,7 @@ const ENCOURAGEMENT_QUOTES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = getServerClient()
     const { session_id, partner_guesses } = await request.json()
 
     // Validate input

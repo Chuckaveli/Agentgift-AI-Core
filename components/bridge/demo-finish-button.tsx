@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import type React from "react"
 
 import { useState } from "react"
@@ -102,3 +102,4 @@ export function DemoFinishButton({ demoPayload, className, children }: DemoFinis
     </Button>
   )
 }
+

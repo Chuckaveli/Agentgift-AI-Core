@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
@@ -646,3 +646,4 @@ export function GiftConciergeModal({
     </>
   )
 }
+

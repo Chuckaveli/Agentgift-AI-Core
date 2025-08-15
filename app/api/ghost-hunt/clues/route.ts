@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = getServerClient()
     const body = await request.json()
 
     const { sessionId, clueId, answer, isCorrect, xpEarned, timeSpent } = body
@@ -54,7 +51,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = getServerClient()
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get("sessionId")
 

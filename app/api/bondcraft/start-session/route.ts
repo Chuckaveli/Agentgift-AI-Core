@@ -1,7 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-
 const RITUAL_TEMPLATES = {
   "Long-Distance": {
     "Poetic & Romantic": [
@@ -343,7 +340,7 @@ const REFLECTION_QUOTES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = getServerClient()
     const { user_id, relationship_dynamic, occasion, tone, user_tier } = await request.json()
 
     // Validate input

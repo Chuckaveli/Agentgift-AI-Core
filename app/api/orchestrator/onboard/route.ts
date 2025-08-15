@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { createServerClient } from "@/lib/supabase-client"
-import { cookies } from "next/headers"
+import { createServerClient } from "@/lib/supabase/clients"
 import { verify } from "jsonwebtoken"
 
 export async function POST(request: NextRequest) {
@@ -9,7 +7,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = cookies()
 
     // Get authenticated user
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = getServerClient() => cookieStore })
     const {
       data: { user },
       error: authError,
@@ -20,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use server client for admin operations
-    const serverSupabase = createServerClient()
+    const serverSupabase = getServerClient()
 
     // Start transaction-like operations
     let isNewUser = false

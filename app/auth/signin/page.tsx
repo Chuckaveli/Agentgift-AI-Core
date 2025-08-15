@@ -1,13 +1,13 @@
 "use client";
-
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Gift } from "lucide-react";
 
-const supabase = createClientComponentClient();
+const supabase = createBrowserClient();
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default function SignInPage() {
@@ -93,3 +93,4 @@ export default function SignInPage() {
     </div>
   );
 }
+

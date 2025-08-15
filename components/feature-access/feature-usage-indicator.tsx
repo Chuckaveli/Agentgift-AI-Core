@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState, useEffect } from "react"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -114,3 +114,4 @@ export function FeatureUsageIndicator({ feature, className = "" }: FeatureUsageI
     </TooltipProvider>
   )
 }
+

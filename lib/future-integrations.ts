@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 // Future API Key Management
 export interface APIKeyConfig {
   serviceName: string
@@ -272,3 +272,4 @@ export const FuturePlaceholders = {
     </div>
   ),
 }
+

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "@/lib/supabase/clients"
 import type { User } from "@supabase/supabase-js"
 
 interface UserProfile {
@@ -107,3 +107,4 @@ export function useUser() {
     isAdmin: profile?.admin_role || false,
   }
 }
+

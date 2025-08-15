@@ -1,5 +1,3 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { type NextRequest, NextResponse } from "next/server"
 import type { Database } from "@/types/supabase"
 
@@ -36,7 +34,7 @@ export function withAuth<T extends any[]>(
         )
       }
 
-      const supabase = createServerComponentClient<Database>({ cookies })
+      const supabase = createServerClient<Database>({ cookies })
 
       // Check session
       const {
@@ -170,7 +168,7 @@ export async function requireAuth(): Promise<AuthenticatedUser | null> {
       return null
     }
 
-    const supabase = createServerComponentClient<Database>({ cookies })
+    const supabase = createServerClient<Database>({ cookies })
 
     const {
       data: { session },

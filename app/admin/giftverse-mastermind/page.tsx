@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState, useEffect } from "react"
 import { useUser } from "@/hooks/use-user"
 import { useRouter } from "next/navigation"
@@ -608,3 +608,4 @@ export default function GiftverseMastermind() {
     </div>
   )
 }
+

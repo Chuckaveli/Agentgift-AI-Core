@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { createClient } from "@supabase/supabase-js"
 
 // Supabase client
@@ -547,3 +547,4 @@ export function suggestPhysicalFollowThrough(
   // Filter by user tier access
   return suggestions.filter((s) => hasServiceAccess(userTier, s.service))
 }
+

@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import type React from "react"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
@@ -228,3 +228,4 @@ export function useAchievementTriggers() {
     triggerEcoWarrior,
   }
 }
+

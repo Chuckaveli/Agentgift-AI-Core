@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@/lib/supabase-client"
+import { createClient } from "@/lib/supabase/clients"
 
 interface AssistantSyncData {
   id: string // OpenAI assistant ID
@@ -577,3 +577,4 @@ export const logAssistantInteraction = async (
     console.error("Error in logAssistantInteraction:", error)
   }
 }
+

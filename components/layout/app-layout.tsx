@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import Link from "next/link"
 
 import type React from "react"
@@ -322,3 +322,4 @@ export default function AppLayout({
     </div>
   )
 }
+

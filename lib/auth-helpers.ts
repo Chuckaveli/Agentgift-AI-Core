@@ -1,11 +1,9 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { NextResponse } from "next/server"
 
 export async function getUserOrRedirect(redirectTo = "/auth") {
   const cookieStore = cookies()
-  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+  const supabase = getServerClient() => cookieStore })
 
   const {
     data: { user },
@@ -21,7 +19,7 @@ export async function getUserOrRedirect(redirectTo = "/auth") {
 
 export async function getOptionalUser() {
   const cookieStore = cookies()
-  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+  const supabase = getServerClient() => cookieStore })
 
   const {
     data: { user },

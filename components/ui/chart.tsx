@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
@@ -363,3 +363,4 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+

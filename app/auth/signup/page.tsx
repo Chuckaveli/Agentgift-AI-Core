@@ -1,12 +1,12 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { Auth } from "@supabase/auth-ui-react"
 import { ThemeSupa } from "@supabase/auth-ui-shared"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createBrowserClient } from "@supabase/ssr"
 import Link from "next/link"
 import { Gift } from "lucide-react"
 
-const supabase = createClientComponentClient()
+const supabase = createBrowserClient()
 
 export default function SignUpPage() {
   return (
@@ -97,3 +97,4 @@ export default function SignUpPage() {
     </div>
   )
 }
+

@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useEffect, useRef, useState } from "react"
 
 interface LottieAnimationProps {
@@ -96,3 +96,4 @@ export default function LottieAnimation({
 
   return <div ref={containerRef} className={className} />
 }
+

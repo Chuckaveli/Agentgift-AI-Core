@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState } from "react"
 import { Lock, Crown, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -115,3 +115,4 @@ export default function LockedFeatureAnimation({
     </Card>
   )
 }
+

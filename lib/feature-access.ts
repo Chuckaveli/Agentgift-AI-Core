@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { createClient } from "@supabase/supabase-js"
 
 // Supabase client
@@ -367,3 +367,4 @@ export function getUpgradeUrl(targetTier?: UserTier): string {
   }
   return baseUrl
 }
+

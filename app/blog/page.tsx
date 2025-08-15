@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState, useMemo } from "react"
 import { Search, Heart, DollarSign, Leaf, Clock, TrendingUp, Eye, Calendar, User } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -337,3 +337,4 @@ export default function BlogPage() {
     </div>
   )
 }
+

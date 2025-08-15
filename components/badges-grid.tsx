@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Crown, Target, Gift, Users, Sparkles } from "lucide-react"
@@ -128,3 +128,4 @@ export function BadgesGrid() {
     </div>
   )
 }
+

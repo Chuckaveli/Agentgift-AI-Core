@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import type React from "react"
 
 import { useEffect, useState } from "react"
@@ -52,3 +52,4 @@ export function PersonaThemeWrapper({
     </div>
   )
 }
+

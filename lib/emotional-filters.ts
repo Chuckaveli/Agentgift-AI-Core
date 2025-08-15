@@ -1,5 +1,5 @@
-"use client"
-
+"use client";
+import { getBrowserClient } from "@/lib/supabase/clients";
 import { TIERS, type UserTier } from "./feature-access"
 
 export interface EmotionalFilter {
@@ -353,3 +353,4 @@ export const FILTER_BUNDLES: FilterBundle[] = [
     color: "from-gray-700 to-slate-800",
   },
 ]
+
