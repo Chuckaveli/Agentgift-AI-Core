@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase-client"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
-)
+const supabase = createAdminClient()
 
 // Pride Alliance XP rewards
 const XP_REWARDS = {
