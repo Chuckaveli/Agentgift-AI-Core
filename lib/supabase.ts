@@ -4,10 +4,10 @@ import { cookies } from "next/headers"
 import type { Database } from "@/types/supabase"
 
 // Client-side Supabase client
-export const createClientSupabase = () => createClientComponentClient<Database>()
+export const createClientSupabase = () => createClientComponentClient()
 
 // Server-side Supabase client
-export const createServerSupabase = () => createServerComponentClient<Database>({ cookies })
+export const createServerSupabase = () => createServerComponentClient({ cookies })
 
 // Admin Supabase client (for server-side operations that need elevated permissions)
 export const createAdminSupabase = () =>

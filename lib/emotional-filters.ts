@@ -296,7 +296,7 @@ export function searchGiftsByFilters(
   const filters = EMOTIONAL_FILTERS.filter((filter) => activeFilters.includes(filter.id))
 
   const searchTerms = [...new Set(filters.flatMap((filter) => filter.searchTerms))]
-  const giftTypes = [...new Set(filters.flatMap((filter) => filter.giftTypes))]
+  const giftTypes = [...new Set(filters.flatMap((filter) => filter.giftTypes || []))]
   const occasions = [...new Set(filters.flatMap((filter) => filter.occasions))]
   const priceRanges = [...new Set(filters.map((filter) => filter.priceRange).filter(Boolean))]
 

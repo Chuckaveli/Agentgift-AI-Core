@@ -1,12 +1,22 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": { "@/*": ["./*"] },
+    "paths": {
+      "@/*": ["./*"],
+      "@tensorflow/tfjs": ["types/blank"],
+      "@tensorflow-models/face-landmarks-detection": ["types/blank"],
+      "react/compiler-runtime": ["types/blank"],
+      "recharts": ["types/blank"],
+      "@supabase/auth-ui-react": ["types/blank"],
+      "@supabase/auth-ui-shared": ["types/blank"],
+      "@stitches/core/types/styled-component": ["types/blank"],
+      "@supabase/auth-helpers-nextjs": ["types/blank"]
+    },
 
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
+    "allowJs": false,
     "target": "ES2020",
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -19,5 +29,5 @@
     "plugins": [{ "name": "next" }]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "supabase/functions"]
 }
