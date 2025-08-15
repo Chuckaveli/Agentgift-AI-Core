@@ -30,4 +30,3 @@ export function getAdminClient() {
 
 // Add the missing export that was causing deployment errors
 export const getBrowserClient = getClient
-</merged_code>
