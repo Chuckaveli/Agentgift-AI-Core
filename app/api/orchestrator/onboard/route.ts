@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 // ✅ our single source of truth
 import { getServerClient } from "@/lib/supabase/clients";
 import { verify } from "jsonwebtoken";
 
+interface DemoTokenPayload {
+  demoSessionId: string;
+  iat?: number;
+  exp?: number;
+}
+
 export async function POST() {
   try {
     const supabase = getServerClient();
+    const cookieStore = cookies();
 
     const {
       data: { user },
@@ -58,7 +66,14 @@ export async function POST() {
 
     if (demoToken) {
       try {
-        const decoded = verify(demoToken, process.env.ORCHESTRATOR_SIGNING_SECRET!) as any;
+        const decoded = verify(
+          demoToken,
+          process.env.ORCHESTRATOR_SIGNING_SECRET!
+        ) as DemoTokenPayload;
+
+        if (typeof decoded.demoSessionId !== "string") {
+          throw new Error("Invalid demo token payload");
+        }
 
         // Unused/failed lookups should not block onboarding
         const { data: demoSession, error: demoError } = await supabase
