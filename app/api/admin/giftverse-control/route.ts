@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase-client"
 import { withAuth } from "@/lib/middleware/withAuth"
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+const supabase = createAdminClient()
 
 export const POST = withAuth(async (request: NextRequest, context) => {
   try {
