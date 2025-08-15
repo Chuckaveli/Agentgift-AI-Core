@@ -1,0 +1,98 @@
+{
+  "cozy": [
+    {
+      "service": "doordash",
+      "suggestion": "Send warm comfort food like soup or hot chocolate",
+      "reasoning": "Physical comfort food enhances the cozy emotional experience"
+    },
+    {
+      "service": "amazon_gifting",
+      "suggestion": "Deliver a soft blanket or aromatherapy candles",
+      "reasoning": "Tangible comfort items extend the cozy feeling"
+    }
+  ],
+  "comfort": [
+    {
+      "service": "doordash",
+      "suggestion": "Send warm comfort food like soup or hot chocolate",
+      "reasoning": "Physical comfort food enhances the cozy emotional experience"
+    },
+    {
+      "service": "amazon_gifting",
+      "suggestion": "Deliver a soft blanket or aromatherapy candles",
+      "reasoning": "Tangible comfort items extend the cozy feeling"
+    }
+  ],
+  "celebration": [
+    {
+      "service": "eventbrite",
+      "suggestion": "Gift tickets to a fun local experience",
+      "reasoning": "Shared experiences amplify celebratory emotions"
+    },
+    {
+      "service": "opentable",
+      "suggestion": "Book a special dinner reservation",
+      "reasoning": "Memorable dining creates lasting celebratory moments"
+    }
+  ],
+  "joy": [
+    {
+      "service": "eventbrite",
+      "suggestion": "Gift tickets to a fun local experience",
+      "reasoning": "Shared experiences amplify celebratory emotions"
+    },
+    {
+      "service": "opentable",
+      "suggestion": "Book a special dinner reservation",
+      "reasoning": "Memorable dining creates lasting celebratory moments"
+    }
+  ],
+  "romantic": [
+    {
+      "service": "expedia",
+      "suggestion": "Surprise weekend getaway for two",
+      "reasoning": "Travel experiences deepen romantic connections"
+    },
+    {
+      "service": "opentable",
+      "suggestion": "Reserve an intimate dinner for two",
+      "reasoning": "Romantic dining creates perfect intimate moments"
+    }
+  ],
+  "love": [
+    {
+      "service": "expedia",
+      "suggestion": "Surprise weekend getaway for two",
+      "reasoning": "Travel experiences deepen romantic connections"
+    },
+    {
+      "service": "opentable",
+      "suggestion": "Reserve an intimate dinner for two",
+      "reasoning": "Romantic dining creates perfect intimate moments"
+    }
+  ],
+  "appreciation": [
+    {
+      "service": "sendoso",
+      "suggestion": "Send a thoughtful appreciation gift box",
+      "reasoning": "Professional gifts show serious appreciation"
+    },
+    {
+      "service": "amazon_gifting",
+      "suggestion": "Deliver their favorite book or hobby item",
+      "reasoning": "Personal interests show thoughtful appreciation"
+    }
+  ],
+  "gratitude": [
+    {
+      "service": "sendoso",
+      "suggestion": "Send a thoughtful appreciation gift box",
+      "reasoning": "Professional gifts show serious appreciation"
+    },
+    {
+      "service": "amazon_gifting",
+      "suggestion": "Deliver their favorite book or hobby item",
+      "reasoning": "Personal interests show thoughtful appreciation"
+    }
+  ]
+}

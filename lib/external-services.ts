@@ -1,6 +1,7 @@
 "use client"
 
 import { createClient } from "@supabase/supabase-js"
+import serviceSuggestionData from "./service-suggestions.json"
 
 // Supabase client
 const supabase = createClient(
@@ -19,6 +20,12 @@ export const EXTERNAL_SERVICES = {
 } as const
 
 export type ExternalService = (typeof EXTERNAL_SERVICES)[keyof typeof EXTERNAL_SERVICES]
+
+interface ServiceSuggestion {
+  service: ExternalService
+  suggestion: string
+  reasoning: string
+}
 
 // Service configurations
 export const SERVICE_CONFIG: Record<
@@ -474,76 +481,11 @@ export function suggestPhysicalFollowThrough(
   emotion: string,
   campaignStep: string,
   userTier: string,
-): {
-  service: ExternalService
-  suggestion: string
-  reasoning: string
-}[] {
-  const suggestions: {
-    service: ExternalService
-    suggestion: string
-    reasoning: string
-  }[] = []
+): ServiceSuggestion[] {
+  const suggestionMap =
+    serviceSuggestionData as Record<string, ServiceSuggestion[]>
 
-  // Emotion-based suggestions
-  switch (emotion.toLowerCase()) {
-    case "cozy":
-    case "comfort":
-      suggestions.push({
-        service: EXTERNAL_SERVICES.DOORDASH,
-        suggestion: "Send warm comfort food like soup or hot chocolate",
-        reasoning: "Physical comfort food enhances the cozy emotional experience",
-      })
-      suggestions.push({
-        service: EXTERNAL_SERVICES.AMAZON_GIFTING,
-        suggestion: "Deliver a soft blanket or aromatherapy candles",
-        reasoning: "Tangible comfort items extend the cozy feeling",
-      })
-      break
+  const suggestions = suggestionMap[emotion.toLowerCase()] || []
 
-    case "celebration":
-    case "joy":
-      suggestions.push({
-        service: EXTERNAL_SERVICES.EVENTBRITE,
-        suggestion: "Gift tickets to a fun local experience",
-        reasoning: "Shared experiences amplify celebratory emotions",
-      })
-      suggestions.push({
-        service: EXTERNAL_SERVICES.OPENTABLE,
-        suggestion: "Book a special dinner reservation",
-        reasoning: "Memorable dining creates lasting celebratory moments",
-      })
-      break
-
-    case "romantic":
-    case "love":
-      suggestions.push({
-        service: EXTERNAL_SERVICES.EXPEDIA,
-        suggestion: "Surprise weekend getaway for two",
-        reasoning: "Travel experiences deepen romantic connections",
-      })
-      suggestions.push({
-        service: EXTERNAL_SERVICES.OPENTABLE,
-        suggestion: "Reserve an intimate dinner for two",
-        reasoning: "Romantic dining creates perfect intimate moments",
-      })
-      break
-
-    case "appreciation":
-    case "gratitude":
-      suggestions.push({
-        service: EXTERNAL_SERVICES.SENDOSO,
-        suggestion: "Send a thoughtful appreciation gift box",
-        reasoning: "Professional gifts show serious appreciation",
-      })
-      suggestions.push({
-        service: EXTERNAL_SERVICES.AMAZON_GIFTING,
-        suggestion: "Deliver their favorite book or hobby item",
-        reasoning: "Personal interests show thoughtful appreciation",
-      })
-      break
-  }
-
-  // Filter by user tier access
   return suggestions.filter((s) => hasServiceAccess(userTier, s.service))
 }
