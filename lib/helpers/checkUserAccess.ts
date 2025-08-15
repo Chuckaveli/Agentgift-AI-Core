@@ -7,7 +7,11 @@ import type { Database } from "@/types/supabase"
 
 export interface AccessCheckResult {
   accessGranted: boolean
-  fallbackReason: "no_auth" | "insufficient_tier" | "insufficient_credits" | "feature_disabled"
+  fallbackReason?:
+    | "no_auth"
+    | "insufficient_tier"
+    | "insufficient_credits"
+    | "feature_disabled"
   creditsLeft: number
   upgradeRequired: boolean
   requiredTier?: string
@@ -146,7 +150,6 @@ export async function checkUserAccess(featureName: string): Promise<AccessCheckR
     // Access granted
     return {
       accessGranted: true,
-      fallbackReason: "no_auth", // Won't be used
       creditsLeft: profile.credits || 0,
       upgradeRequired: false,
       currentTier: profile.tier,

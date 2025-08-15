@@ -1,8 +1,16 @@
 "use client"
 
 // Jest setup file for additional configuration
-import "@testing-library/jest-dom"
-import jest from "jest"
+require("@testing-library/jest-dom")
+
+jest.mock(
+  "@supabase/auth-helpers-nextjs",
+  () => ({
+    createClientComponentClient: jest.fn(),
+    createRouteHandlerClient: jest.fn(),
+  }),
+  { virtual: true }
+)
 
 // Mock Next.js router
 jest.mock("next/router", () => ({
