@@ -1,14 +1,20 @@
-"use client"
+"use client";
 
-import { Auth } from "@supabase/auth-ui-react"
-import { ThemeSupa } from "@supabase/auth-ui-shared"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import Link from "next/link"
-import { Gift } from "lucide-react"
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Gift } from "lucide-react";
 
-const supabase = createClientComponentClient()
+const supabase = createClientComponentClient();
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default function SignInPage() {
+  const search = useSearchParams();
+  const next = search?.get("next") || "/dashboard";
+  const callbackUrl = `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -31,7 +37,7 @@ export default function SignInPage() {
           <Auth
             supabaseClient={supabase}
             view="sign_in"
-            providers={["google", "apple"]}
+            providers={["google", "apple"]} // remove "apple" if not fully configured in Supabase
             appearance={{
               theme: ThemeSupa,
               variables: {
@@ -47,15 +53,8 @@ export default function SignInPage() {
                     inputBorderHover: "#9333ea",
                     inputBorderFocus: "#7c3aed",
                   },
-                  borderWidths: {
-                    buttonBorderWidth: "1px",
-                    inputBorderWidth: "1px",
-                  },
-                  radii: {
-                    borderRadiusButton: "8px",
-                    buttonBorderRadius: "8px",
-                    inputBorderRadius: "8px",
-                  },
+                  borderWidths: { buttonBorderWidth: "1px", inputBorderWidth: "1px" },
+                  radii: { borderRadiusButton: "8px", buttonBorderRadius: "8px", inputBorderRadius: "8px" },
                 },
               },
               className: {
@@ -66,13 +65,14 @@ export default function SignInPage() {
                 message: "text-sm text-red-600 mt-2",
               },
             }}
-            redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
+            /** The key line: always your canonical domain + callback + next */
+            redirectTo={callbackUrl}
             showLinks={false}
           />
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/auth/signup" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
                 Sign up
               </Link>
@@ -91,5 +91,5 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
