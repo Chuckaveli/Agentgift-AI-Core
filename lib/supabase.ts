@@ -2,6 +2,7 @@ import { createClientComponentClient, createServerComponentClient } from "@supab
 import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/supabase"
+import { env } from "@/lib/env.server"
 
 // Client-side Supabase client
 export const createClientSupabase = () => createClientComponentClient<Database>()
@@ -11,7 +12,7 @@ export const createServerSupabase = () => createServerComponentClient<Database>(
 
 // Admin Supabase client (for server-side operations that need elevated permissions)
 export const createAdminSupabase = () =>
-  createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

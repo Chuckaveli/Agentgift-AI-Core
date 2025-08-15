@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { type NextRequest, NextResponse } from "next/server"
 import type { Database } from "@/types/supabase"
+import { env } from "@/lib/env.server"
 
 export interface AuthenticatedUser {
   id: string
@@ -26,7 +27,7 @@ export function withAuth<T extends any[]>(
   return async (req: NextRequest, ...args: T): Promise<Response> => {
     try {
       // Check if Supabase is configured
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
         return NextResponse.json(
           {
             error: "Authentication service not configured",
@@ -166,7 +167,7 @@ export function withAuth<T extends any[]>(
 export async function requireAuth(): Promise<AuthenticatedUser | null> {
   try {
     // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
       return null
     }
 

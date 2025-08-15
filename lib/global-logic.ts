@@ -1,10 +1,11 @@
 "use client"
 
 import { createClient } from "@supabase/supabase-js"
+import { env } from "@/lib/env.client"
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
+  env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
 )
 
 // Global Constants

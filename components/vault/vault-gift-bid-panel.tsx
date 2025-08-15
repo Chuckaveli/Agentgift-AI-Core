@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Coins, Zap, Crown, Gem, Star, Volume2, Trophy, Target, Flame, Loader2, Users, Timer } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@supabase/supabase-js"
+import { env } from "@/lib/env.client"
 
 // Lottie Player component
 import dynamic from "next/dynamic"
@@ -18,8 +19,8 @@ const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
 
 // Supabase client setup
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
+  env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "demo-key",
 )
 
 interface GiftItem {

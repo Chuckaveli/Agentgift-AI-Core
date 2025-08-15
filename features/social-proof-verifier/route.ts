@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { env } from "@/lib/env.server"
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
+  env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
+  env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
 )
 
 // Helper function to extract hashtags from text
@@ -20,7 +21,7 @@ async function fetchPostData(url: string, platform: string) {
     switch (platform) {
       case "instagram":
         // Instagram oEmbed API
-        apiUrl = `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
+        apiUrl = `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${env.INSTAGRAM_ACCESS_TOKEN}`
         break
       case "twitter":
         // Twitter oEmbed API

@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Gift, Heart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { env } from "@/lib/env.client";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE_URL = env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function AuthPage() {
   const supabase = useMemo(
     () =>
       createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        env.NEXT_PUBLIC_SUPABASE_URL!,
+        env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       ),
     []
   );

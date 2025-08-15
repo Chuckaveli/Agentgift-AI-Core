@@ -2,6 +2,7 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import type { NextResponse } from "next/server"
+import { env } from "@/lib/env.server"
 
 export async function getUserOrRedirect(redirectTo = "/auth") {
   const cookieStore = cookies()
@@ -33,7 +34,7 @@ export function setServerSessionCookies(response: NextResponse, sessionData: any
   // Set session cookies for server-side auth
   response.cookies.set("sb-access-token", sessionData.access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: sessionData.expires_in,
     path: "/",
@@ -41,7 +42,7 @@ export function setServerSessionCookies(response: NextResponse, sessionData: any
 
   response.cookies.set("sb-refresh-token", sessionData.refresh_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30, // 30 days
     path: "/",
