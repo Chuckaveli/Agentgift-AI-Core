@@ -2,10 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { Deno } from "https://deno.land/std@0.168.0/node/global.ts" // Declare Deno variable
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-}
+// Comma-separated list of origins allowed to access this function
+const allowedOrigins =
+  Deno.env.get("ALLOWED_ORIGINS")?.split(",").map((o) => o.trim()) ?? []
 
 interface GiftSuggestionRequest {
   recipient_profile?: {
@@ -65,6 +64,17 @@ interface GiftSuggestion {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin") ?? ""
+  if (allowedOrigins.length && !allowedOrigins.includes(origin)) {
+    return new Response("Origin not allowed", { status: 403 })
+  }
+
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+  }
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }
