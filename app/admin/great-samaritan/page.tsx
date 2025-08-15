@@ -49,6 +49,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
+import { createClient } from "@/lib/supabase-client"
 
 interface Participant {
   user_id: string
@@ -119,6 +120,8 @@ export default function GreatSamaritanTracker() {
   const [webhookUrl, setWebhookUrl] = useState("")
   const [deliveryNotes, setDeliveryNotes] = useState("")
 
+  const supabase = createClient()
+
   useEffect(() => {
     fetchData()
   }, [searchTerm, tierFilter, sortBy, sortOrder])
@@ -170,6 +173,15 @@ export default function GreatSamaritanTracker() {
     }
 
     try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+      if (sessionError || !session?.user) {
+        toast.error("Authentication required")
+        return
+      }
+
       const response = await fetch("/api/admin/great-samaritan/awards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,7 +189,7 @@ export default function GreatSamaritanTracker() {
           award_type: awardType,
           user_ids: selectedUsers,
           award_period: awardPeriod,
-          admin_id: "current-admin-id", // TODO: Get from auth context
+          admin_id: session.user.id,
           bonus_rewards: bonusRewards,
         }),
       })
@@ -206,12 +218,21 @@ export default function GreatSamaritanTracker() {
     }
 
     try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+      if (sessionError || !session?.user) {
+        toast.error("Authentication required")
+        return
+      }
+
       const response = await fetch("/api/admin/great-samaritan/lunch-drop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: selectedUserForLunch,
-          admin_id: "current-admin-id", // TODO: Get from auth context
+          admin_id: session.user.id,
           webhook_url: webhookUrl || undefined,
           delivery_notes: deliveryNotes || undefined,
         }),
