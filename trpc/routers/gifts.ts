@@ -209,7 +209,21 @@ export const giftsRouter = router({
     )
     .mutation(async ({ input }) => {
       // Mock gut check analysis
-      const analysis = {
+      interface GutCheckAnalysis {
+        overallScore: number
+        factors: {
+          personalRelevance: number
+          occasionFit: number
+          budgetAppropriate: number
+          culturalSensitivity: number
+        }
+        insights: string[]
+        suggestions: string[]
+        redFlags: string[]
+        confidence: number
+      }
+
+      const analysis: GutCheckAnalysis = {
         overallScore: Math.random() * 0.3 + 0.7, // 70-100%
         factors: {
           personalRelevance: Math.random() * 0.4 + 0.6,

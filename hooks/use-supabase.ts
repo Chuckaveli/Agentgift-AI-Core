@@ -15,7 +15,7 @@ export function useSupabase() {
       setSupabase(client)
 
       // Test the connection
-      client.auth.getSession().then(({ error }) => {
+      client.auth.getSession().then(({ error }: { error: any }) => {
         if (error) {
           setError(error.message)
           setIsConnected(false)

@@ -160,9 +160,11 @@ export function canUseFeature(userTier: string, feature: string, usageCount: num
     case "smart-search":
       return tierConfig.limits.monthly_searches === -1 || usageCount < tierConfig.limits.monthly_searches
     case "voice-interactions":
-      return tierConfig.limits.voice_interactions === -1 || usageCount < tierConfig.limits.voice_interactions
+      const voiceLimit = tierConfig.limits.voice_interactions
+      return typeof voiceLimit === "number" && (voiceLimit === -1 || usageCount < voiceLimit)
     case "group-gifting":
-      return tierConfig.limits.group_campaigns === -1 || usageCount < tierConfig.limits.group_campaigns
+      const groupLimit = tierConfig.limits.group_campaigns
+      return typeof groupLimit === "number" && (groupLimit === -1 || usageCount < groupLimit)
     default:
       return true
   }

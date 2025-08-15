@@ -63,7 +63,7 @@ export const FEATURE_CONFIGS: Record<string, FeatureConfig> = {
 }
 
 export async function checkUserAccess(featureName: string): Promise<AccessCheckResult> {
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClientComponentClient()
 
   try {
     // Check authentication

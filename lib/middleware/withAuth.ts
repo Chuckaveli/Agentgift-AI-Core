@@ -36,7 +36,7 @@ export function withAuth<T extends any[]>(
         )
       }
 
-      const supabase = createServerComponentClient<Database>({ cookies })
+      const supabase = createServerComponentClient({ cookies })
 
       // Check session
       const {
@@ -170,7 +170,7 @@ export async function requireAuth(): Promise<AuthenticatedUser | null> {
       return null
     }
 
-    const supabase = createServerComponentClient<Database>({ cookies })
+    const supabase = createServerComponentClient({ cookies })
 
     const {
       data: { session },

@@ -271,4 +271,4 @@ export const FuturePlaceholders = {
       <div className="text-sm text-gray-500">Features: Emotion AI, Personality Deep Dive, Trend Predictor</div>
     </div>
   ),
-}
+};

@@ -14,5 +14,5 @@ export function getBrowserClient() {
 
 export function getServerClient() {
   // use in RSC, route handlers, and server actions
-  return createServerClient(url, anon, { cookies });
+  return createServerClient(url, anon, { cookies: cookies as any });
 }
