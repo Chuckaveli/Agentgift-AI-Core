@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
-)
-
 export async function GET() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("Missing Supabase environment variables")
+    return NextResponse.json(
+      { error: "Server misconfiguration" },
+      { status: 500 },
+    )
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey)
+
   try {
     // Try to fetch from database, fallback to mock data if table doesn't exist or column missing
     const { data: features, error } = await supabase
