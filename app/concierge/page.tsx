@@ -8,11 +8,28 @@ import SuggestionChips from "@/components/concierge/SuggestionChips"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import type { DatabaseUserProfile, PersonaKey, Tier } from "@/lib/types"
 
+// ⬇️ NEW: lightweight Lottie status component (use the one I shared earlier)
+// If you placed it at components/concierge/LottieStatus.tsx:
+import LottieStatus from "@/components/concierge/LottieStatus"
+
+type LottieState = "idle" | "userListening" | "aiThinking" | "aiSpeaking"
+
 export default function ConciergePage() {
   const supabase = useMemo(() => createClientComponentClient(), [])
   const [profile, setProfile] = useState<DatabaseUserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [persona, setPersona] = useState<PersonaKey>("avelyn")
+
+  // ⬇️ NEW: Lottie status state (no separate hook file needed)
+  const [status, setStatus] = useState<LottieState>("idle")
+
+  // Event handlers you can pass to ConciergeChat
+  const onInputFocus = () => setStatus("userListening")
+  const onInputChange = () => setStatus("userListening")
+  const onSubmit = () => setStatus("aiThinking")
+  const onFirstToken = () => setStatus("aiSpeaking")
+  const onStreamEnd = () => setTimeout(() => setStatus("idle"), 600)
+  const onError = () => setStatus("idle")
 
   useEffect(() => {
     let mounted = true
@@ -115,7 +132,9 @@ export default function ConciergePage() {
                 label="Numerology"
                 status={profile?.life_path_number ? "active" : "dim"}
                 lottie="/lottie/numerology.json"
-                tooltip={profile?.life_path_number ? `Life Path #${profile?.life_path_number}` : "Sync date of birth"}
+                tooltip={
+                  profile?.life_path_number ? `Life Path #${profile?.life_path_number}` : "Sync date of birth"
+                }
               />
               <Orb
                 label="Emotion Tag"
@@ -149,9 +168,24 @@ export default function ConciergePage() {
           </div>
         </aside>
 
-        {/* Chat */}
-        <section className="lg:col-span-2">
-          <ConciergeChat persona={persona} profile={profile} />
+        {/* Right: Status + Chat */}
+        <section className="lg:col-span-2 space-y-4">
+          {/* ⬇️ NEW: the 3-state Lottie status bar */}
+          <LottieStatus state={status} className="mb-2" />
+
+          {/* Pass the handlers if your ConciergeChat supports them.
+              If not yet, add these props in that component to flip the status at the right moments. */}
+          <ConciergeChat
+            persona={persona}
+            profile={profile}
+            // optional wiring for animation control:
+            onInputFocus={onInputFocus}
+            onInputChange={onInputChange}
+            onSubmitMessage={onSubmit}
+            onFirstToken={onFirstToken}
+            onStreamEnd={onStreamEnd}
+            onError={onError}
+          />
         </section>
       </main>
     </div>
