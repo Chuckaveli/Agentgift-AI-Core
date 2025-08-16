@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import type { DatabaseUserProfile, PersonaKey } from "@/lib/types"
 
 type LottieState = "idle" | "userListening" | "aiThinking" | "aiSpeaking"
@@ -21,143 +21,225 @@ interface UseConciergeChat {
   setInputValue: (value: string) => void
 }
 
-export function useConciergeChat(persona: PersonaKey, profile: DatabaseUserProfile | null): UseConciergeChat {
+const SPEAKING_HOLD_MS = 600
+const MAX_RETRIES = 2
+
+export function useConciergeChat(
+  persona: PersonaKey,
+  profile: DatabaseUserProfile | null
+): UseConciergeChat {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [lottieState, setLottieState] = useState<LottieState>("idle")
   const [inputValue, setInputValue] = useState("")
   const [inputFocused, setInputFocused] = useState(false)
 
-  const timeoutRef = useRef<NodeJS.Timeout>()
-  const abortControllerRef = useRef<AbortController>()
+  const abortRef = useRef<AbortController | null>(null)
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Handle input focus/blur
+  // --- cleanup on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
+    }
+  }, [])
+
+  // --- focus toggles listening orb
   const handleSetInputFocused = useCallback(
     (focused: boolean) => {
       setInputFocused(focused)
-
-      if (focused && lottieState === "idle") {
-        setLottieState("userListening")
-      } else if (!focused && lottieState === "userListening" && !inputValue.trim()) {
+      if (focused && lottieState === "idle") setLottieState("userListening")
+      if (!focused && !inputValue.trim() && lottieState === "userListening") {
         setLottieState("idle")
       }
     },
-    [lottieState, inputValue],
+    [lottieState, inputValue]
   )
 
-  // Handle input value changes
+  // --- typing toggles listening orb
   const handleSetInputValue = useCallback(
     (value: string) => {
       setInputValue(value)
-
-      if (value.trim() && lottieState === "idle") {
-        setLottieState("userListening")
-      } else if (!value.trim() && !inputFocused && lottieState === "userListening") {
+      if (value.trim() && lottieState === "idle") setLottieState("userListening")
+      if (!value.trim() && !inputFocused && lottieState === "userListening") {
         setLottieState("idle")
       }
     },
-    [lottieState, inputFocused],
+    [lottieState, inputFocused]
   )
 
-  // Send message function
+  // --- basic toast without any deps
+  function toast(msg: string) {
+    try {
+      const el = document.createElement("div")
+      el.textContent = msg
+      el.className =
+        "fixed top-4 right-4 z-[9999] rounded-lg bg-red-500 px-4 py-2 text-white shadow-lg"
+      document.body.appendChild(el)
+      setTimeout(() => el.remove(), 2500)
+    } catch {
+      // noop (SSR or locked DOM)
+    }
+  }
+
+  async function fetchWithRetry(
+    body: unknown,
+    attempt = 0
+  ): Promise<Response> {
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+
+    const res = await fetch("/api/concierge/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: abortRef.current.signal,
+    })
+
+    if (res.ok) return res
+
+    // Retry on 429/5xx
+    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
+      const backoff = 400 * Math.pow(2, attempt) // 400ms, 800ms
+      await new Promise((r) => setTimeout(r, backoff))
+      return fetchWithRetry(body, attempt + 1)
+    }
+
+    // surface error
+    const text = await res.text().catch(() => "")
+    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`)
+  }
+
+  // --- main send
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim() || isLoading) return
+      const text = content.trim()
+      if (!text || isLoading) return
 
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+      // cancel in-flight + clear speaking hold
+      abortRef.current?.abort()
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
 
-      // Abort any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-
-      const userMessage: Message = {
+      const userMsg: Message = {
         id: crypto.randomUUID(),
         role: "user",
-        content: content.trim(),
+        content: text,
         timestamp: new Date(),
       }
-
-      setMessages((prev) => [...prev, userMessage])
+      setMessages((prev) => [...prev, userMsg])
       setIsLoading(true)
       setLottieState("aiThinking")
       setInputValue("")
 
-      // Create new abort controller
-      abortControllerRef.current = new AbortController()
+      // prepare assistant placeholder for streaming
+      const assistantId = crypto.randomUUID()
+      const startAssistant: Message = {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, startAssistant])
+
+      const requestBody = {
+        persona,
+        context: {
+          tier: profile?.tier ?? "Free",
+          xp_level: profile?.xp_level ?? 0,
+          love_language: profile?.love_language ?? null,
+          life_path_number: profile?.life_path_number ?? null,
+        },
+        // send the _new_ list including the user message only; assistant will stream back
+        messages: [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        stream: true, // your /api route can ignore this if not streaming
+      }
 
       try {
-        const response = await fetch("/api/concierge/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            persona,
-            context: {
-              tier: profile?.tier ?? "Free",
-              xp_level: profile?.xp_level ?? 0,
-              love_language: profile?.love_language,
-              life_path_number: profile?.life_path_number,
-            },
-            messages: [...messages, userMessage].map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-          }),
-          signal: abortControllerRef.current.signal,
-        })
+        const res = await fetchWithRetry(requestBody)
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-
-        // First byte received - switch to speaking
+        // switch to speaking on first byte
         setLottieState("aiSpeaking")
 
-        const data = await response.json()
+        // Stream if possible
+        if (res.body) {
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let buf = ""
 
-        if (data.error) {
-          throw new Error(data.error)
-        }
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buf += decoder.decode(value, { stream: true })
 
-        const assistantMessage: Message = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: data.reply || "I'm having trouble responding right now. Could you try rephrasing?",
-          timestamp: new Date(),
-        }
+            // naive chunk split by \n\n (Server-Sent-Chunks or JSONL)
+            const parts = buf.split(/\n{2,}/)
+            // keep last partial in buffer
+            buf = parts.pop() ?? ""
 
-        setMessages((prev) => [...prev, assistantMessage])
-
-        // Stay in speaking state for 600ms after completion
-        timeoutRef.current = setTimeout(() => {
-          setLottieState("idle")
-        }, 600)
-      } catch (error: any) {
-        console.error("[useConciergeChat] Error:", error)
-
-        if (error.name !== "AbortError") {
-          // Show error toast
-          if (typeof window !== "undefined" && "navigator" in window) {
-            // Simple toast fallback
-            const toast = document.createElement("div")
-            toast.textContent = "Connection issue. Try again."
-            toast.className = "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
-            document.body.appendChild(toast)
-            setTimeout(() => document.body.removeChild(toast), 3000)
+            for (const part of parts) {
+              // try JSON first; if it fails, treat as plain text chunk
+              try {
+                const j = JSON.parse(part)
+                if (j.delta) {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, content: (m.content || "") + j.delta }
+                        : m
+                    )
+                  )
+                }
+                if (j.done) {
+                  // no-op here; finish handled below
+                }
+              } catch {
+                // plain text chunk
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? { ...m, content: (m.content || "") + part }
+                      : m
+                  )
+                )
+              }
+            }
           }
+        } else {
+          // fallback: non-stream JSON
+          const data = await res.json().catch(() => ({}))
+          const reply =
+            data.reply ||
+            "I’m having trouble responding right now. Could you try again?"
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, content: reply } : m
+            )
+          )
         }
 
-        setLottieState("idle")
+        // small “speaking” hold for polish
+        holdTimerRef.current = setTimeout(() => {
+          setLottieState("idle")
+        }, SPEAKING_HOLD_MS)
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          console.error("[useConciergeChat] Error:", err)
+          toast("Connection issue. Please try again.")
+          setLottieState("idle")
+          // Clean the empty assistant placeholder if it exists
+          setMessages((prev) =>
+            prev.filter((m) => !(m.id === assistantId && !m.content))
+          )
+        }
       } finally {
         setIsLoading(false)
       }
     },
-    [persona, profile, messages, isLoading],
+    [persona, profile, messages, isLoading]
   )
 
   return {
