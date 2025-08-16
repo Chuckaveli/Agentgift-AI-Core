@@ -1,32 +1,30 @@
-import { createClient as createBrowserClient } from "@/lib/supabase-client"
+import { createClientComponentClient, createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClient } from "@supabase/supabase-js"
+import { cookies } from "next/headers"
 
-// Browser-safe client functions
+// Client-side Supabase client
 export function getClient() {
-  return createBrowserClient()
+  return createClientComponentClient()
 }
 
+// Server-side Supabase client
 export function getServerClient() {
-  // In browser context, use browser client
-  if (typeof window !== "undefined") {
-    return createBrowserClient()
-  }
-
-  // In server context, dynamically import server client
-  const { createServerClient } = require("@/lib/supabase-server")
-  return createServerClient()
+  const cookieStore = cookies()
+  return createServerComponentClient({ cookies: () => cookieStore })
 }
 
+// Admin client with service role key
 export function getAdminClient() {
-  // In browser context, use browser client
-  if (typeof window !== "undefined") {
-    console.warn("Admin client not available in browser context")
-    return createBrowserClient()
-  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-  // In server context, dynamically import admin client
-  const { createAdminClient } = require("@/lib/supabase-server")
-  return createAdminClient()
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 }
 
-// Add the missing export that was causing deployment errors
+// Browser client (alias for getClient)
 export const getBrowserClient = getClient

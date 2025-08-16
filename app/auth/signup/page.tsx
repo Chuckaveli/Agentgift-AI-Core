@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { getBrowserClient } from "@/lib/supabase/clients";
-import Link from "next/link";
-import { Gift } from "lucide-react";
+import { Auth } from "@supabase/auth-ui-react"
+import { ThemeSupa } from "@supabase/auth-ui-shared"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import Link from "next/link"
+import { Gift } from "lucide-react"
 
-const supabase = getBrowserClient();
+const supabase = createClientComponentClient()
 
 export default function SignUpPage() {
   return (
@@ -71,28 +71,29 @@ export default function SignUpPage() {
           />
 
           <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link href="/auth/signin" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-              Sign in
+            <p className="text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link href="/auth/signin" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-xs text-gray-500">
+            By signing up, you agree to our{" "}
+            <Link href="/terms" className="text-purple-600 hover:text-purple-500">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-purple-600 hover:text-purple-500">
+              Privacy Policy
             </Link>
           </p>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="text-center mt-8">
-        <p className="text-xs text-gray-500">
-          By signing up, you agree to our{" "}
-          <Link href="/terms" className="text-purple-600 hover:text-purple-500">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="text-purple-600 hover:text-purple-500">
-            Privacy Policy
-          </Link>
-        </p>
-      </div>
     </div>
-  );
+  )
 }
