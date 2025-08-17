@@ -5,10 +5,22 @@ import { ThemeSupa } from "@supabase/auth-ui-shared"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import Link from "next/link"
 import { Gift } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { useEffect } from "react"
 
 const supabase = createClientComponentClient()
 
 export default function SignInPage() {
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect_to") || "/dashboard"
+
+  useEffect(() => {
+    // Set redirect cookie for auth callback
+    if (redirectTo) {
+      document.cookie = `redirect_to=${redirectTo}; path=/; max-age=3600`
+    }
+  }, [redirectTo])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">

@@ -1,22 +1,9 @@
-export interface AnalyticsEvent {
+interface AnalyticsEvent {
   event: string
   properties?: Record<string, any>
   userId?: string
-  timestamp?: string
-}
-
-export interface ConversionEvent {
-  step:
-    | "questionnaire_started"
-    | "questionnaire_completed"
-    | "cta_clicked"
-    | "signup_started"
-    | "signup_completed"
-    | "dashboard_arrived"
-    | "onboarding_completed"
-  userId?: string
   sessionId?: string
-  metadata?: Record<string, any>
+  timestamp?: string
 }
 
 class Analytics {
@@ -36,132 +23,131 @@ class Analytics {
   }
 
   async track(event: string, properties: Record<string, any> = {}) {
-    const payload: AnalyticsEvent = {
+    const eventData: AnalyticsEvent = {
       event,
       properties: {
         ...properties,
-        sessionId: this.sessionId,
+        url: typeof window !== "undefined" ? window.location.href : "",
+        userAgent: typeof window !== "undefined" ? window.navigator.userAgent : "",
         timestamp: new Date().toISOString(),
-        url: typeof window !== "undefined" ? window.location.href : undefined,
-        userAgent: typeof window !== "undefined" ? window.navigator.userAgent : undefined,
       },
       userId: this.userId,
+      sessionId: this.sessionId,
       timestamp: new Date().toISOString(),
     }
 
-    // Send to multiple analytics providers
-    await Promise.allSettled([this.sendToMake(payload), this.sendToSupabase(payload), this.sendToConsole(payload)])
+    // Send to multiple providers
+    await Promise.allSettled([
+      this.sendToMake(eventData),
+      this.sendToSupabase(eventData),
+      this.sendToConsole(eventData),
+    ])
   }
 
-  async trackConversion(step: ConversionEvent["step"], metadata: Record<string, any> = {}) {
-    const conversionEvent: ConversionEvent = {
-      step,
-      userId: this.userId,
-      sessionId: this.sessionId,
-      metadata: {
-        ...metadata,
-        timestamp: new Date().toISOString(),
-      },
-    }
-
-    await this.track("conversion_funnel", {
-      conversion_step: step,
-      ...conversionEvent,
-    })
-
-    // Special handling for key conversion events
-    switch (step) {
-      case "signup_completed":
-        await this.track("signup_success", metadata)
-        break
-      case "dashboard_arrived":
-        await this.track("onboarding_complete", metadata)
-        break
-      case "cta_clicked":
-        await this.track("cta_conversion", metadata)
-        break
-    }
-  }
-
-  private async sendToMake(payload: AnalyticsEvent) {
+  private async sendToMake(eventData: AnalyticsEvent) {
     try {
+      if (!process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL) return
+
       await fetch("/api/analytics/make", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventData),
       })
     } catch (error) {
-      console.error("Failed to send analytics to Make:", error)
+      console.error("Make analytics error:", error)
     }
   }
 
-  private async sendToSupabase(payload: AnalyticsEvent) {
+  private async sendToSupabase(eventData: AnalyticsEvent) {
     try {
       await fetch("/api/analytics/supabase", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventData),
       })
     } catch (error) {
-      console.error("Failed to send analytics to Supabase:", error)
+      console.error("Supabase analytics error:", error)
     }
   }
 
-  private sendToConsole(payload: AnalyticsEvent) {
+  private sendToConsole(eventData: AnalyticsEvent) {
     if (process.env.NODE_ENV === "development") {
-      console.log("📊 Analytics Event:", payload)
+      console.log("📊 Analytics Event:", eventData)
     }
   }
 
-  // Questionnaire specific tracking
+  // Conversion funnel tracking methods
+  async trackLandingPageView(utmParams?: Record<string, string>) {
+    await this.track("landing_page_view", {
+      page: "landing",
+      utm_source: utmParams?.utm_source,
+      utm_medium: utmParams?.utm_medium,
+      utm_campaign: utmParams?.utm_campaign,
+      referrer: typeof window !== "undefined" ? document.referrer : "",
+    })
+  }
+
+  async trackQuestionnaireStarted() {
+    await this.track("questionnaire_started", {
+      step: "modal_opened",
+    })
+  }
+
   async trackQuestionnaireStep(step: number, data: Record<string, any>) {
     await this.track("questionnaire_step", {
       step,
-      ...data,
+      step_data: data,
     })
   }
 
-  async trackQuestionnaireComplete(results: Record<string, any>) {
-    await this.trackConversion("questionnaire_completed", results)
+  async trackQuestionnaireCompleted(results: Record<string, any>) {
+    await this.track("questionnaire_completed", {
+      results,
+      completion_time: Date.now(),
+    })
   }
 
-  async trackCTAClick(source: string, metadata: Record<string, any> = {}) {
-    await this.trackConversion("cta_clicked", {
+  async trackCTAClicked(source: string) {
+    await this.track("cta_clicked", {
       source,
-      ...metadata,
+      button_text: "Get My Gift Recommendations",
     })
   }
 
-  async trackSignupStart(method: string) {
-    await this.trackConversion("signup_started", {
-      signup_method: method,
+  async trackAuthPageView(view: "signin" | "signup", context?: Record<string, any>) {
+    await this.track("auth_page_view", {
+      view,
+      context,
     })
   }
 
-  async trackSignupComplete(userId: string, method: string) {
-    this.setUserId(userId)
-    await this.trackConversion("signup_completed", {
-      userId,
-      signup_method: method,
+  async trackSignupStarted() {
+    await this.track("signup_started", {
+      method: "form_interaction",
     })
   }
 
-  async trackDashboardArrival(isNewUser: boolean, metadata: Record<string, any> = {}) {
-    await this.trackConversion("dashboard_arrived", {
+  async trackSignupCompleted(method: string) {
+    await this.track("signup_completed", {
+      method,
+      completion_time: Date.now(),
+    })
+  }
+
+  async trackDashboardArrived(isNewUser = false) {
+    await this.track("dashboard_arrived", {
       is_new_user: isNewUser,
-      ...metadata,
+      arrival_time: Date.now(),
+    })
+  }
+
+  async trackFeatureClick(feature: string, location: string) {
+    await this.track("feature_click", {
+      feature,
+      location,
     })
   }
 }
 
 // Singleton instance
 export const analytics = new Analytics()
-
-// React hook for analytics
-export function useAnalytics() {
-  return analytics
-}

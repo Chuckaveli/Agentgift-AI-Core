@@ -1,261 +1,298 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
-import { useTheme } from "next-themes"
 import Link from "next/link"
-import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut, Moon, Sun, Twitter, Instagram, Linkedin, Github, MessageCircle } from "lucide-react"
-
-// Mock user for demo - replace with real auth
-const mockUser = {
-  id: "1",
-  name: "Alex Johnson",
-  email: "alex@example.com",
-  avatar: "/placeholder.svg?height=40&width=40",
-  tier: "free_agent", // or "premium_spy"
-  credits: 150,
-  xp: 2450,
-  level: 3,
-}
+  Menu,
+  Gift,
+  Home,
+  Search,
+  Users,
+  Settings,
+  HelpCircle,
+  Twitter,
+  Instagram,
+  Linkedin,
+  Github,
+  MessageCircle,
+} from "lucide-react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import type { User } from "@supabase/auth-helpers-nextjs"
 
 interface ClientLayoutProps {
   children: React.ReactNode
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
-  const [user, setUser] = useState<typeof mockUser | null>(null)
-  const [mounted, setMounted] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    setMounted(true)
-    // Simulate auth check
-    setUser(mockUser)
-  }, [])
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
 
-  if (!mounted) {
+    getUser()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase.auth])
+
+  const navigation = [
+    { name: "Dashboard", href: "/dashboard", icon: Home },
+    { name: "Smart Search", href: "/smart-search", icon: Search },
+    { name: "Community", href: "/social", icon: Users },
+    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Help", href: "/contact", icon: HelpCircle },
+  ]
+
+  const isAuthPage = pathname?.startsWith("/auth") || pathname === "/login"
+  const isLandingPage = pathname === "/"
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <div className="flex-1" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} className="rounded-lg" />
-            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AgentGift.ai
-            </span>
-          </Link>
-
-          {/* Header Actions */}
-          <div className="flex items-center gap-2">
-            {/* Theme Toggle */}
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-
-            {/* User Menu or Auth Buttons */}
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.name}</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {user.tier === "free_agent" ? "Free Agent" : "Premium Spy"}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          Level {user.level} • {user.credits} credits
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard">
-                      <User className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                >
-                  Get Started
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1">{children}</main>
-
-      {/* Footer */}
-      <footer className="border-t bg-background">
-        <div className="container px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Brand */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Image src="/agentgift-logo.png" alt="AgentGift Logo" width={32} height={32} className="rounded-lg" />
-                <span className="font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      {!isAuthPage && (
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              {/* Logo */}
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   AgentGift.ai
                 </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                AI-powered gift intelligence for meaningful connections and perfect presents.
-              </p>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                  <a href="https://twitter.com/agentgift" target="_blank" rel="noopener noreferrer">
-                    <Twitter className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                  <a href="https://instagram.com/agentgift" target="_blank" rel="noopener noreferrer">
-                    <Instagram className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                  <a href="https://linkedin.com/company/agentgift" target="_blank" rel="noopener noreferrer">
-                    <Linkedin className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                  <a href="https://github.com/agentgift" target="_blank" rel="noopener noreferrer">
-                    <Github className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                  <a href="https://discord.gg/FVDQPDvkEH" target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                  </a>
-                </Button>
-              </div>
-            </div>
+                <Badge variant="secondary" className="text-xs">
+                  Beta
+                </Badge>
+              </Link>
 
-            {/* Company */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Company</h3>
-              <div className="space-y-2 text-sm">
-                <Link href="/mission" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Our Mission
-                </Link>
-                <Link href="/blog" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Gift Intel (Blog)
-                </Link>
-                <Link href="/contact" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Contact Us
-                </Link>
-                <Link href="/terms" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Terms of Service
-                </Link>
-              </div>
-            </div>
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center space-x-8">
+                {user &&
+                  navigation.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          pathname === item.href
+                            ? "bg-purple-100 text-purple-700"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{item.name}</span>
+                      </Link>
+                    )
+                  })}
+              </nav>
 
-            {/* Product */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Product</h3>
-              <div className="space-y-2 text-sm">
-                <Link href="/pricing" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Pricing
-                </Link>
-                <Link
-                  href="/tokenomics"
-                  className="block text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Tokenomics
-                </Link>
-                <Link href="/features" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Features
-                </Link>
-                <Link href="/api" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  API Access
-                </Link>
-              </div>
-            </div>
+              {/* Auth Buttons */}
+              <div className="flex items-center space-x-4">
+                {user ? (
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-600">Welcome, {user.email?.split("@")[0]}</span>
+                    <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-3">
+                    <Link href="/auth/signin">
+                      <Button variant="ghost" size="sm">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link href="/auth/signup">
+                      <Button size="sm">Sign Up</Button>
+                    </Link>
+                  </div>
+                )}
 
-            {/* Resources */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Resources</h3>
-              <div className="space-y-2 text-sm">
-                <Link href="/docs" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Documentation
-                </Link>
-                <Link href="/help" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Help Center
-                </Link>
-                <Link href="/community" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Community
-                </Link>
-                <Link href="/status" className="block text-muted-foreground hover:text-foreground transition-colors">
-                  Status
-                </Link>
+                {/* Mobile Menu */}
+                {user && (
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="sm" className="md:hidden">
+                        <Menu className="w-5 h-5" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-64">
+                      <div className="flex flex-col space-y-4 mt-8">
+                        {navigation.map((item) => {
+                          const Icon = item.icon
+                          return (
+                            <Link
+                              key={item.name}
+                              href={item.href}
+                              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                pathname === item.href
+                                  ? "bg-purple-100 text-purple-700"
+                                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                              <span>{item.name}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                )}
               </div>
             </div>
           </div>
+        </header>
+      )}
 
-          <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">© 2024 AgentGift.ai. All rights reserved.</p>
-            <div className="flex items-center gap-4 mt-4 md:mt-0">
-              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/cookies" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Cookie Policy
-              </Link>
+      {/* Main Content */}
+      <main className={isAuthPage ? "" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>{children}</main>
+
+      {/* Footer */}
+      {!isAuthPage && (
+        <footer className="bg-white border-t border-gray-200 mt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              {/* Company Info */}
+              <div className="col-span-1 md:col-span-2">
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Gift className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    AgentGift.ai
+                  </span>
+                </div>
+                <p className="text-gray-600 mb-4 max-w-md">
+                  AI-powered gift recommendations that understand emotions, relationships, and cultural context. Find
+                  the perfect gift every time.
+                </p>
+                <div className="flex space-x-4">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="https://twitter.com/agentgift" target="_blank" rel="noopener noreferrer">
+                      <Twitter className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="https://instagram.com/agentgift" target="_blank" rel="noopener noreferrer">
+                      <Instagram className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="https://linkedin.com/company/agentgift" target="_blank" rel="noopener noreferrer">
+                      <Linkedin className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="https://github.com/agentgift" target="_blank" rel="noopener noreferrer">
+                      <Github className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="https://discord.gg/FVDQPDvkEH" target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Links */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Product</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/smart-search" className="text-sm text-gray-600 hover:text-gray-900">
+                      Smart Search
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/concierge" className="text-sm text-gray-600 hover:text-gray-900">
+                      AI Concierge
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/pricing" className="text-sm text-gray-600 hover:text-gray-900">
+                      Pricing
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/features" className="text-sm text-gray-600 hover:text-gray-900">
+                      Features
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Support */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Support</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/contact" className="text-sm text-gray-600 hover:text-gray-900">
+                      Contact Us
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/legal/terms" className="text-sm text-gray-600 hover:text-gray-900">
+                      Terms of Service
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/legal/privacy" className="text-sm text-gray-600 hover:text-gray-900">
+                      Privacy Policy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="https://discord.gg/FVDQPDvkEH"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Discord Community
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 mt-8 pt-8">
+              <p className="text-sm text-gray-500 text-center">© 2024 AgentGift.ai. All rights reserved.</p>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   )
 }
