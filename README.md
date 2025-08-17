@@ -1,30 +1,37 @@
-# Agentgift.ai dashboard
+# AgentGift.ai Dashboard
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+AI-powered gift recommendations with cultural intelligence and emotional understanding.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/gift-squad-projects/v0-agentgift-ai-dashboard)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/Bl1e1aToYT0)
+## Features
 
-## Overview
+- 🎁 Smart Gift Recommendations
+- 🌍 Cultural Context Awareness
+- 💝 Emotional Intelligence
+- 🎯 Personalized Suggestions
+- 🏆 Gamification & XP System
+- 🤖 AI Concierge Chat
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## Getting Started
 
-## Deployment
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up environment variables (see `.env.local.example`)
+4. Run the development server: `npm run dev`
+5. Open [http://localhost:3000](http://localhost:3000)
 
-Your project is live at:
+## Environment Variables
 
-**[https://vercel.com/gift-squad-projects/v0-agentgift-ai-dashboard](https://vercel.com/gift-squad-projects/v0-agentgift-ai-dashboard)**
+See `.env.local.example` for required environment variables.
 
-## Build your app
+## Tech Stack
 
-Continue building your app on:
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (Auth & Database)
+- Shadcn/ui Components
+- Framer Motion (Animations)
 
-**[https://v0.dev/chat/projects/Bl1e1aToYT0](https://v0.dev/chat/projects/Bl1e1aToYT0)**
+## License
 
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+MIT License

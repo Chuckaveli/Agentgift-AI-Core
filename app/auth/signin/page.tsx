@@ -34,8 +34,8 @@ export default function SignInPage() {
               AgentGift.ai
             </span>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your AgentGift.ai account</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+          <p className="text-gray-600">Sign in to your account to continue finding perfect gifts</p>
         </div>
 
         {/* Auth Form */}
@@ -95,9 +95,13 @@ export default function SignInPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-xs text-gray-500">
-            Need help?{" "}
-            <Link href="/contact" className="text-purple-600 hover:text-purple-500">
-              Contact Support
+            By signing in, you agree to our{" "}
+            <Link href="/legal/terms" className="text-purple-600 hover:text-purple-500">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/legal/privacy" className="text-purple-600 hover:text-purple-500">
+              Privacy Policy
             </Link>
           </p>
         </div>
