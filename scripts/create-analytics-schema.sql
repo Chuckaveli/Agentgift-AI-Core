@@ -1,144 +1,119 @@
--- Create analytics events table
+-- Create analytics_events table
 CREATE TABLE IF NOT EXISTS analytics_events (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  event_name TEXT NOT NULL,
-  properties JSONB DEFAULT '{}',
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  session_id TEXT,
-  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    event_name TEXT NOT NULL,
+    properties JSONB DEFAULT '{}',
+    session_id TEXT,
+    user_id UUID,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes for better performance
+-- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_analytics_events_event_name ON analytics_events(event_name);
-CREATE INDEX IF NOT EXISTS idx_analytics_events_user_id ON analytics_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_session_id ON analytics_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_user_id ON analytics_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_timestamp ON analytics_events(timestamp);
-CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at);
 
--- Create a view for conversion funnel analysis
+-- Create conversion funnel view
 CREATE OR REPLACE VIEW conversion_funnel AS
 SELECT 
-  event_name,
-  COUNT(*) as event_count,
-  COUNT(DISTINCT session_id) as unique_sessions,
-  COUNT(DISTINCT user_id) as unique_users,
-  DATE_TRUNC('day', timestamp) as event_date
+    event_name,
+    COUNT(*) as event_count,
+    COUNT(DISTINCT session_id) as unique_sessions,
+    COUNT(DISTINCT user_id) as unique_users
 FROM analytics_events 
 WHERE event_name IN (
-  'questionnaire_started',
-  'questionnaire_completed', 
-  'cta_clicked',
-  'signup_started',
-  'signup_completed',
-  'dashboard_arrived'
+    'landing_page_view',
+    'questionnaire_started',
+    'questionnaire_completed',
+    'cta_clicked',
+    'signup_started',
+    'signup_completed',
+    'dashboard_arrived'
 )
-GROUP BY event_name, DATE_TRUNC('day', timestamp)
-ORDER BY event_date DESC, event_name;
+GROUP BY event_name
+ORDER BY 
+    CASE event_name
+        WHEN 'landing_page_view' THEN 1
+        WHEN 'questionnaire_started' THEN 2
+        WHEN 'questionnaire_completed' THEN 3
+        WHEN 'cta_clicked' THEN 4
+        WHEN 'signup_started' THEN 5
+        WHEN 'signup_completed' THEN 6
+        WHEN 'dashboard_arrived' THEN 7
+    END;
 
--- Function to calculate conversion rates
-CREATE OR REPLACE FUNCTION get_conversion_rates(
-  start_date DATE DEFAULT CURRENT_DATE - INTERVAL '30 days',
-  end_date DATE DEFAULT CURRENT_DATE
-)
+-- Function to get conversion rates
+CREATE OR REPLACE FUNCTION get_conversion_rates()
 RETURNS TABLE (
-  step TEXT,
-  count BIGINT,
-  conversion_rate NUMERIC
+    step TEXT,
+    count BIGINT,
+    conversion_rate NUMERIC
 ) AS $$
 BEGIN
-  RETURN QUERY
-  WITH funnel_steps AS (
+    RETURN QUERY
+    WITH funnel_data AS (
+        SELECT 
+            event_name,
+            COUNT(DISTINCT session_id) as sessions
+        FROM analytics_events 
+        WHERE event_name IN (
+            'landing_page_view',
+            'questionnaire_started', 
+            'questionnaire_completed',
+            'cta_clicked',
+            'signup_started',
+            'signup_completed',
+            'dashboard_arrived'
+        )
+        GROUP BY event_name
+    ),
+    ordered_funnel AS (
+        SELECT 
+            event_name,
+            sessions,
+            LAG(sessions) OVER (ORDER BY 
+                CASE event_name
+                    WHEN 'landing_page_view' THEN 1
+                    WHEN 'questionnaire_started' THEN 2
+                    WHEN 'questionnaire_completed' THEN 3
+                    WHEN 'cta_clicked' THEN 4
+                    WHEN 'signup_started' THEN 5
+                    WHEN 'signup_completed' THEN 6
+                    WHEN 'dashboard_arrived' THEN 7
+                END
+            ) as previous_sessions
+        FROM funnel_data
+    )
     SELECT 
-      'questionnaire_started' as step,
-      COUNT(DISTINCT session_id) as count
-    FROM analytics_events 
-    WHERE event_name = 'questionnaire_started'
-      AND timestamp::date BETWEEN start_date AND end_date
-    
-    UNION ALL
-    
-    SELECT 
-      'questionnaire_completed' as step,
-      COUNT(DISTINCT session_id) as count
-    FROM analytics_events 
-    WHERE event_name = 'questionnaire_completed'
-      AND timestamp::date BETWEEN start_date AND end_date
-    
-    UNION ALL
-    
-    SELECT 
-      'cta_clicked' as step,
-      COUNT(DISTINCT session_id) as count
-    FROM analytics_events 
-    WHERE event_name = 'cta_clicked'
-      AND timestamp::date BETWEEN start_date AND end_date
-    
-    UNION ALL
-    
-    SELECT 
-      'signup_started' as step,
-      COUNT(DISTINCT session_id) as count
-    FROM analytics_events 
-    WHERE event_name = 'signup_started'
-      AND timestamp::date BETWEEN start_date AND end_date
-    
-    UNION ALL
-    
-    SELECT 
-      'signup_completed' as step,
-      COUNT(DISTINCT session_id) as count
-    FROM analytics_events 
-    WHERE event_name = 'signup_completed'
-      AND timestamp::date BETWEEN start_date AND end_date
-    
-    UNION ALL
-    
-    SELECT 
-      'dashboard_arrived' as step,
-      COUNT(DISTINCT session_id) as count
-    FROM analytics_events 
-    WHERE event_name = 'dashboard_arrived'
-      AND timestamp::date BETWEEN start_date AND end_date
-  ),
-  total_sessions AS (
-    SELECT COUNT(DISTINCT session_id) as total
-    FROM analytics_events 
-    WHERE event_name = 'questionnaire_started'
-      AND timestamp::date BETWEEN start_date AND end_date
-  )
-  SELECT 
-    f.step,
-    f.count,
-    CASE 
-      WHEN t.total > 0 THEN ROUND((f.count::numeric / t.total::numeric) * 100, 2)
-      ELSE 0
-    END as conversion_rate
-  FROM funnel_steps f
-  CROSS JOIN total_sessions t
-  ORDER BY 
-    CASE f.step
-      WHEN 'questionnaire_started' THEN 1
-      WHEN 'questionnaire_completed' THEN 2
-      WHEN 'cta_clicked' THEN 3
-      WHEN 'signup_started' THEN 4
-      WHEN 'signup_completed' THEN 5
-      WHEN 'dashboard_arrived' THEN 6
-    END;
+        event_name::TEXT,
+        sessions,
+        CASE 
+            WHEN previous_sessions IS NULL OR previous_sessions = 0 THEN 100.0
+            ELSE ROUND((sessions::NUMERIC / previous_sessions::NUMERIC) * 100, 2)
+        END as conversion_rate
+    FROM ordered_funnel
+    ORDER BY 
+        CASE event_name
+            WHEN 'landing_page_view' THEN 1
+            WHEN 'questionnaire_started' THEN 2
+            WHEN 'questionnaire_completed' THEN 3
+            WHEN 'cta_clicked' THEN 4
+            WHEN 'signup_started' THEN 5
+            WHEN 'signup_completed' THEN 6
+            WHEN 'dashboard_arrived' THEN 7
+        END;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Enable RLS
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 
--- Policy for authenticated users to read their own analytics
-CREATE POLICY "Users can view their own analytics" ON analytics_events
-  FOR SELECT USING (auth.uid() = user_id);
+-- Create policy for service role access
+CREATE POLICY "Service role can manage analytics_events" ON analytics_events
+    FOR ALL USING (auth.role() = 'service_role');
 
--- Policy for service role to insert analytics
-CREATE POLICY "Service role can insert analytics" ON analytics_events
-  FOR INSERT WITH CHECK (true);
-
--- Policy for service role to read all analytics (for admin)
-CREATE POLICY "Service role can read all analytics" ON analytics_events
-  FOR SELECT USING (auth.jwt() ->> 'role' = 'service_role');
+-- Create policy for authenticated users to view their own events
+CREATE POLICY "Users can view own analytics_events" ON analytics_events
+    FOR SELECT USING (auth.uid() = user_id);
