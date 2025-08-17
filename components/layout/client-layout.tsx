@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut, Moon, Sun, Twitter, Instagram, Linkedin, Github } from "lucide-react"
+import { User, Settings, LogOut, Moon, Sun, Twitter, Instagram, Linkedin, Github, MessageCircle } from "lucide-react"
 
 // Mock user for demo - replace with real auth
 const mockUser = {
@@ -154,17 +154,30 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                 AI-powered gift intelligence for meaningful connections and perfect presents.
               </p>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Twitter className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <a href="https://twitter.com/agentgift" target="_blank" rel="noopener noreferrer">
+                    <Twitter className="h-4 w-4" />
+                  </a>
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Instagram className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <a href="https://instagram.com/agentgift" target="_blank" rel="noopener noreferrer">
+                    <Instagram className="h-4 w-4" />
+                  </a>
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Linkedin className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <a href="https://linkedin.com/company/agentgift" target="_blank" rel="noopener noreferrer">
+                    <Linkedin className="h-4 w-4" />
+                  </a>
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Github className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <a href="https://github.com/agentgift" target="_blank" rel="noopener noreferrer">
+                    <Github className="h-4 w-4" />
+                  </a>
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <a href="https://discord.gg/FVDQPDvkEH" target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-4 w-4" />
+                  </a>
                 </Button>
               </div>
             </div>
