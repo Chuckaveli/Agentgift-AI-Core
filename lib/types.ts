@@ -2,7 +2,7 @@ export type Tier = "Free" | "Pro" | "Pro+"
 
 export type PersonaKey = "avelyn" | "galen" | "zola" | "mei" | "arya"
 
-export type DatabaseUserProfile = {
+export interface DatabaseUserProfile {
   id: string
   tier: Tier
   xp_level: number
@@ -11,29 +11,15 @@ export type DatabaseUserProfile = {
 }
 
 export interface Message {
+  id: string
   role: "user" | "assistant"
   content: string
+  timestamp: Date
 }
 
-export interface ConciergeContext {
-  tier: Tier
-  xp_level: number
-  love_language: string | null
-  life_path_number: number | null
-}
-
-export interface ConciergeRequest {
-  persona: PersonaKey
-  context: ConciergeContext
-  messages: Message[]
-}
-
-export interface ConciergeResponse {
-  reply: string
-  ideas?: Array<{
-    title: string
-    description: string
-    reasoning: string
-  }>
-  meta?: Record<string, any>
+export interface EmotionalSignal {
+  label: string
+  lottie: string
+  tooltip: string
+  status: "active" | "dim" | "locked"
 }

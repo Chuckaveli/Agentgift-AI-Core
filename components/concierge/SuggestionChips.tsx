@@ -8,7 +8,7 @@ const chips = [
   "Something deeply personal",
 ]
 
-export default function SuggestionChips() {
+export function SuggestionChips() {
   return (
     <div className="flex flex-wrap gap-2">
       {chips.map((c) => (
@@ -22,3 +22,5 @@ export default function SuggestionChips() {
     </div>
   )
 }
+
+export default SuggestionChips

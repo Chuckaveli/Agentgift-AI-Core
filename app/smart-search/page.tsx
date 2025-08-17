@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -91,9 +91,18 @@ export default function SmartSearchPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [filteredGifts, setFilteredGifts] = useState(mockGifts)
-  const [searchTerms, setSearchTerms] = useState<string[]>([])
-  const [giftTypes, setGiftTypes] = useState<string[]>([])
-  const [occasions, setOccasions] = useState<string[]>([])
+
+  // Memoize the search change handler to prevent infinite re-renders
+  const handleSearchChange = useCallback((terms: string[], types: string[], occasions: string[]) => {
+    // This function receives search data from the filter engine
+    // We can use this data for more advanced filtering if needed
+    console.log("Search terms:", terms, "Gift types:", types, "Occasions:", occasions)
+  }, [])
+
+  // Memoize the filters change handler
+  const handleFiltersChange = useCallback((filters: string[]) => {
+    setActiveFilters(filters)
+  }, [])
 
   // Filter gifts based on active filters and search
   useEffect(() => {
@@ -117,16 +126,6 @@ export default function SmartSearchPage() {
 
     setFilteredGifts(filtered)
   }, [activeFilters, searchQuery])
-
-  const handleFiltersChange = (filters: string[]) => {
-    setActiveFilters(filters)
-  }
-
-  const handleSearchChange = (terms: string[], types: string[], occasions: string[]) => {
-    setSearchTerms(terms)
-    setGiftTypes(types)
-    setOccasions(occasions)
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

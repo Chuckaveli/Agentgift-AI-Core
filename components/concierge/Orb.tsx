@@ -4,17 +4,14 @@ import { useMemo, useState, useEffect } from "react"
 
 type OrbStatus = "active" | "dim" | "locked"
 
-export default function Orb({
-  label,
-  status,
-  lottie,
-  tooltip,
-}: {
+interface OrbProps {
   label: string
   status: OrbStatus
   lottie: string
   tooltip?: string
-}) {
+}
+
+export function Orb({ label, status, lottie, tooltip }: OrbProps) {
   const [animationData, setAnimationData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -86,3 +83,5 @@ export default function Orb({
     </div>
   )
 }
+
+export default Orb

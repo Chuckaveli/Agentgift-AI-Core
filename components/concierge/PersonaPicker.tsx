@@ -3,15 +3,13 @@
 import { Lock } from "lucide-react"
 import type { PersonaKey } from "@/lib/types"
 
-export default function PersonaPicker({
-  value,
-  onChange,
-  unlocked,
-}: {
+interface PersonaPickerProps {
   value: PersonaKey
   onChange: (p: PersonaKey) => void
   unlocked: Record<PersonaKey, boolean>
-}) {
+}
+
+export function PersonaPicker({ value, onChange, unlocked }: PersonaPickerProps) {
   const items: { key: PersonaKey; label: string; hint: string }[] = [
     { key: "avelyn", label: "🌸 Avelyn", hint: "Warm · Story-rich" },
     { key: "galen", label: "🖤 Galen", hint: "Calm · Minimal" },
@@ -47,3 +45,5 @@ export default function PersonaPicker({
     </div>
   )
 }
+
+export default PersonaPicker
