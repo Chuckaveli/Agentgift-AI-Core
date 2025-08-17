@@ -73,6 +73,26 @@ serve(async (req) => {
     }
   }
 
+  const generateImage = async (topic) => {
+    const dallePrompt = `Create a blog header image inspired by this gifting topic: ${topic}. Style: soft lighting, cozy, emotionally resonant, clean background.`
+
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      },
+      body: JSON.stringify({
+        prompt: dallePrompt,
+        n: 1,
+        size: "1024x512"
+      }),
+    })
+
+    const data = await response.json()
+    return data?.data?.[0]?.url || null
+  }
+
   for (const draft of drafts ?? []) {
     const persona = draft.persona_suggestion || choosePersona({
       series_suggestion: draft.series_suggestion,
@@ -98,14 +118,17 @@ serve(async (req) => {
     const result = await aiRes.json()
     const content = result.choices?.[0]?.message?.content || "[ERROR: No content]"
 
+    const image_url = await generateImage(draft.title)
+
     await supabase.from("post_queue").update({
       raw_content: content,
       status: "drafted",
-      persona_suggestion: persona
+      persona_suggestion: persona,
+      image_url
     }).eq("id", draft.id)
   }
 
-  return new Response("Generated post drafts from OpenAI", { status: 200 })
+  return new Response("Generated post drafts from OpenAI with images", { status: 200 })
 })
 
 /**
@@ -135,7 +158,7 @@ serve(async (req) => {
     series: post.series_suggestion,
     tags: [],
     category: null,
-    image_url: null,
+    image_url: post.image_url,
     published_at: new Date().toISOString(),
     status: "published"
   })
