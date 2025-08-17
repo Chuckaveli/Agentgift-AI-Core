@@ -1,4 +1,4 @@
-export default function SignInLoading() {
+export default function SignUpLoading() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -12,7 +12,7 @@ export default function SignInLoading() {
             </span>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Loading...</h2>
-          <p className="text-gray-600">Please wait while we prepare your sign in page</p>
+          <p className="text-gray-600">Please wait while we prepare your signup page</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -22,7 +22,15 @@ export default function SignInLoading() {
             <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
             <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
             <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            <div className="space-y-2 mt-6">
+              <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            </div>
           </div>
+        </div>
+
+        <div className="text-center mt-8">
+          <div className="h-3 bg-gray-200 rounded animate-pulse mx-auto w-3/4"></div>
         </div>
       </div>
     </div>

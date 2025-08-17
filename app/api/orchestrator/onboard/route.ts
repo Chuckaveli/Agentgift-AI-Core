@@ -1,68 +1,115 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getAdminClient } from "@/lib/supabase/clients"
-import { analytics } from "@/lib/analytics"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, email, metadata } = await request.json()
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
-    if (!userId || !email) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    // Get the current user
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const supabase = getAdminClient()
-
-    // Create user profile
-    const { data: profile, error: profileError } = await supabase
+    // Check if user already exists in our system
+    const { data: existingUser, error: fetchError } = await supabase
       .from("user_profiles")
-      .insert({
-        id: userId,
-        email,
+      .select("id, onboarded")
+      .eq("id", user.id)
+      .single()
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Error fetching user profile:", fetchError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
+    }
+
+    // If user doesn't exist, create profile
+    if (!existingUser) {
+      const { error: insertError } = await supabase.from("user_profiles").insert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        onboarded: true,
         xp: 100, // Welcome bonus
         tier: "free",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .select()
-      .single()
 
-    if (profileError) {
-      console.error("Profile creation error:", profileError)
-      return NextResponse.json({ error: "Failed to create profile" }, { status: 500 })
+      if (insertError) {
+        console.error("Error creating user profile:", insertError)
+        return NextResponse.json({ error: "Failed to create profile" }, { status: 500 })
+      }
+
+      // Award welcome bonus XP
+      const { error: xpError } = await supabase.from("user_xp").insert({
+        user_id: user.id,
+        amount: 100,
+        source: "welcome_bonus",
+        description: "Welcome to AgentGift.ai!",
+        created_at: new Date().toISOString(),
+      })
+
+      if (xpError) {
+        console.error("Error awarding welcome XP:", xpError)
+        // Don't fail onboarding if XP fails
+      }
+    } else if (!existingUser.onboarded) {
+      // Update existing user to mark as onboarded
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({
+          onboarded: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+
+      if (updateError) {
+        console.error("Error updating user profile:", updateError)
+        return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
+      }
     }
 
-    // Award welcome badge
-    const { error: badgeError } = await supabase.from("user_badges").insert({
-      user_id: userId,
-      badge_id: "welcome-explorer",
-      earned_at: new Date().toISOString(),
-    })
-
-    if (badgeError) {
-      console.error("Badge award error:", badgeError)
+    // Trigger Make.com webhook for new user onboarding
+    if (process.env.MAKE_WEBHOOK_URL) {
+      try {
+        await fetch(process.env.MAKE_WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            event: "user_onboarded",
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name,
+            timestamp: new Date().toISOString(),
+          }),
+        })
+      } catch (webhookError) {
+        console.error("Webhook error:", webhookError)
+        // Don't fail onboarding if webhook fails
+      }
     }
-
-    // Track successful onboarding
-    await analytics.track("user_onboarded", {
-      user_id: userId,
-      email,
-      welcome_xp: 100,
-      metadata,
-    })
 
     return NextResponse.json({
       success: true,
-      profile,
-      welcomeBonus: 100,
+      message: "User onboarded successfully",
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name,
+      },
     })
   } catch (error) {
     console.error("Onboarding error:", error)
-    return NextResponse.json(
-      {
-        error: "Failed to complete onboarding",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
