@@ -1,254 +1,283 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Gift, Sparkles, Globe, Brain, Users, Zap, TrendingUp, Calendar, Star, Crown, Heart } from "lucide-react"
-import Link from "next/link"
+import { Gift, Sparkles, Trophy, Users, Calendar, Heart, Star, Zap, Target, TrendingUp } from "lucide-react"
+import { analytics } from "@/lib/analytics"
 
-export default function DashboardPage() {
-  const [xp, setXp] = useState(1250)
-  const [level, setLevel] = useState(5)
-  const [nextLevelXp, setNextLevelXp] = useState(1500)
+interface User {
+  id: string
+  email: string
+  created_at: string
+}
 
-  const quickActions = [
-    {
-      title: "Find Perfect Gift",
-      description: "Get AI-powered recommendations",
-      icon: Gift,
-      href: "/gift-dna",
-      color: "bg-purple-500",
-      xp: "+50 XP",
-    },
-    {
-      title: "Cultural Check",
-      description: "Ensure cultural appropriateness",
-      icon: Globe,
-      href: "/cultural-respect",
-      color: "bg-blue-500",
-      xp: "+30 XP",
-    },
-    {
-      title: "Smart Search",
-      description: "Intelligent gift discovery",
-      icon: Brain,
-      href: "/smart-search",
-      color: "bg-green-500",
-      xp: "+40 XP",
-    },
-    {
-      title: "Group Gift",
-      description: "Coordinate with others",
-      icon: Users,
-      href: "/group-gifting",
-      color: "bg-pink-500",
-      xp: "+60 XP",
-    },
-  ]
+export default function Dashboard() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [xp, setXp] = useState(100) // Welcome bonus
+  const [isNewUser, setIsNewUser] = useState(false)
 
-  const recentActivity = [
-    {
-      action: "Completed Gift DNA Analysis",
-      time: "2 hours ago",
-      xp: 50,
-      icon: Gift,
-    },
-    {
-      action: "Unlocked Cultural Insights",
-      time: "1 day ago",
-      xp: 100,
-      icon: Globe,
-    },
-    {
-      action: "Used Smart Search",
-      time: "2 days ago",
-      xp: 40,
-      icon: Brain,
-    },
-  ]
+  const router = useRouter()
+  const supabase = createClientComponentClient()
 
-  const upcomingOccasions = [
-    {
-      name: "Mom's Birthday",
-      date: "Dec 25, 2024",
-      daysLeft: 12,
-      type: "Birthday",
-    },
-    {
-      name: "Anniversary",
-      date: "Jan 15, 2025",
-      daysLeft: 33,
-      type: "Anniversary",
-    },
-  ]
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser()
+
+        if (!authUser) {
+          router.push("/auth")
+          return
+        }
+
+        setUser(authUser as User)
+
+        // Check if user signed up within the last 5 minutes (new user)
+        const signupTime = new Date(authUser.created_at).getTime()
+        const now = new Date().getTime()
+        const fiveMinutesAgo = now - 5 * 60 * 1000
+        const isNew = signupTime > fiveMinutesAgo
+
+        setIsNewUser(isNew)
+
+        // Track dashboard arrival
+        await analytics.trackDashboardArrival(isNew, {
+          user_id: authUser.id,
+          signup_time: authUser.created_at,
+          time_to_dashboard: isNew ? now - signupTime : null,
+        })
+
+        // Award welcome XP for new users
+        if (isNew) {
+          await analytics.track("welcome_bonus_awarded", {
+            user_id: authUser.id,
+            xp_awarded: 100,
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error)
+        router.push("/auth")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    getUser()
+  }, [router, supabase])
+
+  const handleFeatureClick = async (featureName: string, featureUrl: string) => {
+    await analytics.track("dashboard_feature_click", {
+      feature_name: featureName,
+      feature_url: featureUrl,
+      user_id: user?.id,
+    })
+
+    router.push(featureUrl)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Welcome Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-2">
-            Welcome back, Gift Master!
-            <Sparkles className="inline-block ml-2 h-8 w-8 text-yellow-500" />
-          </h1>
-          <p className="text-muted-foreground">Ready to create some magical gifting moments?</p>
-        </div>
-
-        {/* XP Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-yellow-500" />
-              Level {level} - Gift Enthusiast
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{xp} XP</span>
-                <span>{nextLevelXp} XP</span>
-              </div>
-              <Progress value={(xp / nextLevelXp) * 100} className="h-3" />
-              <p className="text-sm text-muted-foreground">
-                {nextLevelXp - xp} XP until Level {level + 1}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome{isNewUser ? " to AgentGift.ai" : " back"}, {user?.email?.split("@")[0]}!
+                {isNewUser && <span className="ml-2">🎉</span>}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {isNewUser ? "Let's find the perfect gifts together!" : "Ready to discover more amazing gifts?"}
               </p>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader className="text-center pb-2">
-                  <div
-                    className={`w-12 h-12 mx-auto rounded-full ${action.color} flex items-center justify-center mb-3`}
-                  >
-                    <action.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <CardTitle className="text-lg">{action.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center pt-0">
-                  <p className="text-sm text-muted-foreground mb-4">{action.description}</p>
-                  <div className="space-y-2">
-                    <Badge variant="secondary" className="text-xs">
-                      <Zap className="w-3 h-3 mr-1" />
-                      {action.xp}
-                    </Badge>
-                    <Button size="sm" className="w-full" asChild>
-                      <Link href={action.href}>Start</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <div className="text-right">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                <span className="font-semibold">{xp} XP</span>
+              </div>
+              {isNewUser && (
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Welcome Bonus!
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* XP Progress */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>Progress to next level</span>
+              <span>{xp}/250 XP</span>
+            </div>
+            <Progress value={(xp / 250) * 100} className="h-2" />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <activity.icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      +{activity.xp} XP
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleFeatureClick("Smart Search", "/smart-search")}
+          >
+            <CardContent className="p-4 text-center">
+              <Target className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+              <h3 className="font-semibold">Smart Search</h3>
+              <p className="text-sm text-gray-600">Find gifts by description</p>
             </CardContent>
           </Card>
 
-          {/* Upcoming Occasions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                Upcoming Occasions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingOccasions.map((occasion, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/20 flex items-center justify-center">
-                      <Heart className="h-4 w-4 text-pink-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{occasion.name}</p>
-                      <p className="text-xs text-muted-foreground">{occasion.date}</p>
-                    </div>
-                    <Badge variant={occasion.daysLeft <= 14 ? "destructive" : "secondary"} className="text-xs">
-                      {occasion.daysLeft} days
-                    </Badge>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Add Occasion
-                </Button>
-              </div>
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleFeatureClick("Gift Concierge", "/concierge")}
+          >
+            <CardContent className="p-4 text-center">
+              <Sparkles className="h-8 w-8 text-pink-600 mx-auto mb-2" />
+              <h3 className="font-semibold">AI Concierge</h3>
+              <p className="text-sm text-gray-600">Chat with our AI assistant</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleFeatureClick("Gift DNA", "/gift-dna")}
+          >
+            <CardContent className="p-4 text-center">
+              <Heart className="h-8 w-8 text-red-600 mx-auto mb-2" />
+              <h3 className="font-semibold">Gift DNA</h3>
+              <p className="text-sm text-gray-600">Personality-based gifts</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleFeatureClick("Group Gifting", "/group-gifting")}
+          >
+            <CardContent className="p-4 text-center">
+              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <h3 className="font-semibold">Group Gifting</h3>
+              <p className="text-sm text-gray-600">Collaborate on gifts</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Featured Tools */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-              Featured Tools
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-                <Gift className="h-8 w-8 text-purple-600 mb-2" />
-                <h3 className="font-semibold mb-1">Gift DNA</h3>
-                <p className="text-sm text-muted-foreground mb-3">Analyze personality for perfect matches</p>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href="/gift-dna">Try Now</Link>
-                </Button>
-              </div>
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Recent Activity */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Recent Activity
+              </CardTitle>
+              <CardDescription>Your latest gift discoveries and interactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isNewUser ? (
+                <div className="text-center py-8">
+                  <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-900 mb-2">Welcome to AgentGift.ai!</h3>
+                  <p className="text-gray-600 mb-4">
+                    Start exploring our AI-powered gift features to see your activity here.
+                  </p>
+                  <Button onClick={() => handleFeatureClick("Smart Search", "/smart-search")}>
+                    <Target className="mr-2 h-4 w-4" />
+                    Try Smart Search
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Gift className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Gift search completed</p>
+                      <p className="text-sm text-gray-600">Found 12 perfect matches</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-                <Globe className="h-8 w-8 text-blue-600 mb-2" />
-                <h3 className="font-semibold mb-1">Cultural Respect</h3>
-                <p className="text-sm text-muted-foreground mb-3">Ensure culturally appropriate gifting</p>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href="/cultural-respect">Explore</Link>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Upcoming Occasions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Upcoming Occasions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Mom's Birthday</p>
+                      <p className="text-sm text-gray-600">In 12 days</p>
+                    </div>
+                    <Badge variant="outline">Birthday</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Anniversary</p>
+                      <p className="text-sm text-gray-600">In 28 days</p>
+                    </div>
+                    <Badge variant="outline">Anniversary</Badge>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full mt-4 bg-transparent">
+                  Add Occasion
                 </Button>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
-                <Brain className="h-8 w-8 text-green-600 mb-2" />
-                <h3 className="font-semibold mb-1">Smart Search</h3>
-                <p className="text-sm text-muted-foreground mb-3">AI-powered gift discovery</p>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href="/smart-search">Search</Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Achievement */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Latest Achievement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <div className="h-16 w-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Zap className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="font-semibold">Welcome Explorer!</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {isNewUser ? "Joined AgentGift.ai" : "Keep exploring features"}
+                  </p>
+                  <Badge variant="secondary" className="mt-2">
+                    +100 XP
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -1,184 +1,68 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { createServerClient } from "@/lib/supabase-client"
-import { cookies } from "next/headers"
-import { verify } from "jsonwebtoken"
+import { getAdminClient } from "@/lib/supabase/clients"
+import { analytics } from "@/lib/analytics"
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
+    const { userId, email, metadata } = await request.json()
 
-    // Get authenticated user
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ ok: false, error: "Authentication required" }, { status: 401 })
+    if (!userId || !email) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Use server client for admin operations
-    const serverSupabase = createServerClient()
+    const supabase = getAdminClient()
 
-    // Start transaction-like operations
-    let isNewUser = false
-    let demoData = null
-
-    // 1. Check/Create user profile
-    const { data: existingProfile } = await serverSupabase
+    // Create user profile
+    const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
-      .select("*")
-      .eq("user_id", user.id)
+      .insert({
+        id: userId,
+        email,
+        xp: 100, // Welcome bonus
+        tier: "free",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
       .single()
 
-    if (!existingProfile) {
-      // Create new user profile
-      const { error: profileError } = await serverSupabase.from("user_profiles").insert({
-        user_id: user.id,
-        tier: ["FREE"],
-        level: 1,
-        current_xp: 50, // Bonus XP for new users
-        lifetime_xp: 50,
-        demo_completed: false,
-        onboarding_completed: true,
-        signup_source: "demo",
-      })
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError)
-        throw new Error("Failed to create user profile")
-      }
-
-      // Award onboarding XP
-      const { error: xpError } = await serverSupabase.from("xp_transactions").insert({
-        user_id: user.id,
-        reason: "Welcome bonus - First signup",
-        amount: 50,
-      })
-
-      if (xpError) {
-        console.error("XP transaction error:", xpError)
-      }
-
-      isNewUser = true
+    if (profileError) {
+      console.error("Profile creation error:", profileError)
+      return NextResponse.json({ error: "Failed to create profile" }, { status: 500 })
     }
 
-    // 2. Process demo token if present
-    const demoToken = cookieStore.get("demo_token")?.value
+    // Award welcome badge
+    const { error: badgeError } = await supabase.from("user_badges").insert({
+      user_id: userId,
+      badge_id: "welcome-explorer",
+      earned_at: new Date().toISOString(),
+    })
 
-    if (demoToken) {
-      try {
-        const decoded = verify(demoToken, process.env.ORCHESTRATOR_SIGNING_SECRET!) as any
-
-        // Get demo session
-        const { data: demoSession, error: demoError } = await serverSupabase
-          .from("demo_sessions")
-          .select("*")
-          .eq("id", decoded.demoSessionId)
-          .eq("consumed", false)
-          .single()
-
-        if (demoSession && !demoError) {
-          const payload = demoSession.payload
-
-          // Create recipient
-          const { data: recipient, error: recipientError } = await serverSupabase
-            .from("recipients")
-            .insert({
-              user_id: user.id,
-              name: payload.recipient,
-              interests: payload.interests,
-            })
-            .select()
-            .single()
-
-          if (!recipientError && recipient) {
-            // Create gift suggestions
-            const giftSuggestions = payload.outputs.map((output: any) => ({
-              user_id: user.id,
-              recipient_id: recipient.id,
-              kind: output.type,
-              text: output.text,
-              rationale: output.rationale,
-              source: "demo",
-            }))
-
-            const { error: suggestionsError } = await serverSupabase.from("gift_suggestions").insert(giftSuggestions)
-
-            if (!suggestionsError) {
-              // Mark demo as consumed and attach to user
-              await serverSupabase
-                .from("demo_sessions")
-                .update({
-                  user_id: user.id,
-                  consumed: true,
-                })
-                .eq("id", demoSession.id)
-
-              // Update user profile to mark demo as completed
-              await serverSupabase.from("user_profiles").update({ demo_completed: true }).eq("user_id", user.id)
-
-              demoData = {
-                recipient: recipient.name,
-                suggestions: payload.outputs,
-              }
-            }
-          }
-        }
-      } catch (tokenError) {
-        console.error("Demo token processing error:", tokenError)
-      }
+    if (badgeError) {
+      console.error("Badge award error:", badgeError)
     }
 
-    // Log successful onboarding
-    await logToWebhook("user-onboarded", {
-      userId: user.id,
-      email: user.email,
-      isNewUser,
-      hasDemoData: !!demoData,
-      timestamp: new Date().toISOString(),
+    // Track successful onboarding
+    await analytics.track("user_onboarded", {
+      user_id: userId,
+      email,
+      welcome_xp: 100,
+      metadata,
     })
 
-    // Clear demo token cookie
-    const response = NextResponse.json({
-      ok: true,
-      next: "/dashboard",
-      isNewUser,
-      demoData,
+    return NextResponse.json({
+      success: true,
+      profile,
+      welcomeBonus: 100,
     })
-
-    response.cookies.delete("demo_token")
-
-    return response
   } catch (error) {
     console.error("Onboarding error:", error)
-
-    await logToWebhook("onboarding-error", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      timestamp: new Date().toISOString(),
-    })
-
-    return NextResponse.json({ ok: false, error: "Onboarding failed" }, { status: 500 })
-  }
-}
-
-async function logToWebhook(event: string, data: any) {
-  try {
-    if (process.env.MAKE_WEBHOOK_URL) {
-      await fetch(process.env.MAKE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event,
-          data,
-          timestamp: new Date().toISOString(),
-          source: "orchestrator",
-        }),
-      })
-    }
-  } catch (error) {
-    console.error("Webhook logging failed:", error)
+    return NextResponse.json(
+      {
+        error: "Failed to complete onboarding",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
