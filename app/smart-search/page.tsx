@@ -1,131 +1,87 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Search, Sparkles, Gift, Star, Filter, Heart, Globe } from "lucide-react"
-import Link from "next/link"
-import { EmotionalFilterEngine } from "@/components/filters/emotional-filter-engine"
-import { SmartSearchForm } from "@/components/features/smart-search-form"
-import type { UserTier } from "@/lib/feature-access"
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Search, Sparkles, Gift, Star, Filter, Heart, Globe } from "lucide-react";
+import Link from "next/link";
+import { EmotionalFilterEngine } from "@/components/filters/emotional-filter-engine";
+import { SmartSearchForm } from "@/components/features/smart-search-form";
+import type { UserTier } from "@/lib/feature-access";
 
 // Mock user data - in real app this would come from auth/context
 const userData = {
-  tier: "premium" as UserTier, // Change to test different tiers
+  tier: "premium" as UserTier,
   name: "Alex Chen",
-}
+};
 
 // Mock gift data
 const mockGifts = [
-  {
-    id: "1",
-    title: "Handwritten Letter Kit",
-    description: "Beautiful stationery set for heartfelt apologies",
-    price: "$24.99",
-    image: "/placeholder.svg?height=200&width=200",
-    tags: ["apology", "gentle", "thoughtful"],
-    rating: 4.8,
-    category: "Stationery",
-    emotions: ["apology", "gentle_love"],
-  },
-  {
-    id: "2",
-    title: "Gourmet Chocolate Box",
-    description: "Artisan chocolates that say sorry sweetly",
-    price: "$39.99",
-    image: "/placeholder.svg?height=200&width=200",
-    tags: ["apology", "sweet", "luxury"],
-    rating: 4.9,
-    category: "Food & Treats",
-    emotions: ["apology", "just_because"],
-  },
-  {
-    id: "3",
-    title: "Spa Day Experience",
-    description: "Relaxing spa treatment for healing and care",
-    price: "$129.99",
-    image: "/placeholder.svg?height=200&width=200",
-    tags: ["repair", "comfort", "luxury"],
-    rating: 4.7,
-    category: "Experience",
-    emotions: ["repair", "gentle_love"],
-  },
-  {
-    id: "4",
-    title: "Custom Star Map",
-    description: "Capture the night sky of your special moment",
-    price: "$49.99",
-    image: "/placeholder.svg?height=200&width=200",
-    tags: ["deep", "meaningful", "custom"],
-    rating: 4.9,
-    category: "Personalized",
-    emotions: ["deep_love", "i_see_you"],
-  },
-  {
-    id: "5",
-    title: "Surprise Picnic Kit",
-    description: "Everything needed for a spontaneous outdoor date",
-    price: "$79.99",
-    image: "/placeholder.svg?height=200&width=200",
-    tags: ["surprise", "playful", "experience"],
-    rating: 4.6,
-    category: "Experience",
-    emotions: ["surprise", "playful_love"],
-  },
-  {
-    id: "6",
-    title: "Memory Journal",
-    description: "Beautiful journal for capturing thoughts and memories",
-    price: "$34.99",
-    image: "/placeholder.svg?height=200&width=200",
-    tags: ["reflect", "thoughtful", "personal"],
-    rating: 4.8,
-    category: "Stationery",
-    emotions: ["reflect", "i_see_you"],
-  },
-]
+  { id: "1", title: "Handwritten Letter Kit", description: "Beautiful stationery set for heartfelt apologies", price: "$24.99", image: "/placeholder.svg?height=200&width=200", tags: ["apology", "gentle", "thoughtful"], rating: 4.8, category: "Stationery", emotions: ["apology", "gentle_love"] },
+  { id: "2", title: "Gourmet Chocolate Box", description: "Artisan chocolates that say sorry sweetly", price: "$39.99", image: "/placeholder.svg?height=200&width=200", tags: ["apology", "sweet", "luxury"], rating: 4.9, category: "Food & Treats", emotions: ["apology", "just_because"] },
+  { id: "3", title: "Spa Day Experience", description: "Relaxing spa treatment for healing and care", price: "$129.99", image: "/placeholder.svg?height=200&width=200", tags: ["repair", "comfort", "luxury"], rating: 4.7, category: "Experience", emotions: ["repair", "gentle_love"] },
+  { id: "4", title: "Custom Star Map", description: "Capture the night sky of your special moment", price: "$49.99", image: "/placeholder.svg?height=200&width=200", tags: ["deep", "meaningful", "custom"], rating: 4.9, category: "Personalized", emotions: ["deep_love", "i_see_you"] },
+  { id: "5", title: "Surprise Picnic Kit", description: "Everything needed for a spontaneous outdoor date", price: "$79.99", image: "/placeholder.svg?height=200&width=200", tags: ["surprise", "playful", "experience"], rating: 4.6, category: "Experience", emotions: ["surprise", "playful_love"] },
+  { id: "6", title: "Memory Journal", description: "Beautiful journal for capturing thoughts and memories", price: "$34.99", image: "/placeholder.svg?height=200&width=200", tags: ["reflect", "thoughtful", "personal"], rating: 4.8, category: "Stationery", emotions: ["reflect", "i_see_you"] },
+];
+
+// shallow, order-sensitive compare (matches how most filter arrays mutate)
+const arraysEqual = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((v, i) => v === b[i]);
 
 export default function SmartSearchPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [activeFilters, setActiveFilters] = useState<string[]>([])
-  const [filteredGifts, setFilteredGifts] = useState(mockGifts)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [filteredGifts, setFilteredGifts] = useState(mockGifts);
 
-  // Memoize the search change handler to prevent infinite re-renders
+  // ——— Stable & idempotent handlers ———
+
+  // Track the last payload we processed from the filter engine
+  const lastEngineSearchRef = useRef<string>("");
+
+  // Parent handler for search data coming from EmotionalFilterEngine
+  // Idempotent: only acts when the payload actually changes.
   const handleSearchChange = useCallback((terms: string[], types: string[], occasions: string[]) => {
-    // This function receives search data from the filter engine
-    // We can use this data for more advanced filtering if needed
-    console.log("Search terms:", terms, "Gift types:", types, "Occasions:", occasions)
-  }, [])
+    const key = JSON.stringify({ terms, types, occasions });
+    if (lastEngineSearchRef.current === key) return; // no-op if identical
+    lastEngineSearchRef.current = key;
 
-  // Memoize the filters change handler
+    // TODO: if/when you want to use these for advanced filtering,
+    // set state here (e.g., setEngineSearch({ terms, types, occasions }))
+    // For now we just log once per real change:
+    // console.log("Search terms:", terms, "Gift types:", types, "Occasions:", occasions);
+  }, []);
+
+  // Parent handler for filters coming from EmotionalFilterEngine
+  // Idempotent: avoids re-setting the same array.
   const handleFiltersChange = useCallback((filters: string[]) => {
-    setActiveFilters(filters)
-  }, [])
+    setActiveFilters((prev) => (arraysEqual(prev, filters) ? prev : filters));
+  }, []);
 
-  // Filter gifts based on active filters and search
+  // ——— Local filtering for demo data ———
   useEffect(() => {
-    let filtered = mockGifts
+    let filtered = mockGifts;
 
-    // Filter by emotions
     if (activeFilters.length > 0) {
-      filtered = filtered.filter((gift) => gift.emotions.some((emotion) => activeFilters.includes(emotion)))
+      filtered = filtered.filter((gift) =>
+        gift.emotions.some((emotion) => activeFilters.includes(emotion))
+      );
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+      const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (gift) =>
-          gift.title.toLowerCase().includes(query) ||
-          gift.description.toLowerCase().includes(query) ||
-          gift.tags.some((tag) => tag.toLowerCase().includes(query)),
-      )
+          gift.title.toLowerCase().includes(q) ||
+          gift.description.toLowerCase().includes(q) ||
+          gift.tags.some((tag) => tag.toLowerCase().includes(q))
+      );
     }
 
-    setFilteredGifts(filtered)
-  }, [activeFilters, searchQuery])
+    setFilteredGifts(filtered);
+  }, [activeFilters, searchQuery]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -185,7 +141,9 @@ export default function SmartSearchPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Scores gifts based on emotional impact and thoughtfulness</p>
+              <p className="text-sm text-muted-foreground">
+                Scores gifts based on emotional impact and thoughtfulness
+              </p>
             </CardContent>
           </Card>
 
@@ -337,8 +295,8 @@ export default function SmartSearchPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setActiveFilters([])
-                      setSearchQuery("")
+                      setActiveFilters([]);
+                      setSearchQuery("");
                     }}
                   >
                     Clear All Filters
@@ -350,5 +308,5 @@ export default function SmartSearchPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
