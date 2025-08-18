@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Gift, Sparkles, Settings, LogOut, Menu, Heart, Search, Zap, Crown, Star } from "lucide-react"
+import { Settings, LogOut, Menu, Heart, Search, Zap, Crown, Star } from "lucide-react"
 
 interface ClientUser {
   id: string
@@ -72,7 +73,7 @@ export function Navbar() {
     { name: "Dashboard", href: "/dashboard", icon: Zap },
     { name: "Smart Search", href: "/smart-search", icon: Search },
     { name: "Gift DNA", href: "/gift-dna", icon: Heart },
-    { name: "Concierge", href: "/concierge", icon: Sparkles },
+    { name: "Concierge", href: "/concierge", icon: Star },
     { name: "Pricing", href: "/pricing", icon: Crown },
   ]
 
@@ -102,14 +103,17 @@ export function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-3">
               <div className="relative">
-                <Gift className="h-8 w-8 text-purple-600" />
-                <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-pink-500" />
+                <Image
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentgift-logo-120x120-LNt9JS0WFm3LMER4UKFOXazjdOmyHS.png"
+                  alt="AgentGift.ai Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-lg"
+                />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                AgentGift.ai
-              </span>
+              <span className="text-xl font-bold agentgift-text-gradient">AgentGift.ai</span>
               <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
                 <Star className="w-3 h-3 mr-1" />
                 Global
@@ -181,10 +185,7 @@ export function Navbar() {
                 <Button variant="ghost" onClick={handleSignIn} className="text-sm">
                   Sign In
                 </Button>
-                <Button
-                  onClick={handleSignUp}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm"
-                >
+                <Button onClick={handleSignUp} className="agentgift-gradient hover:opacity-90 text-white text-sm">
                   Get Started
                 </Button>
               </div>
@@ -225,7 +226,7 @@ export function Navbar() {
                       </Button>
                       <Button
                         onClick={handleSignUp}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white justify-start"
+                        className="agentgift-gradient hover:opacity-90 text-white justify-start"
                       >
                         Get Started
                       </Button>
