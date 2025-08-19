@@ -1,69 +1,79 @@
 import { type NextRequest, NextResponse } from "next/server"
+<<<<<<< HEAD
 import { createClient } from "@/lib/supabase/clients"
+=======
+import { getServerClient } from "@/lib/supabase/clients"
+
+export const dynamic = "force-dynamic"
+>>>>>>> origin/main
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getServerClient()
     const body = await request.json()
-    const { name, relationship, birthday, loveLanguage, interests, notes, timestamp } = body
 
-    // Validate required fields
-    if (!name || !relationship) {
-      return NextResponse.json({ error: "Name and relationship are required" }, { status: 400 })
+    const { email, name, gift_context, source = "landing_page" } = body
+
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
-    const supabase = createClient()
-
-    // Store the lead data
+    // Store the lead in the database
     const { data, error } = await supabase
       .from("gift_entry_leads")
       .insert({
+        email,
         name,
-        relationship,
-        birthday: birthday || null,
-        love_language: loveLanguage,
-        interests: interests || [],
-        notes: notes || "",
-        created_at: timestamp || new Date().toISOString(),
-        ip_address: request.headers.get("x-forwarded-for") || "unknown",
-        user_agent: request.headers.get("user-agent") || "unknown",
+        gift_context,
+        source,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     if (error) {
-      console.error("Supabase error:", error)
-      return NextResponse.json({ error: "Failed to store lead data" }, { status: 500 })
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to save lead" }, { status: 500 })
     }
 
-    // Trigger Make.com webhook for lead processing
-    try {
-      await fetch(process.env.MAKE_WEBHOOK_URL!, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "gift_entry_lead",
-          data: {
-            id: data.id,
-            name,
-            relationship,
-            birthday,
-            love_language: loveLanguage,
-            interests,
-            notes,
-            timestamp,
-          },
-        }),
-      })
-    } catch (webhookError) {
-      console.error("Make.com webhook error:", webhookError)
-      // Don't fail the request if webhook fails
-    }
+    // Send welcome email or trigger automation here
+    // await sendWelcomeEmail(email, name)
 
-    return NextResponse.json({ success: true, leadId: data.id })
+    return NextResponse.json({
+      success: true,
+      lead_id: data.id,
+      message: "Lead captured successfully",
+    })
   } catch (error) {
-    console.error("API error:", error)
+    console.error("Gift entry leads API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = getServerClient()
+    const { searchParams } = new URL(request.url)
+    const limit = Number.parseInt(searchParams.get("limit") || "50")
+    const offset = Number.parseInt(searchParams.get("offset") || "0")
+
+    const { data: leads, error } = await supabase
+      .from("gift_entry_leads")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to fetch leads" }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      leads: leads || [],
+      total: leads?.length || 0,
+    })
+  } catch (error) {
+    console.error("Gift entry leads API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

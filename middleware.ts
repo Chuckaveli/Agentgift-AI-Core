@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import { createMiddlewareClient } from "@supabase/ssr"
+=======
+>>>>>>> origin/main
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
@@ -14,54 +17,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  try {
-    const res = NextResponse.next()
-    const supabase = createMiddlewareClient({ req, res })
-
-    // Refresh session if expired - required for Server Components
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    // Protected routes that require authentication
-    const protectedRoutes = [
-      "/dashboard",
-      "/admin",
-      "/settings",
-      "/agent-gifty",
-      "/smart-search",
-      "/gift-dna",
-      "/badges",
-      "/emotitokens",
-      "/agentvault",
-      "/assistants",
-      "/registry",
-    ]
-
-    // Check if the current path is protected
-    const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
-
-    // Redirect to auth if accessing protected route without session
-    if (isProtectedRoute && !session) {
-      const redirectUrl = new URL("/auth/signin", req.url)
-      redirectUrl.searchParams.set("redirectTo", req.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // Redirect authenticated users away from auth pages
-    if (
-      session &&
-      (req.nextUrl.pathname.startsWith("/auth/signin") || req.nextUrl.pathname.startsWith("/auth/signup"))
-    ) {
-      return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
-
-    return res
-  } catch (error) {
-    // If Supabase fails, just continue without auth
-    console.warn("Supabase middleware error:", error)
-    return NextResponse.next()
-  }
+  // For now, just pass through all requests
+  // Auth will be handled at the component level
+  return NextResponse.next()
 }
 
 export const config = {

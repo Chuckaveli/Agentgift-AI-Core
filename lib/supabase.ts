@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { createClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
 
@@ -15,8 +16,16 @@ export const createAdminSupabase = () =>
       persistSession: false,
     },
   })
+=======
+import { getBrowserClient, getServerClient, getAdminClient } from "@/lib/supabase/clients"
+
+// Re-export the clients for backward compatibility
+export const createClientSupabase = getBrowserClient
+export const createServerSupabase = getServerClient
+export const createAdminSupabase = getAdminClient
+>>>>>>> origin/main
 
 // Type exports
-export type SupabaseClient = ReturnType<typeof createClientSupabase>
-export type SupabaseServerClient = ReturnType<typeof createServerSupabase>
-export type SupabaseAdminClient = ReturnType<typeof createAdminSupabase>
+export type SupabaseClient = ReturnType<typeof getBrowserClient>
+export type SupabaseServerClient = ReturnType<typeof getServerClient>
+export type SupabaseAdminClient = ReturnType<typeof getAdminClient>

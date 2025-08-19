@@ -25,6 +25,10 @@ export default function LoginPage() {
     }
   }, [user, router])
 
+  useEffect(() => {
+    router.replace("/auth/signin")
+  }, [router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 

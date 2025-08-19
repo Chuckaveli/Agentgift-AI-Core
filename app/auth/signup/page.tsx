@@ -5,10 +5,22 @@ import { ThemeSupa } from "@supabase/auth-ui-shared"
 import { createBrowserClient } from "@supabase/ssr"
 import Link from "next/link"
 import { Gift } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { useEffect } from "react"
 
 const supabase = createBrowserClient()
 
 export default function SignUpPage() {
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect_to") || "/dashboard"
+
+  useEffect(() => {
+    // Set redirect cookie for auth callback
+    if (redirectTo) {
+      document.cookie = `redirect_to=${redirectTo}; path=/; max-age=3600`
+    }
+  }, [redirectTo])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -22,8 +34,8 @@ export default function SignUpPage() {
               AgentGift.ai
             </span>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h2>
-          <p className="text-gray-600">Join the world's most culturally aware AI gift platform</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Join AgentGift.ai</h2>
+          <p className="text-gray-600">Create your account to get personalized gift recommendations</p>
         </div>
 
         {/* Auth Form */}
@@ -84,11 +96,11 @@ export default function SignUpPage() {
         <div className="text-center mt-8">
           <p className="text-xs text-gray-500">
             By signing up, you agree to our{" "}
-            <Link href="/terms" className="text-purple-600 hover:text-purple-500">
+            <Link href="/legal/terms" className="text-purple-600 hover:text-purple-500">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-purple-600 hover:text-purple-500">
+            <Link href="/legal/privacy" className="text-purple-600 hover:text-purple-500">
               Privacy Policy
             </Link>
           </p>

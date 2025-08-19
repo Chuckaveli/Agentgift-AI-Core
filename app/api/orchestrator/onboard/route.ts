@@ -1,22 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server"
+<<<<<<< HEAD
 import { createServerClient } from "@/lib/supabase/clients"
 import { verify } from "jsonwebtoken"
+=======
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
+>>>>>>> origin/main
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = cookies()
+<<<<<<< HEAD
 
     // Get authenticated user
     const supabase = getServerClient() => cookieStore })
+=======
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+
+    // Get the current user
+>>>>>>> origin/main
     const {
       data: { user },
-      error: authError,
+      error: userError,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
-      return NextResponse.json({ ok: false, error: "Authentication required" }, { status: 401 })
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+<<<<<<< HEAD
     // Use server client for admin operations
     const serverSupabase = getServerClient()
 
@@ -26,157 +38,101 @@ export async function POST(request: NextRequest) {
 
     // 1. Check/Create user profile
     const { data: existingProfile } = await serverSupabase
+=======
+    // Check if user already exists in our system
+    const { data: existingUser, error: fetchError } = await supabase
+>>>>>>> origin/main
       .from("user_profiles")
-      .select("*")
-      .eq("user_id", user.id)
+      .select("id, onboarded")
+      .eq("id", user.id)
       .single()
 
-    if (!existingProfile) {
-      // Create new user profile
-      const { error: profileError } = await serverSupabase.from("user_profiles").insert({
-        user_id: user.id,
-        tier: ["FREE"],
-        level: 1,
-        current_xp: 50, // Bonus XP for new users
-        lifetime_xp: 50,
-        demo_completed: false,
-        onboarding_completed: true,
-        signup_source: "demo",
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Error fetching user profile:", fetchError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
+    }
+
+    // If user doesn't exist, create profile
+    if (!existingUser) {
+      const { error: insertError } = await supabase.from("user_profiles").insert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        onboarded: true,
+        xp: 100, // Welcome bonus
+        tier: "free",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
 
-      if (profileError) {
-        console.error("Profile creation error:", profileError)
-        throw new Error("Failed to create user profile")
+      if (insertError) {
+        console.error("Error creating user profile:", insertError)
+        return NextResponse.json({ error: "Failed to create profile" }, { status: 500 })
       }
 
-      // Award onboarding XP
-      const { error: xpError } = await serverSupabase.from("xp_transactions").insert({
+      // Award welcome bonus XP
+      const { error: xpError } = await supabase.from("user_xp").insert({
         user_id: user.id,
-        reason: "Welcome bonus - First signup",
-        amount: 50,
+        amount: 100,
+        source: "welcome_bonus",
+        description: "Welcome to AgentGift.ai!",
+        created_at: new Date().toISOString(),
       })
 
       if (xpError) {
-        console.error("XP transaction error:", xpError)
+        console.error("Error awarding welcome XP:", xpError)
+        // Don't fail onboarding if XP fails
       }
+    } else if (!existingUser.onboarded) {
+      // Update existing user to mark as onboarded
+      const { error: updateError } = await supabase
+        .from("user_profiles")
+        .update({
+          onboarded: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
 
-      isNewUser = true
+      if (updateError) {
+        console.error("Error updating user profile:", updateError)
+        return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
+      }
     }
 
-    // 2. Process demo token if present
-    const demoToken = cookieStore.get("demo_token")?.value
-
-    if (demoToken) {
+    // Trigger Make.com webhook for new user onboarding
+    if (process.env.MAKE_WEBHOOK_URL) {
       try {
-        const decoded = verify(demoToken, process.env.ORCHESTRATOR_SIGNING_SECRET!) as any
-
-        // Get demo session
-        const { data: demoSession, error: demoError } = await serverSupabase
-          .from("demo_sessions")
-          .select("*")
-          .eq("id", decoded.demoSessionId)
-          .eq("consumed", false)
-          .single()
-
-        if (demoSession && !demoError) {
-          const payload = demoSession.payload
-
-          // Create recipient
-          const { data: recipient, error: recipientError } = await serverSupabase
-            .from("recipients")
-            .insert({
-              user_id: user.id,
-              name: payload.recipient,
-              interests: payload.interests,
-            })
-            .select()
-            .single()
-
-          if (!recipientError && recipient) {
-            // Create gift suggestions
-            const giftSuggestions = payload.outputs.map((output: any) => ({
-              user_id: user.id,
-              recipient_id: recipient.id,
-              kind: output.type,
-              text: output.text,
-              rationale: output.rationale,
-              source: "demo",
-            }))
-
-            const { error: suggestionsError } = await serverSupabase.from("gift_suggestions").insert(giftSuggestions)
-
-            if (!suggestionsError) {
-              // Mark demo as consumed and attach to user
-              await serverSupabase
-                .from("demo_sessions")
-                .update({
-                  user_id: user.id,
-                  consumed: true,
-                })
-                .eq("id", demoSession.id)
-
-              // Update user profile to mark demo as completed
-              await serverSupabase.from("user_profiles").update({ demo_completed: true }).eq("user_id", user.id)
-
-              demoData = {
-                recipient: recipient.name,
-                suggestions: payload.outputs,
-              }
-            }
-          }
-        }
-      } catch (tokenError) {
-        console.error("Demo token processing error:", tokenError)
+        await fetch(process.env.MAKE_WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            event: "user_onboarded",
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name,
+            timestamp: new Date().toISOString(),
+          }),
+        })
+      } catch (webhookError) {
+        console.error("Webhook error:", webhookError)
+        // Don't fail onboarding if webhook fails
       }
     }
 
-    // Log successful onboarding
-    await logToWebhook("user-onboarded", {
-      userId: user.id,
-      email: user.email,
-      isNewUser,
-      hasDemoData: !!demoData,
-      timestamp: new Date().toISOString(),
+    return NextResponse.json({
+      success: true,
+      message: "User onboarded successfully",
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name,
+      },
     })
-
-    // Clear demo token cookie
-    const response = NextResponse.json({
-      ok: true,
-      next: "/dashboard",
-      isNewUser,
-      demoData,
-    })
-
-    response.cookies.delete("demo_token")
-
-    return response
   } catch (error) {
     console.error("Onboarding error:", error)
-
-    await logToWebhook("onboarding-error", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      timestamp: new Date().toISOString(),
-    })
-
-    return NextResponse.json({ ok: false, error: "Onboarding failed" }, { status: 500 })
-  }
-}
-
-async function logToWebhook(event: string, data: any) {
-  try {
-    if (process.env.MAKE_WEBHOOK_URL) {
-      await fetch(process.env.MAKE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event,
-          data,
-          timestamp: new Date().toISOString(),
-          source: "orchestrator",
-        }),
-      })
-    }
-  } catch (error) {
-    console.error("Webhook logging failed:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

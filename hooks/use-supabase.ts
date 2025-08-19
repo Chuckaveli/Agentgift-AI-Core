@@ -1,52 +1,41 @@
 "use client"
 
+<<<<<<< HEAD
 import { createClient } from "@/lib/supabase/clients"
+=======
+import { getBrowserClient } from "@/lib/supabase/clients"
+>>>>>>> origin/main
 import { useEffect, useState } from "react"
-import type { SupabaseClient } from "@supabase/supabase-js"
 
 export function useSupabase() {
-  const [supabase, setSupabase] = useState<SupabaseClient | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [supabase] = useState(() => getBrowserClient())
+
+  return supabase
+}
+
+export function useUser() {
+  const supabase = useSupabase()
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    try {
-      const client = createClient()
-      setSupabase(client)
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
-      // Test the connection
-      client.auth.getSession().then(({ error }) => {
-        if (error) {
-          setError(error.message)
-          setIsConnected(false)
-        } else {
-          setIsConnected(true)
-          setError(null)
-        }
-      })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initialize Supabase client")
-      setIsConnected(false)
-    }
-  }, [])
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
-  const retry = () => {
-    setError(null)
-    try {
-      const client = createClient()
-      setSupabase(client)
-      setIsConnected(true)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initialize Supabase client")
-      setIsConnected(false)
-    }
-  }
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
-  return {
-    supabase,
-    isConnected,
-    error,
-    retry,
-  }
+  return { user, loading, supabase }
 }
 

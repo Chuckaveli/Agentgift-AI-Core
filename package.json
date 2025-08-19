@@ -6,10 +6,10 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start",
-    "type-check": "tsc --noEmit"
+    "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/openai": "latest",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@mediapipe/face_mesh": "latest",
@@ -40,6 +40,7 @@
     "@radix-ui/react-toggle": "latest",
     "@radix-ui/react-toggle-group": "latest",
     "@radix-ui/react-tooltip": "latest",
+    "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/auth-ui-react": "latest",
     "@supabase/auth-ui-shared": "latest",
     "@supabase/ssr": "latest",
@@ -56,9 +57,11 @@
     "@trpc/next": "latest",
     "@trpc/react-query": "latest",
     "@trpc/server": "latest",
+    "ai": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "latest",
+    "crypto": "latest",
     "date-fns": "latest",
     "embla-carousel-react": "latest",
     "framer-motion": "latest",
@@ -72,9 +75,15 @@
     "next-themes": "latest",
     "node-notifier": "latest",
     "openai": "latest",
+<<<<<<< HEAD
     "react": "18.3.1",
     "react-day-picker": "latest",
     "react-dom": "18.3.1",
+=======
+    "react": "^18",
+    "react-day-picker": "latest",
+    "react-dom": "^18",
+>>>>>>> origin/main
     "react-hook-form": "latest",
     "react-resizable-panels": "latest",
     "recharts": "latest",
@@ -88,12 +97,16 @@
   },
   "devDependencies": {
     "@types/node": "^22",
-    "@types/react": "^18.3.23",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "eslint": "^8.56.0",
+<<<<<<< HEAD
     "eslint-config-next": "14.2.16",
+=======
+    "eslint-config-next": "14.0.4",
+>>>>>>> origin/main
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.9.2"
+    "typescript": "^5"
   }
 }

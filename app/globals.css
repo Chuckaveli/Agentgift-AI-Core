@@ -5,60 +5,58 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 9% 17%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
+    --radius: 0.5rem;
+    --agentgift-purple: 262 83% 58%;
+    --agentgift-blue: 240 100% 70%;
+    --agentgift-yellow: 48 96% 53%;
+    --agentgift-red: 0 84% 60%;
+    --agentgift-pink: 330 81% 60%;
+    --agentgift-green: 142 76% 36%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-
-    /* AgentGift Custom Colors */
-    --agentgift-purple: 262 83% 58%;
-    --agentgift-pink: 330 81% 60%;
-    --agentgift-blue: 217 91% 60%;
-    --agentgift-green: 142 76% 36%;
-    --agentgift-yellow: 48 96% 53%;
-    --agentgift-red: 0 84% 60%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262 83% 58%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -76,20 +74,35 @@
   }
 }
 
+.cultural-theme-warm {
+  --agentgift-purple: 25 95% 53%;
+  --agentgift-pink: 15 86% 59%;
+}
+
+.cultural-theme-cool {
+  --agentgift-purple: 220 83% 58%;
+  --agentgift-pink: 200 81% 60%;
+}
+
+.cultural-theme-neutral {
+  --agentgift-purple: 240 15% 45%;
+  --agentgift-pink: 240 15% 55%;
+}
+
 /* AgentGift Custom Styles */
 .agentgift-gradient {
-  background: linear-gradient(135deg, hsl(var(--agentgift-purple)) 0%, hsl(var(--agentgift-pink)) 100%);
+  background: linear-gradient(135deg, hsl(var(--agentgift-purple)) 0%, hsl(var(--agentgift-blue)) 100%);
 }
 
 .agentgift-text-gradient {
-  background: linear-gradient(135deg, hsl(var(--agentgift-purple)) 0%, hsl(var(--agentgift-pink)) 100%);
+  background: linear-gradient(135deg, hsl(var(--agentgift-purple)) 0%, hsl(var(--agentgift-blue)) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .agentgift-border-gradient {
-  border-image: linear-gradient(135deg, hsl(var(--agentgift-purple)) 0%, hsl(var(--agentgift-pink)) 100%) 1;
+  border-image: linear-gradient(135deg, hsl(var(--agentgift-purple)) 0%, hsl(var(--agentgift-blue)) 100%) 1;
 }
 
 /* Custom scrollbar */
@@ -108,7 +121,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--agentgift-pink));
+  background: hsl(var(--agentgift-blue));
 }
 
 /* Animations */
@@ -132,7 +145,7 @@
     box-shadow: 0 0 5px hsl(var(--agentgift-purple) / 0.5);
   }
   50% {
-    box-shadow: 0 0 20px hsl(var(--agentgift-purple) / 0.8), 0 0 30px hsl(var(--agentgift-pink) / 0.5);
+    box-shadow: 0 0 20px hsl(var(--agentgift-purple) / 0.8), 0 0 30px hsl(var(--agentgift-blue) / 0.5);
   }
 }
 
@@ -212,22 +225,6 @@
 
 .badge-glow {
   filter: drop-shadow(0 0 8px hsl(var(--agentgift-yellow) / 0.6));
-}
-
-/* Cultural theme adaptations */
-.cultural-theme-warm {
-  --agentgift-purple: 25 95% 53%;
-  --agentgift-pink: 15 86% 59%;
-}
-
-.cultural-theme-cool {
-  --agentgift-purple: 220 83% 58%;
-  --agentgift-pink: 200 81% 60%;
-}
-
-.cultural-theme-neutral {
-  --agentgift-purple: 240 15% 45%;
-  --agentgift-pink: 240 15% 55%;
 }
 
 /* Responsive utilities */

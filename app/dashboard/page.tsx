@@ -1,254 +1,302 @@
+<<<<<<< HEAD
 "use client";
 import { getBrowserClient } from "@/lib/supabase/clients";
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+=======
+"use client"
+
+import { useState, useEffect } from "react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+>>>>>>> origin/main
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Gift, Sparkles, Globe, Brain, Users, Zap, TrendingUp, Calendar, Star, Crown, Heart } from "lucide-react"
+import { Gift, Sparkles, Heart, Star, Trophy, Zap, Users, Calendar, TrendingUp, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import type { User } from "@supabase/auth-helpers-nextjs"
+
+interface UserProfile {
+  id: string
+  email: string
+  full_name: string | null
+  xp: number
+  tier: string
+  onboarded: boolean
+}
 
 export default function DashboardPage() {
-  const [xp, setXp] = useState(1250)
-  const [level, setLevel] = useState(5)
-  const [nextLevelXp, setNextLevelXp] = useState(1500)
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        setUser(user)
+
+        // Fetch user profile
+        const { data: profileData, error } = await supabase.from("user_profiles").select("*").eq("id", user.id).single()
+
+        if (profileData) {
+          setProfile(profileData)
+        } else if (error) {
+          console.error("Error fetching profile:", error)
+          // Trigger onboarding if profile doesn't exist
+          try {
+            await fetch("/api/orchestrator/onboard", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            })
+            // Refresh the page to get the new profile
+            window.location.reload()
+          } catch (onboardError) {
+            console.error("Onboarding error:", onboardError)
+          }
+        }
+      }
+
+      setLoading(false)
+    }
+
+    getUser()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        setUser(null)
+        setProfile(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase.auth])
 
   const quickActions = [
     {
-      title: "Find Perfect Gift",
-      description: "Get AI-powered recommendations",
-      icon: Gift,
-      href: "/gift-dna",
-      color: "bg-purple-500",
-      xp: "+50 XP",
-    },
-    {
-      title: "Cultural Check",
-      description: "Ensure cultural appropriateness",
-      icon: Globe,
-      href: "/cultural-respect",
-      color: "bg-blue-500",
-      xp: "+30 XP",
-    },
-    {
       title: "Smart Search",
-      description: "Intelligent gift discovery",
-      icon: Brain,
+      description: "Find gifts with AI-powered search",
+      icon: Zap,
       href: "/smart-search",
-      color: "bg-green-500",
-      xp: "+40 XP",
+      color: "from-blue-500 to-cyan-500",
     },
     {
-      title: "Group Gift",
-      description: "Coordinate with others",
+      title: "AI Concierge",
+      description: "Chat with our gift expert AI",
+      icon: Heart,
+      href: "/concierge",
+      color: "from-pink-500 to-rose-500",
+    },
+    {
+      title: "Gift Occasions",
+      description: "Browse by upcoming events",
+      icon: Calendar,
+      href: "/occasions",
+      color: "from-purple-500 to-indigo-500",
+    },
+    {
+      title: "Community",
+      description: "Connect with other gift-givers",
       icon: Users,
-      href: "/group-gifting",
-      color: "bg-pink-500",
-      xp: "+60 XP",
+      href: "/social",
+      color: "from-green-500 to-emerald-500",
     },
   ]
 
-  const recentActivity = [
-    {
-      action: "Completed Gift DNA Analysis",
-      time: "2 hours ago",
-      xp: 50,
-      icon: Gift,
-    },
-    {
-      action: "Unlocked Cultural Insights",
-      time: "1 day ago",
-      xp: 100,
-      icon: Globe,
-    },
-    {
-      action: "Used Smart Search",
-      time: "2 days ago",
-      xp: 40,
-      icon: Brain,
-    },
-  ]
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
 
-  const upcomingOccasions = [
-    {
-      name: "Mom's Birthday",
-      date: "Dec 25, 2024",
-      daysLeft: 12,
-      type: "Birthday",
-    },
-    {
-      name: "Anniversary",
-      date: "Jan 15, 2025",
-      daysLeft: 33,
-      type: "Anniversary",
-    },
-  ]
-
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Welcome Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-2">
-            Welcome back, Gift Master!
-            <Sparkles className="inline-block ml-2 h-8 w-8 text-yellow-500" />
-          </h1>
-          <p className="text-muted-foreground">Ready to create some magical gifting moments?</p>
-        </div>
-
-        {/* XP Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-yellow-500" />
-              Level {level} - Gift Enthusiast
-            </CardTitle>
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Please Sign In</CardTitle>
+            <CardDescription>You need to be signed in to access the dashboard</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{xp} XP</span>
-                <span>{nextLevelXp} XP</span>
-              </div>
-              <Progress value={(xp / nextLevelXp) * 100} className="h-3" />
-              <p className="text-sm text-muted-foreground">
-                {nextLevelXp - xp} XP until Level {level + 1}
-              </p>
-            </div>
+          <CardContent className="text-center">
+            <Link href="/auth/signin">
+              <Button>Sign In</Button>
+            </Link>
           </CardContent>
         </Card>
+      </div>
+    )
+  }
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader className="text-center pb-2">
-                  <div
-                    className={`w-12 h-12 mx-auto rounded-full ${action.color} flex items-center justify-center mb-3`}
-                  >
-                    <action.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <CardTitle className="text-lg">{action.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center pt-0">
-                  <p className="text-sm text-muted-foreground mb-4">{action.description}</p>
-                  <div className="space-y-2">
-                    <Badge variant="secondary" className="text-xs">
-                      <Zap className="w-3 h-3 mr-1" />
-                      {action.xp}
-                    </Badge>
-                    <Button size="sm" className="w-full" asChild>
-                      <Link href={action.href}>Start</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Welcome back, {profile?.full_name || user.email?.split("@")[0]}! 👋
+              </h1>
+              <p className="text-gray-600 mt-2">Ready to find the perfect gifts?</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                <Trophy className="w-3 h-3 mr-1" />
+                {profile?.xp || 0} XP
+              </Badge>
+              <Badge variant="outline">{profile?.tier || "Free"} Tier</Badge>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <activity.icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      +{activity.xp} XP
-                    </Badge>
-                  </div>
-                ))}
+        {/* Welcome Bonus Alert */}
+        {profile?.xp === 100 && (
+          <Card className="mb-8 border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-green-900">Welcome Bonus Earned!</h3>
+                  <p className="text-green-700">You've received 100 XP for joining AgentGift.ai</p>
+                </div>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Upcoming Occasions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                Upcoming Occasions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingOccasions.map((occasion, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/20 flex items-center justify-center">
-                      <Heart className="h-4 w-4 text-pink-500" />
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {quickActions.map((action, index) => {
+            const Icon = action.icon
+            return (
+              <Link key={index} href={action.href}>
+                <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div
+                      className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center mb-3`}
+                    >
+                      <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{occasion.name}</p>
-                      <p className="text-xs text-muted-foreground">{occasion.date}</p>
-                    </div>
-                    <Badge variant={occasion.daysLeft <= 14 ? "destructive" : "secondary"} className="text-xs">
-                      {occasion.daysLeft} days
-                    </Badge>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" className="w-full bg-transparent">
-                  Add Occasion
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                    <CardTitle className="text-lg">{action.title}</CardTitle>
+                    <CardDescription>{action.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
 
-        {/* Featured Tools */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-500" />
-              Featured Tools
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-                <Gift className="h-8 w-8 text-purple-600 mb-2" />
-                <h3 className="font-semibold mb-1">Gift DNA</h3>
-                <p className="text-sm text-muted-foreground mb-3">Analyze personality for perfect matches</p>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href="/gift-dna">Try Now</Link>
-                </Button>
-              </div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Activity */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2" />
+                  Recent Activity
+                </CardTitle>
+                <CardDescription>Your latest gift-finding activities</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Gift className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Welcome to AgentGift.ai!</p>
+                      <p className="text-xs text-gray-500">Earned 100 XP • Just now</p>
+                    </div>
+                  </div>
 
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-                <Globe className="h-8 w-8 text-blue-600 mb-2" />
-                <h3 className="font-semibold mb-1">Cultural Respect</h3>
-                <p className="text-sm text-muted-foreground mb-3">Ensure culturally appropriate gifting</p>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href="/cultural-respect">Explore</Link>
-                </Button>
-              </div>
+                  <div className="text-center py-8 text-gray-500">
+                    <Gift className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>Start using our features to see your activity here</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
-                <Brain className="h-8 w-8 text-green-600 mb-2" />
-                <h3 className="font-semibold mb-1">Smart Search</h3>
-                <p className="text-sm text-muted-foreground mb-3">AI-powered gift discovery</p>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href="/smart-search">Search</Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Progress Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Star className="w-5 h-5 mr-2" />
+                  Your Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>XP Progress</span>
+                      <span>{profile?.xp || 0}/500</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-purple-600 h-2 rounded-full"
+                        style={{ width: `${Math.min(((profile?.xp || 0) / 500) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <p className="text-sm text-gray-600 mb-3">Next milestone: Silver Tier (500 XP)</p>
+                    <Button variant="outline" size="sm" className="w-full bg-transparent">
+                      View Rewards
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tips Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Pro Tips
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-medium text-blue-900">💡 Smart Search Tip</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Include relationship details for better recommendations
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <p className="text-sm font-medium text-green-900">🎯 Cultural Context</p>
+                    <p className="text-xs text-green-700 mt-1">
+                      Mention cultural background for appropriate suggestions
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 import { getBrowserClient } from "@/lib/supabase/clients";
 import { Auth } from "@supabase/auth-ui-react";
@@ -9,11 +10,30 @@ import { Gift } from "lucide-react";
 
 const supabase = createBrowserClient();
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+=======
+"use client"
+
+import { Auth } from "@supabase/auth-ui-react"
+import { ThemeSupa } from "@supabase/auth-ui-shared"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import Link from "next/link"
+import { Gift } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { useEffect } from "react"
+
+const supabase = createClientComponentClient()
+>>>>>>> origin/main
 
 export default function SignInPage() {
-  const search = useSearchParams();
-  const next = search?.get("next") || "/dashboard";
-  const callbackUrl = `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect_to") || "/dashboard"
+
+  useEffect(() => {
+    // Set redirect cookie for auth callback
+    if (redirectTo) {
+      document.cookie = `redirect_to=${redirectTo}; path=/; max-age=3600`
+    }
+  }, [redirectTo])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
@@ -28,8 +48,8 @@ export default function SignInPage() {
               AgentGift.ai
             </span>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your AgentGift.ai account</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+          <p className="text-gray-600">Sign in to your account to continue finding perfect gifts</p>
         </div>
 
         {/* Auth Form */}
@@ -37,7 +57,7 @@ export default function SignInPage() {
           <Auth
             supabaseClient={supabase}
             view="sign_in"
-            providers={["google", "apple"]} // remove "apple" if not fully configured in Supabase
+            providers={["google", "apple"]}
             appearance={{
               theme: ThemeSupa,
               variables: {
@@ -53,8 +73,15 @@ export default function SignInPage() {
                     inputBorderHover: "#9333ea",
                     inputBorderFocus: "#7c3aed",
                   },
-                  borderWidths: { buttonBorderWidth: "1px", inputBorderWidth: "1px" },
-                  radii: { borderRadiusButton: "8px", buttonBorderRadius: "8px", inputBorderRadius: "8px" },
+                  borderWidths: {
+                    buttonBorderWidth: "1px",
+                    inputBorderWidth: "1px",
+                  },
+                  radii: {
+                    borderRadiusButton: "8px",
+                    buttonBorderRadius: "8px",
+                    inputBorderRadius: "8px",
+                  },
                 },
               },
               className: {
@@ -65,14 +92,13 @@ export default function SignInPage() {
                 message: "text-sm text-red-600 mt-2",
               },
             }}
-            /** The key line: always your canonical domain + callback + next */
-            redirectTo={callbackUrl}
+            redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
             showLinks={false}
           />
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <Link href="/auth/signup" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
                 Sign up
               </Link>
@@ -83,14 +109,18 @@ export default function SignInPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-xs text-gray-500">
-            Need help?{" "}
-            <Link href="/contact" className="text-purple-600 hover:text-purple-500">
-              Contact Support
+            By signing in, you agree to our{" "}
+            <Link href="/legal/terms" className="text-purple-600 hover:text-purple-500">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/legal/privacy" className="text-purple-600 hover:text-purple-500">
+              Privacy Policy
             </Link>
           </p>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
