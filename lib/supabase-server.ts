@@ -65,3 +65,5 @@ export function createAdminClient() {
     },
   })
 }
+
+export { createClient }

@@ -31,11 +31,19 @@ export const env = {
 
   // Orchestrator
   ORCHESTRATOR_SIGNING_SECRET: process.env.ORCHESTRATOR_SIGNING_SECRET!,
+
+  // BFF URL
+  NEXT_PUBLIC_BFF_URL: process.env.NEXT_PUBLIC_BFF_URL || "http://localhost:3000",
 }
 
 // Validation function
 export function validateEnv() {
-  const required = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"]
+  const required = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_BFF_URL",
+  ]
 
   for (const key of required) {
     if (!process.env[key]) {
@@ -49,4 +57,5 @@ export const clientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  NEXT_PUBLIC_BFF_URL: process.env.NEXT_PUBLIC_BFF_URL || "http://localhost:3000",
 }

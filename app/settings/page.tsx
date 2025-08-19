@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Globe, Bell, Languages, TestTube, Save, RotateCcw } from "lucide-react"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
+import { TestRegionSelector } from "@/components/cultural/test-region-selector"
 
 export default function SettingsPage() {
+  const { toast } = useToast()
   const [settings, setSettings] = useState({
     culturalAdaptation: true,
     holidayReminders: true,
@@ -41,11 +43,18 @@ export default function SettingsPage() {
 
       localStorage.setItem("agentgift_cultural_settings", JSON.stringify(settings))
       setIsSaved(true)
-      toast.success("Settings saved successfully!")
+      toast({
+        title: "Settings saved successfully!",
+        description: "Your settings have been saved successfully.",
+      })
       setTimeout(() => setIsSaved(false), 3000)
     } catch (error) {
       console.error("Error saving settings:", error)
-      toast.error("Failed to save settings")
+      toast({
+        title: "Failed to save settings",
+        description: "There was an error saving your settings.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -62,7 +71,10 @@ export default function SettingsPage() {
       respectCulturalTaboos: true,
       enableHolidayXPBonus: true,
     })
-    toast.info("Settings reset to defaults")
+    toast({
+      title: "Settings reset to defaults",
+      description: "Your settings have been reset to their default values.",
+    })
   }
 
   useEffect(() => {
@@ -301,8 +313,23 @@ export default function SettingsPage() {
                   Testing Preferences
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 dark:text-gray-400">Testing settings will be available soon.</p>
+              <CardContent className="grid gap-6">
+                <div className="space-y-2">
+                  <h2 className="text-lg font-medium">Personal Information</h2>
+                  <p className="text-sm text-muted-foreground">Update your personal information here.</p>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-medium">Preferences</h2>
+                  <p className="text-sm text-muted-foreground">Manage your preferences to customize your experience.</p>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-lg font-medium">Cultural Context</h2>
+                  <p className="text-sm text-muted-foreground">Test region selector.</p>
+                  <TestRegionSelector />
+                </div>
+                <Button onClick={handleSaveSettings} disabled={isLoading}>
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

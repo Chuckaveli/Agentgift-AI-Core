@@ -1,30 +1,21 @@
-import { type NextRequest, NextResponse } from "next/server"
-
 export const dynamic = "force-dynamic"
+import { type NextRequest, NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase-server"
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const { searchParams } = new URL(request.url)
-    const search = searchParams.get("search") || ""
+    const supabase = createClient()
 
-    // Mock employees data
-    const mockEmployees = [
-      { id: "1", email: "alice@agentgift.ai", tier: "pro_agent", created_at: "2024-01-15T00:00:00Z" },
-      { id: "2", email: "bob@agentgift.ai", tier: "premium_spy", created_at: "2024-01-20T00:00:00Z" },
-      { id: "3", email: "carol@agentgift.ai", tier: "agent_00g", created_at: "2024-02-01T00:00:00Z" },
-      { id: "4", email: "david@agentgift.ai", tier: "admin", created_at: "2024-02-10T00:00:00Z" },
-    ]
+    const { data, error } = await supabase.from("emotitokens_employees").select("*")
 
-    let filteredEmployees = mockEmployees
-    if (search) {
-      filteredEmployees = mockEmployees.filter((emp) => emp.email.toLowerCase().includes(search.toLowerCase()))
+    if (error) {
+      console.error("Supabase error:", error)
+      return NextResponse.json({ error: "Failed to fetch employees" }, { status: 500 })
     }
 
-    return NextResponse.json({
-      employees: filteredEmployees,
-    })
-  } catch (error) {
-    console.error("Error in EmotiTokens employees API:", error)
+    return NextResponse.json(data, { status: 200 })
+  } catch (e: any) {
+    console.error("Server error:", e)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

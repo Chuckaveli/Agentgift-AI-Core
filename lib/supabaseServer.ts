@@ -1,31 +1,17 @@
-import { createServerClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
-import { env } from "./env"
-import { getServerClient } from "@/lib/supabase/clients"
 
-export function getSupabaseServer() {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const getSupabaseServer = () => {
   const cookieStore = cookies()
-
-  return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+  const supabase = createClient(supabaseUrl, supabaseKey, {
     cookies: {
-      getAll() {
-        return cookieStore.getAll()
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        } catch (error) {
-          // The `setAll` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
+      get(name: string) {
+        return cookieStore.get(name)?.value
       },
     },
   })
+  return supabase
 }
-
-// Backward compatibility export
-export const createServerSupabaseClient = getServerClient
-export default getServerClient

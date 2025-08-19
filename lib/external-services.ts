@@ -547,3 +547,51 @@ export function suggestPhysicalFollowThrough(
   // Filter by user tier access
   return suggestions.filter((s) => hasServiceAccess(userTier, s.service))
 }
+
+async function generateElevenLabsAudio(text: string): Promise<string | null> {
+  try {
+    const apiKey = process.env.ELEVENLABS_API_KEY
+    const voiceId = process.env.ELEVENLABS_VOICE_AVELYN_ID
+
+    if (!apiKey || !voiceId) {
+      console.warn("ElevenLabs API key or voice ID not found in environment variables.")
+      return null
+    }
+
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
+    const headers = {
+      Accept: "audio/mpeg",
+      "Content-Type": "application/json",
+      "xi-api-key": apiKey,
+    }
+    const body = JSON.stringify({
+      text: text,
+      model_id: "eleven_monolingual_v1",
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.5,
+      },
+    })
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: body,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`ElevenLabs API error: ${response.status} - ${errorText}`)
+      return null
+    }
+
+    const audioBlob = await response.blob()
+    const audioUrl = URL.createObjectURL(audioBlob)
+    return audioUrl
+  } catch (error) {
+    console.error("Error generating ElevenLabs audio:", error)
+    return null
+  }
+}
+
+export { generateElevenLabsAudio }

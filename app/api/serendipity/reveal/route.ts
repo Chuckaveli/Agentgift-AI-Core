@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getServerClient } from "@/lib/supabase/clients"
+import { createClient } from "@/lib/supabase-server"
 
 export const dynamic = "force-dynamic"
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = getServerClient()
+    const supabase = createClient()
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -14,8 +14,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { occasion_type, emotional_state, recent_life_event, gift_frequency, preferred_format } = body
+    const body = await req.json()
+    const {
+      occasion_type,
+      emotional_state,
+      recent_life_event,
+      gift_frequency,
+      preferred_format,
+      gift_dna,
+      recipient_name,
+    } = body
+
+    if (!gift_dna || !recipient_name) {
+      return new NextResponse("Missing gift_dna or recipient_name", { status: 400 })
+    }
+
+    // Generate the key
+    const key = `${gift_dna}-${recipient_name}`.replace(/\s+/g, "")
 
     // Get user profile to check tier and daily usage
     const { data: profile } = await supabase
@@ -46,6 +61,8 @@ export async function POST(request: NextRequest) {
       recent_life_event,
       gift_frequency,
       preferred_format,
+      gift_dna,
+      recipient_name,
     })
 
     // Record the revelation session
@@ -63,6 +80,8 @@ export async function POST(request: NextRequest) {
         emotional_benefit: giftSuggestion.emotionalBenefit,
         confidence_score: giftSuggestion.confidence,
         affirmations,
+        gift_dna,
+        recipient_name,
       })
       .select()
       .single()
@@ -90,6 +109,7 @@ export async function POST(request: NextRequest) {
       revelation_id: revelation.id,
       affirmations,
       gift_suggestion: giftSuggestion,
+      key,
     })
   } catch (error) {
     console.error("Serendipity revelation error:", error)
@@ -132,6 +152,8 @@ export async function generateGiftSuggestion(inputs: {
   recent_life_event?: string
   gift_frequency: string
   preferred_format: string
+  gift_dna: string
+  recipient_name: string
 }) {
   // Mock AI gift generation logic - in production this would call your AI service
   const giftDatabase = {

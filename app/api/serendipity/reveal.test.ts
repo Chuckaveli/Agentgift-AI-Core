@@ -1,4 +1,5 @@
-import { generateGiftSuggestion } from "./reveal/route"
+import { generateGiftSuggestion, POST } from "./reveal/route"
+import type { NextRequest } from "next/server"
 
 describe("generateGiftSuggestion", () => {
   describe("Key generation with spaces", () => {
@@ -49,6 +50,50 @@ describe("generateGiftSuggestion", () => {
       })
 
       expect(result.giftName).toBe("Worry Stone Garden Kit")
+    })
+  })
+
+  describe("Key Generation Logic", () => {
+    it("should generate a key without spaces", async () => {
+      const gift_dna = "Unique Gift DNA"
+      const recipient_name = "Recipient Name"
+
+      const req = {
+        json: async () => ({ gift_dna, recipient_name }),
+      } as NextRequest
+
+      const res = await POST(req)
+      const data = await res.json()
+
+      expect(data.key).toBe("UniqueGiftDNA-RecipientName")
+    })
+
+    it("should handle empty strings", async () => {
+      const gift_dna = ""
+      const recipient_name = ""
+
+      const req = {
+        json: async () => ({ gift_dna, recipient_name }),
+      } as NextRequest
+
+      const res = await POST(req)
+      const data = await res.json()
+
+      expect(data.key).toBe("-")
+    })
+
+    it("should handle special characters", async () => {
+      const gift_dna = "Gift@DNA!"
+      const recipient_name = "Recipient#Name$"
+
+      const req = {
+        json: async () => ({ gift_dna, recipient_name }),
+      } as NextRequest
+
+      const res = await POST(req)
+      const data = await res.json()
+
+      expect(data.key).toBe("Gift@DNA!-Recipient#Name$")
     })
   })
 

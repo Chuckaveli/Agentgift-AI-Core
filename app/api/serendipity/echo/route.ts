@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { revelation_id } = body
+    const { revelation_id, key } = body
 
     // Check if user has Premium access
     const { data: profile } = await supabase.from("user_profiles").select("tier").eq("id", session.user.id).single()
@@ -39,16 +39,22 @@ export async function POST(request: NextRequest) {
     // Generate echo gifts based on the original theme
     const echoGifts = generateEchoGifts(revelation)
 
+    // For now, just echo the key back
+    const gift_description = `A personalized gift suggestion based on the key: ${key}.`
+
     // Record the echo session
     await supabase.from("serendipity_echo_sessions").insert({
       user_id: session.user.id,
       original_revelation_id: revelation_id,
       echo_gifts: echoGifts,
+      key: key,
+      gift_description: gift_description,
     })
 
     return NextResponse.json({
       success: true,
       echo_gifts: echoGifts,
+      gift_description: gift_description,
     })
   } catch (error) {
     console.error("Echo gifts error:", error)

@@ -1,36 +1,22 @@
 "use client"
 
-import { getBrowserClient } from "@/lib/supabase/clients"
+import { useSupabaseClient } from "@supabase/auth-helpers-react"
 import { useEffect, useState } from "react"
 
-export function useSupabase() {
-  const [supabase] = useState(() => getBrowserClient())
-
-  return supabase
-}
-
-export function useUser() {
-  const supabase = useSupabase()
+export const useUser = () => {
   const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const supabaseClient = useSupabaseClient()
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    async function fetchUser() {
+      const {
+        data: { user },
+      } = await supabaseClient.auth.getUser()
+      setUser(user)
+    }
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    fetchUser()
+  }, [supabaseClient])
 
-    return () => subscription.unsubscribe()
-  }, [supabase])
-
-  return { user, loading, supabase }
+  return user
 }
