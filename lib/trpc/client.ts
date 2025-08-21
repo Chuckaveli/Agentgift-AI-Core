@@ -2,7 +2,6 @@ import { createTRPCReact } from "@trpc/react-query"
 import { httpBatchLink } from "@trpc/client"
 import type { AppRouter } from "@/trpc/router"
 import superjson from "superjson"
-import { env } from "@/lib/env"
 
 const getBaseUrl = () => {
   if (typeof window !== "undefined") {
@@ -10,7 +9,7 @@ const getBaseUrl = () => {
   }
 
   // Use NEXT_PUBLIC_BFF_URL from lib/env.ts if available
-  const bffUrl = env.NEXT_PUBLIC_BFF_URL
+  const bffUrl = process.env.NEXT_PUBLIC_BFF_URL
 
   if (!bffUrl) {
     console.error("NEXT_PUBLIC_BFF_URL is not defined in environment variables.")
@@ -27,7 +26,6 @@ const getBaseUrl = () => {
   }
 
   console.log("BFF URL:", bffUrl) // Log the BFF URL to check its value
-  console.log("env.NEXT_PUBLIC_BFF_URL:", env.NEXT_PUBLIC_BFF_URL) // Log the BFF URL to check its value
 
   return bffUrl
 }

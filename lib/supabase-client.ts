@@ -1,22 +1,42 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { env, validateEnv } from "./env"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Validate environment variables but don't throw in development
+const isValid = validateEnv()
 
-// Browser client for client-side operations
+// Create a singleton Supabase client for browser use
+let supabaseClient: ReturnType<typeof createClientComponentClient> | null = null
+
 export function createClient() {
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
-}
+  // If environment variables are missing, return a mock client for development
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn("⚠️  Supabase environment variables not found. Using mock client.")
 
-// Browser-safe fallback functions (these will use the browser client)
-export function createServerClient() {
-  console.warn("createServerClient called from browser context, using browser client instead")
-  return createClient()
-}
+    // Return a mock client that won't crash the app
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signOut: async () => ({ error: null }),
+        signInWithPassword: async () => ({ data: { user: null }, error: { message: "Supabase not configured" } }),
+        signUp: async () => ({ data: { user: null }, error: { message: "Supabase not configured" } }),
+      },
+      from: () => ({
+        select: () => ({ data: [], error: null }),
+        insert: () => ({ data: [], error: null }),
+        update: () => ({ data: [], error: null }),
+        delete: () => ({ data: [], error: null }),
+      }),
+    } as any
+  }
 
-export function createAdminClient() {
-  console.warn("createAdminClient called from browser context, using browser client instead")
-  return createClient()
+  if (!supabaseClient) {
+    supabaseClient = createClientComponentClient({
+      supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+      supabaseKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    })
+  }
+  return supabaseClient
 }
 
 // Default export for backward compatibility

@@ -21,7 +21,7 @@ import {
   Github,
   MessageCircle,
 } from "lucide-react"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClient } from "@/lib/supabase-client"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -36,15 +36,20 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const [loading, setLoading] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setUser(user)
+      } catch (error) {
+        console.error("Error getting user:", error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getUser()
@@ -77,6 +82,15 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   const isAuthPage = pathname?.startsWith("/auth") || pathname === "/login"
 
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+      router.push("/")
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       {loading ? (
@@ -94,7 +108,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                   <Link href="/" className="flex items-center space-x-2">
                     <div className="relative">
                       <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentgift-logo-120x120-LNt9JS0WFm3LMER4UKFOXazjdOmyHS.png"
+                        src="/agentgift-logo.png"
                         alt="AgentGift.ai Logo"
                         width={32}
                         height={32}
@@ -136,7 +150,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                     {user ? (
                       <div className="flex items-center space-x-3">
                         <span className="text-sm text-gray-600">Welcome, {user.email?.split("@")[0]}</span>
-                        <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
+                        <Button variant="outline" size="sm" onClick={handleSignOut}>
                           Sign Out
                         </Button>
                       </div>
@@ -203,7 +217,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                     <div className="flex items-center space-x-2 mb-4">
                       <div className="relative">
                         <Image
-                          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentgift-logo-120x120-LNt9JS0WFm3LMER4UKFOXazjdOmyHS.png"
+                          src="/agentgift-logo.png"
                           alt="AgentGift.ai Logo"
                           width={32}
                           height={32}

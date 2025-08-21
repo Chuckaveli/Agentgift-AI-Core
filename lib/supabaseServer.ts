@@ -1,17 +1,38 @@
-import { createClient } from "@supabase/supabase-js"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
+import { env } from "./env"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies()
 
-export const getSupabaseServer = () => {
-  const cookieStore = cookies()
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn("⚠️  Supabase environment variables not found for server client")
+    return null
+  }
+
+  return createServerComponentClient({
+    cookies: () => cookieStore,
+    supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  })
+}
+
+export async function createSupabaseAdminClient() {
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("⚠️  Supabase admin environment variables not found")
+    return null
+  }
+
+  const { createClient } = await import("@supabase/supabase-js")
+
+  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
   })
-  return supabase
 }
+
+// Export aliases for backward compatibility
+export const createServerClient = createSupabaseServerClient
+export const createAdminClient = createSupabaseAdminClient

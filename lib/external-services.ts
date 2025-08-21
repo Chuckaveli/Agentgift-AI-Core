@@ -1,6 +1,7 @@
 "use client"
 
 import { createClient } from "@supabase/supabase-js"
+import { env } from "./env"
 
 // Supabase client
 const supabase = createClient(
@@ -16,6 +17,13 @@ export const EXTERNAL_SERVICES = {
   EXPEDIA: "expedia",
   SENDOSO: "sendoso",
   EVENTBRITE: "eventbrite",
+  ELEVENLABS: "elevenlabs",
+  OPENAI: "openai",
+  WHISPER: "whisper",
+  DEEPINFRA: "deepinfra",
+  FAL: "fal",
+  RESEND: "resend",
+  STRIPE: "stripe",
 } as const
 
 export type ExternalService = (typeof EXTERNAL_SERVICES)[keyof typeof EXTERNAL_SERVICES]
@@ -100,6 +108,83 @@ export const SERVICE_CONFIG: Record<
     apiEndpoint: "/api/services/eventbrite",
     isActive: true,
     estimatedDelivery: "Instant delivery",
+  },
+  [EXTERNAL_SERVICES.ELEVENLABS]: {
+    name: "ElevenLabs",
+    description: "Generate audio responses using ElevenLabs API",
+    icon: "🎧",
+    category: "AI Services",
+    creditCost: 5,
+    requiredTier: "premium",
+    apiEndpoint: "/api/services/elevenlabs",
+    isActive: true,
+    estimatedDelivery: "Instant",
+  },
+  [EXTERNAL_SERVICES.OPENAI]: {
+    name: "OpenAI",
+    description: "Generate text responses using OpenAI API",
+    icon: "🤖",
+    category: "AI Services",
+    creditCost: 7,
+    requiredTier: "premium",
+    apiEndpoint: "/api/services/openai",
+    isActive: true,
+    estimatedDelivery: "Instant",
+  },
+  [EXTERNAL_SERVICES.WHISPER]: {
+    name: "Whisper",
+    description: "Transcribe audio using OpenAI Whisper API",
+    icon: "🎤",
+    category: "AI Services",
+    creditCost: 6,
+    requiredTier: "premium",
+    apiEndpoint: "/api/services/whisper",
+    isActive: true,
+    estimatedDelivery: "Instant",
+  },
+  [EXTERNAL_SERVICES.DEEPINFRA]: {
+    name: "DeepInfra",
+    description: "Use DeepInfra AI services",
+    icon: "🧠",
+    category: "AI Services",
+    creditCost: 10,
+    requiredTier: "enterprise",
+    apiEndpoint: "/api/services/deepinfra",
+    isActive: true,
+    estimatedDelivery: "Instant",
+  },
+  [EXTERNAL_SERVICES.FAL]: {
+    name: "Fal",
+    description: "Use Fal AI services",
+    icon: "🔮",
+    category: "AI Services",
+    creditCost: 12,
+    requiredTier: "enterprise",
+    apiEndpoint: "/api/services/fal",
+    isActive: true,
+    estimatedDelivery: "Instant",
+  },
+  [EXTERNAL_SERVICES.RESEND]: {
+    name: "Resend",
+    description: "Send emails using Resend API",
+    icon: "📧",
+    category: "Email Services",
+    creditCost: 3,
+    requiredTier: "free",
+    apiEndpoint: "/api/services/resend",
+    isActive: true,
+    estimatedDelivery: "Instant",
+  },
+  [EXTERNAL_SERVICES.STRIPE]: {
+    name: "Stripe",
+    description: "Handle payments using Stripe API",
+    icon: "💳",
+    category: "Payment Services",
+    creditCost: 0,
+    requiredTier: "free",
+    apiEndpoint: "/api/services/stripe",
+    isActive: true,
+    estimatedDelivery: "Instant",
   },
 }
 
@@ -290,6 +375,27 @@ async function callExternalService(
       case EXTERNAL_SERVICES.EVENTBRITE:
         return await simulateEventbriteBooking(options)
 
+      case EXTERNAL_SERVICES.ELEVENLABS:
+        return await simulateElevenLabsDelivery(options)
+
+      case EXTERNAL_SERVICES.OPENAI:
+        return await simulateOpenAIDelivery(options)
+
+      case EXTERNAL_SERVICES.WHISPER:
+        return await simulateWhisperDelivery(options)
+
+      case EXTERNAL_SERVICES.DEEPINFRA:
+        return await simulateDeepInfraDelivery(options)
+
+      case EXTERNAL_SERVICES.FAL:
+        return await simulateFalDelivery(options)
+
+      case EXTERNAL_SERVICES.RESEND:
+        return await simulateResendDelivery(options)
+
+      case EXTERNAL_SERVICES.STRIPE:
+        return await simulateStripeDelivery(options)
+
       default:
         throw new Error(`Unsupported service: ${options.service}`)
     }
@@ -406,6 +512,111 @@ async function simulateEventbriteBooking(options: DeliveryOptions): Promise<Deli
       venue: "Downtown Wine Bar",
       ticketType: "VIP Experience",
       ticketCount: 2,
+    },
+  }
+}
+
+async function simulateElevenLabsDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+
+  return {
+    success: true,
+    orderId: `EL-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 5.0,
+    creditsUsed: 0,
+    details: {
+      audio: "Generated audio file",
+    },
+  }
+}
+
+async function simulateOpenAIDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 1500))
+
+  return {
+    success: true,
+    orderId: `OA-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 7.0,
+    creditsUsed: 0,
+    details: {
+      response: "Generated text response",
+    },
+  }
+}
+
+async function simulateWhisperDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 1200))
+
+  return {
+    success: true,
+    orderId: `WP-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 6.0,
+    creditsUsed: 0,
+    details: {
+      transcription: "Transcribed audio text",
+    },
+  }
+}
+
+async function simulateDeepInfraDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+
+  return {
+    success: true,
+    orderId: `DI-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 10.0,
+    creditsUsed: 0,
+    details: {
+      service: "DeepInfra AI service",
+    },
+  }
+}
+
+async function simulateFalDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 2500))
+
+  return {
+    success: true,
+    orderId: `FL-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 12.0,
+    creditsUsed: 0,
+    details: {
+      service: "Fal AI service",
+    },
+  }
+}
+
+async function simulateResendDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 800))
+
+  return {
+    success: true,
+    orderId: `RS-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 3.0,
+    creditsUsed: 0,
+    details: {
+      email: "Sent email",
+    },
+  }
+}
+
+async function simulateStripeDelivery(options: DeliveryOptions): Promise<DeliveryResult> {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  return {
+    success: true,
+    orderId: `ST-${Date.now()}`,
+    estimatedDelivery: "Instant",
+    cost: 0.0,
+    creditsUsed: 0,
+    details: {
+      payment: "Processed payment",
     },
   }
 }
@@ -548,50 +759,64 @@ export function suggestPhysicalFollowThrough(
   return suggestions.filter((s) => hasServiceAccess(userTier, s.service))
 }
 
-async function generateElevenLabsAudio(text: string): Promise<string | null> {
-  try {
-    const apiKey = process.env.ELEVENLABS_API_KEY
-    const voiceId = process.env.ELEVENLABS_VOICE_AVELYN_ID
-
-    if (!apiKey || !voiceId) {
-      console.warn("ElevenLabs API key or voice ID not found in environment variables.")
-      return null
-    }
-
-    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
-    const headers = {
-      Accept: "audio/mpeg",
-      "Content-Type": "application/json",
-      "xi-api-key": apiKey,
-    }
-    const body = JSON.stringify({
-      text: text,
-      model_id: "eleven_monolingual_v1",
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.5,
-      },
-    })
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: headers,
-      body: body,
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`ElevenLabs API error: ${response.status} - ${errorText}`)
-      return null
-    }
-
-    const audioBlob = await response.blob()
-    const audioUrl = URL.createObjectURL(audioBlob)
-    return audioUrl
-  } catch (error) {
-    console.error("Error generating ElevenLabs audio:", error)
-    return null
-  }
+// External services configuration
+export const openaiConfig = {
+  apiKey: env.OPENAI_API_KEY,
+  premiumKey: env.OPENAI_API_KEY_PREMIUM,
+  proKey: env.OPENAI_API_KEY_PRO,
+  enterpriseKey: env.OPENAI_API_KEY_ENTERPRISE,
 }
 
-export { generateElevenLabsAudio }
+export const elevenlabsConfig = {
+  apiKey: env.ELEVENLABS_API_KEY,
+  voiceAvelynId: env.ELEVENLABS_VOICE_AVELYN_ID,
+  voiceGalenId: env.ELEVENLABS_VOICE_GALEN_ID,
+}
+
+export const whisperConfig = {
+  apiKey: env.WHISPER_API_KEY,
+}
+
+export const stripeConfig = {
+  secretKey: env.STRIPE_SECRET_KEY,
+  publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+  webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+}
+
+export const emailConfig = {
+  resendApiKey: env.RESEND_API_KEY,
+}
+
+export const aiServicesConfig = {
+  deepinfraApiKey: env.DEEPINFRA_API_KEY,
+  falKey: env.FAL_KEY,
+}
+
+export const orchestratorConfig = {
+  signingSecret: env.ORCHESTRATOR_SIGNING_SECRET,
+  url: env.ORCHESTRATOR_URL,
+}
+
+// Utility function to check if a service is configured
+export function isServiceConfigured(service: string): boolean {
+  switch (service) {
+    case "openai":
+      return !!env.OPENAI_API_KEY
+    case "elevenlabs":
+      return !!env.ELEVENLABS_API_KEY
+    case "whisper":
+      return !!env.WHISPER_API_KEY
+    case "stripe":
+      return !!env.STRIPE_SECRET_KEY
+    case "resend":
+      return !!env.RESEND_API_KEY
+    case "deepinfra":
+      return !!env.DEEPINFRA_API_KEY
+    case "fal":
+      return !!env.FAL_KEY
+    case "orchestrator":
+      return !!env.ORCHESTRATOR_SIGNING_SECRET
+    default:
+      return false
+  }
+}
