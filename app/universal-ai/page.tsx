@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { UniversalAIPluginLoader } from "@/components/universal/universal-ai-plugin-loader"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

@@ -26,7 +26,7 @@ import {
   Crown,
   Star,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/clients"
+import { createClient } from "@/lib/supabase/browser"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 

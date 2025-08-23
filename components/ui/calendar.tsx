@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"

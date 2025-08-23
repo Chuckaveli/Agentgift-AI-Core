@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { createClient } from "@supabase/supabase-js"
 import { PersonaCulturalAdaptationService, type PersonaCulturalAdaptation } from "@/lib/persona-cultural-adaptation"

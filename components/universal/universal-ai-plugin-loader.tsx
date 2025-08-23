@@ -41,7 +41,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { createClient } from "@/lib/supabase/clients"
+import { createClient } from "@/lib/supabase/browser"
 import { toast } from "sonner"
 
 // Enhanced AI Assistant Interface with Universal Tagging

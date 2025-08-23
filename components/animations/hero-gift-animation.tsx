@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useEffect, useState } from "react"
 import LottieAnimation from "./lottie-animation"
 

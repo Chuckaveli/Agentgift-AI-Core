@@ -1,29 +1,45 @@
-import { createMiddlewareClient } from "@supabase/ssr"
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+// middleware.ts
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
-  // Skip middleware for static files and API routes that don't need auth
+  // Skip static assets & public/health endpoints or when env is missing
   if (
     req.nextUrl.pathname.startsWith("/_next") ||
     req.nextUrl.pathname.startsWith("/api/public") ||
-    req.nextUrl.pathname.includes(".") ||
+    /\.[a-zA-Z0-9]+$/.test(req.nextUrl.pathname) ||
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   ) {
-    return NextResponse.next()
+    return NextResponse.next();
   }
 
-  try {
-    const res = NextResponse.next()
-    const supabase = createMiddlewareClient({ req, res })
+  const res = NextResponse.next();
 
-    // Refresh session if expired - required for Server Components
+  // Supabase client for Middleware (Edge) with cookie bridge
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookies) {
+          // write refreshed auth cookies onto the response
+          cookies.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  try {
     const {
       data: { session },
-    } = await supabase.auth.getSession()
+    } = await supabase.auth.getSession();
 
-    // Protected routes that require authentication
     const protectedRoutes = [
       "/dashboard",
       "/admin",
@@ -36,43 +52,46 @@ export async function middleware(req: NextRequest) {
       "/agentvault",
       "/assistants",
       "/registry",
-    ]
+    ];
 
-    // Check if the current path is protected
-    const isProtectedRoute = protectedRoutes.some((route) => req.nextUrl.pathname.startsWith(route))
+    const path = req.nextUrl.pathname;
+    const isProtected = protectedRoutes.some((r) => path.startsWith(r));
 
-    // Redirect to auth if accessing protected route without session
-    if (isProtectedRoute && !session) {
-      const redirectUrl = new URL("/auth/signin", req.url)
-      redirectUrl.searchParams.set("redirectTo", req.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
+    // Not logged in → bounce to signin
+    if (isProtected && !session) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/auth/signin";
+
+      // Preserve where we were going (support both "next" and "redirectTo")
+      const intended = path + (req.nextUrl.search || "");
+      url.searchParams.set("next", intended);
+      url.searchParams.set("redirectTo", intended);
+
+      return NextResponse.redirect(url);
     }
 
-    // Redirect authenticated users away from auth pages
+    // Logged in → keep auth pages out of the way
     if (
       session &&
-      (req.nextUrl.pathname.startsWith("/auth/signin") || req.nextUrl.pathname.startsWith("/auth/signup"))
+      (path.startsWith("/auth/signin") || path.startsWith("/auth/signup"))
     ) {
-      return NextResponse.redirect(new URL("/dashboard", req.url))
+      const url = req.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
     }
 
-    return res
-  } catch (error) {
-    // If Supabase fails, just continue without auth
-    console.warn("Supabase middleware error:", error)
-    return NextResponse.next()
+    return res;
+  } catch (err) {
+    // If Supabase fails, just continue without auth (don’t break the site)
+    console.warn("Middleware auth skipped due to error:", err);
+    return res;
   }
 }
 
+// keep middleware off static/image/favicon and common assets
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
-}
+};

@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import {

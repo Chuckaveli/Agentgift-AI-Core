@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useState, useMemo } from "react"
 import { Search, Heart, DollarSign, Leaf, Clock, TrendingUp, Eye, Calendar, User } from "lucide-react"
 import { Input } from "@/components/ui/input"

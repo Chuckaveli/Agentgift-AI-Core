@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/clients"
+import { createClient } from "@/lib/supabase/browser"
 
 interface AssistantSyncData {
   id: string // OpenAI assistant ID

@@ -42,7 +42,7 @@
     "@radix-ui/react-tooltip": "latest",
     "@supabase/auth-ui-react": "latest",
     "@supabase/auth-ui-shared": "latest",
-    "@supabase/ssr": "latest",
+    "@supabase/ssr": "0.7.0",
     "@supabase/supabase-js": "latest",
     "@tanstack/react-query": "latest",
     "@tensorflow-models/face-detection": "latest",

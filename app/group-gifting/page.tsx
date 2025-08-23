@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useState } from "react"
 import { ArrowLeft, Users, DollarSign, Plus, Trash2, Calculator, Gift, Star, Heart, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/clients"
+import { createServerClient } from "@/lib/supabase/server"
 import { sign } from "jsonwebtoken"
 import { z } from "zod"
 

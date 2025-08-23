@@ -1,96 +1,55 @@
+// app/auth/signin/page.tsx
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { createBrowserClient } from "@supabase/ssr";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Gift } from "lucide-react";
 
-const supabase = createBrowserClient();
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import { useSearchParams } from "next/navigation";
+import { useCallback } from "react";
+import { getBrowserClient } from "@/lib/supabase/browser";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function SignInPage() {
-  const search = useSearchParams();
-  const next = search?.get("next") || "/dashboard";
-  const callbackUrl = `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+  const supabase = getBrowserClient(); // your client-only singleton
+  const sp = useSearchParams();
+  const next = sp.get("next") || sp.get("redirectTo") || "/dashboard";
+
+  const signInWithGoogle = useCallback(async () => {
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    });
+    if (error) {
+      console.error("OAuth error:", error.message);
+      alert(`Sign-in failed: ${error.message}`);
+    }
+  }, [next, supabase]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AgentGift.ai
-            </span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h2>
-          <p className="text-gray-600">Sign in to your AgentGift.ai account</p>
-        </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-center">Sign in to AgentGift</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button onClick={signInWithGoogle} className="w-full">
+            Continue with Google
+          </Button>
 
-        {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <Auth
-            supabaseClient={supabase}
-            view="sign_in"
-            providers={["google", "apple"]} // remove "apple" if not fully configured in Supabase
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: "#9333ea",
-                    brandAccent: "#7c3aed",
-                    brandButtonText: "white",
-                    defaultButtonBackground: "#f3f4f6",
-                    defaultButtonBackgroundHover: "#e5e7eb",
-                    inputBackground: "#f9fafb",
-                    inputBorder: "#d1d5db",
-                    inputBorderHover: "#9333ea",
-                    inputBorderFocus: "#7c3aed",
-                  },
-                  borderWidths: { buttonBorderWidth: "1px", inputBorderWidth: "1px" },
-                  radii: { borderRadiusButton: "8px", buttonBorderRadius: "8px", inputBorderRadius: "8px" },
-                },
-              },
-              className: {
-                container: "space-y-4",
-                button: "w-full px-4 py-3 font-medium transition-all duration-200",
-                input: "w-full px-4 py-3 transition-all duration-200",
-                label: "text-sm font-medium text-gray-700 mb-2",
-                message: "text-sm text-red-600 mt-2",
-              },
-            }}
-            /** The key line: always your canonical domain + callback + next */
-            redirectTo={callbackUrl}
-            showLinks={false}
-          />
+          {/* If you later add GitHub, just uncomment:
+          <Button variant="outline" onClick={signInWithGitHub} className="w-full">
+            Continue with GitHub
+          </Button>
+          */}
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-500">
-            Need help?{" "}
-            <Link href="/contact" className="text-purple-600 hover:text-purple-500">
-              Contact Support
-            </Link>
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <a className="underline" href={`/auth/signup?next=${encodeURIComponent(next)}`}>
+              Sign up
+            </a>
           </p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

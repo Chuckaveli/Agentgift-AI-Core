@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { VaultSoloPanel } from "@/components/vault/vault-solo-panel"
 import { VaultGiftBidPanel } from "@/components/vault/vault-gift-bid-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

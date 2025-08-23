@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 

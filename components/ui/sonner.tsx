@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 

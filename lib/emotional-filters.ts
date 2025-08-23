@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { TIERS, type UserTier } from "./feature-access"
 
 export interface EmotionalFilter {

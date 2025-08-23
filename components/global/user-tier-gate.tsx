@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import type { ReactNode } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

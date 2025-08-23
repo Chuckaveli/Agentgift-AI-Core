@@ -1,62 +1,104 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { withAuth } from "@/lib/middleware/withAuth"
+// app/api/admin/giftverse-leader/intelligence/route.ts
+import { type NextRequest, NextResponse } from "next/server";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { withAuth } from "@/lib/middleware/withAuth";
+import type { Database } from "@/types/supabase";
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function getAdminClient(): SupabaseClient<Database> {
+  if (!URL || !SERVICE_ROLE_KEY) {
+    throw new Error("Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+  return createClient<Database>(URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+    global: { fetch },
+  });
+}
 
 export const POST = withAuth(async (request: NextRequest, context) => {
-  try {
-    const { function: functionName, parameters, session_id, admin_id } = await request.json()
+  const supabase = getAdminClient();
 
-    // Verify admin access
-    if (!context.user || !context.user.tier.includes("admin")) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+  try {
+    const {
+      function: functionName,
+      parameters = {},
+      session_id,
+      admin_id, // optional external id if you pass it
+    } = await request.json();
+
+    if (!context.user || !context.user.tier?.includes("admin")) {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
-    let result = null
-    let voiceResponse = ""
+    let result: unknown = null;
+    let voiceResponse = "";
 
     switch (functionName) {
-      case "update_assistant_brain":
-        result = await updateAssistantBrain(parameters.bot_name, parameters.new_logic, context.user.id)
-        voiceResponse = `The neural pathways of ${parameters.bot_name} have been rewoven with new intelligence, Agent. The assistant's consciousness now flows with enhanced wisdom.`
-        break
+      case "update_assistant_brain": {
+        result = await updateAssistantBrain(
+          supabase,
+          String(parameters.bot_name),
+          String(parameters.new_logic),
+          context.user.id
+        );
+        voiceResponse = `The neural pathways of ${parameters.bot_name} have been rewoven with new intelligence, Agent.`;
+        break;
+      }
 
-      case "log_feature_usage_summary":
-        result = await getFeatureUsageSummary()
-        voiceResponse = `The platform's vital signs reveal ${result.total_features} features dancing in harmony, with ${result.xp_total} experience points flowing through our digital veins.`
-        break
+      case "log_feature_usage_summary": {
+        const summary = await getFeatureUsageSummary(supabase);
+        result = summary;
+        voiceResponse = `The platform's vital signs reveal ${summary.total_features} features active, with ${summary.xp_total} XP flowing today.`;
+        break;
+      }
 
-      case "trigger_reward_test":
-        result = await triggerRewardTest(parameters.user_id, parameters.feature, parameters.xp, context.user.id)
-        voiceResponse = `The reward simulation cascades through the system, Agent. User ${parameters.user_id} receives ${parameters.xp} XP for their ${parameters.feature} journey.`
-        break
+      case "trigger_reward_test": {
+        result = await triggerRewardTest(
+          supabase,
+          String(parameters.user_id),
+          String(parameters.feature),
+          Number(parameters.xp),
+          context.user.id
+        );
+        voiceResponse = `Simulated: User ${parameters.user_id} receives ${parameters.xp} XP for ${parameters.feature}.`;
+        break;
+      }
 
-      case "voice_ai_query":
-        result = await processVoiceAIQuery(parameters.query || parameters.audioData, context.user.id)
-        voiceResponse = result.reply_text
-        break
+      case "voice_ai_query": {
+        const out = await processVoiceAIQuery(supabase, String(parameters.query ?? parameters.audioData), context.user.id);
+        result = out;
+        voiceResponse = out.reply_text;
+        break;
+      }
 
-      case "get_emotional_summary":
-        result = await getEmotionalSummary()
-        voiceResponse = `The emotional tapestry weaves with ${result.top_mood} as the dominant thread, painting our platform with ${result.total_interactions} heartfelt interactions.`
-        break
+      case "get_emotional_summary": {
+        const emo = await getEmotionalSummary(supabase);
+        result = emo;
+        voiceResponse = `Dominant mood: ${emo.top_mood}. ${emo.total_interactions} interactions in the last 7 days.`;
+        break;
+      }
 
       default:
-        return NextResponse.json({ error: "Unknown function" }, { status: 400 })
+        return NextResponse.json({ error: "Unknown function" }, { status: 400 });
     }
 
-    // Log the function execution
     await supabase.from("admin_action_logs").insert({
       admin_id: context.user.id,
-      session_id,
+      session_id: session_id ?? request.headers.get("x-session-id"),
       action_type: `giftverse_leader_${functionName}`,
       action_detail: `Executed ${functionName} with parameters: ${JSON.stringify(parameters)}`,
       request_data: parameters,
       response_data: result,
       execution_status: "success",
       execution_time_ms: Date.now(),
-    })
+      created_at: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,
@@ -64,132 +106,122 @@ export const POST = withAuth(async (request: NextRequest, context) => {
       result,
       voice_response: voiceResponse,
       timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    console.error("Giftverse Leader intelligence error:", error)
+    });
+  } catch (error: any) {
+    // best-effort error log
+    try {
+      const admin = getAdminClient();
+      await admin.from("admin_action_logs").insert({
+        admin_id: context.user?.id ?? admin_id ?? null,
+        session_id: request.headers.get("x-session-id"),
+        action_type: "giftverse_leader_error",
+        action_detail: String(error?.message ?? error),
+        execution_status: "error",
+        execution_time_ms: Date.now(),
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
 
-    // Log error
-    await supabase.from("admin_action_logs").insert({
-      admin_id: context.user?.id,
-      session_id: request.headers.get("x-session-id"),
-      action_type: "giftverse_leader_error",
-      action_detail: error.message,
-      execution_status: "error",
-      execution_time_ms: Date.now(),
-    })
-
-    return NextResponse.json({ error: "Intelligence function failed", details: error.message }, { status: 500 })
+    return NextResponse.json(
+      { error: "Intelligence function failed", details: String(error?.message ?? error) },
+      { status: 500 }
+    );
   }
-})
+});
 
-async function updateAssistantBrain(botName: string, newLogic: string, adminId: string) {
-  // Check if admin has founder permissions for voice updates
-  const { data: admin } = await supabase.from("user_profiles").select("admin_role").eq("id", adminId).single()
+/* ================= helpers ================= */
 
+async function updateAssistantBrain(
+  supabase: SupabaseClient<Database>,
+  botName: string,
+  newLogic: string,
+  adminId: string
+) {
+  const { data: admin } = await supabase.from("user_profiles").select("admin_role").eq("id", adminId).single();
   if (admin?.admin_role !== "founder") {
-    throw new Error("Voice assistant logic updates require founder access")
+    throw new Error("Voice assistant logic updates require founder access");
   }
 
-  // Update assistant brain logic
+  const version = `v${Date.now()}`;
   const { error } = await supabase.from("assistant_brain_updates").insert({
     bot_name: botName,
     logic_update: newLogic,
     updated_by: adminId,
-    version: `v${Date.now()}`,
+    version,
     is_active: true,
-  })
+  });
+  if (error) throw error;
 
-  if (error) throw error
-
-  // Deactivate previous versions
   await supabase
     .from("assistant_brain_updates")
     .update({ is_active: false })
     .eq("bot_name", botName)
-    .neq("updated_by", adminId)
+    .neq("version", version);
 
-  return {
-    bot_name: botName,
-    logic_updated: true,
-    version: `v${Date.now()}`,
-    updated_by: adminId,
-  }
+  return { bot_name: botName, logic_updated: true, version, updated_by: adminId };
 }
 
-async function getFeatureUsageSummary() {
-  // Get total features used today
+async function getFeatureUsageSummary(supabase: SupabaseClient<Database>) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
   const { data: featureUsage } = await supabase
     .from("feature_usage_logs")
     .select("feature_name, user_id")
-    .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .gte("created_at", since);
 
-  const totalFeatures = new Set(featureUsage?.map((f) => f.feature_name)).size
+  const totalFeatures = new Set((featureUsage ?? []).map((f) => f.feature_name)).size;
 
-  // Get top 3 features
-  const featureCounts = {}
-  featureUsage?.forEach((f) => {
-    featureCounts[f.feature_name] = (featureCounts[f.feature_name] || 0) + 1
-  })
+  const counts: Record<string, number> = {};
+  (featureUsage ?? []).forEach((f) => {
+    counts[f.feature_name] = (counts[f.feature_name] ?? 0) + 1;
+  });
 
-  const topFeatures = Object.entries(featureCounts)
-    .sort(([, a], [, b]) => b - a)
+  const topFeatures = Object.entries(counts)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 3)
-    .map(([name, count]) => ({ name, count }))
+    .map(([name, count]) => ({ name, count }));
 
-  // Get total XP distributed today
-  const { data: xpLogs } = await supabase
-    .from("xp_logs")
-    .select("xp_amount")
-    .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+  const { data: xpLogs } = await supabase.from("xp_logs").select("xp_amount").gte("created_at", since);
+  const xpTotal = (xpLogs ?? []).reduce((sum, x) => sum + (x.xp_amount ?? 0), 0);
 
-  const xpTotal = xpLogs?.reduce((sum, log) => sum + log.xp_amount, 0) || 0
-
-  return {
-    total_features: totalFeatures,
-    top_features: topFeatures,
-    xp_total: xpTotal,
-  }
+  return { total_features: totalFeatures, top_features: topFeatures, xp_total: xpTotal };
 }
 
-async function triggerRewardTest(userId: string, featureName: string, xpAmount: number, adminId: string) {
-  // Simulate feature usage
+async function triggerRewardTest(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  featureName: string,
+  xpAmount: number,
+  adminId: string
+) {
   const { error: usageError } = await supabase.from("feature_usage_logs").insert({
     user_id: userId,
     feature_name: featureName,
-    usage_duration: 30, // Simulated 30 seconds
+    usage_duration: 30,
     success_rate: 100,
     admin_simulated: true,
     simulated_by: adminId,
-  })
+  });
+  if (usageError) throw usageError;
 
-  if (usageError) throw usageError
+  const { data: user } = await supabase.from("user_profiles").select("xp, level").eq("id", userId).single();
+  if (!user) throw new Error("User not found");
 
-  // Award XP
-  const { data: user } = await supabase.from("user_profiles").select("xp, level").eq("id", userId).single()
-
-  if (!user) throw new Error("User not found")
-
-  const newXP = user.xp + xpAmount
-  const newLevel = Math.floor(newXP / 150) + 1
+  const newXP = (user.xp ?? 0) + (xpAmount ?? 0);
+  const newLevel = Math.floor(newXP / 150) + 1;
 
   const { error: xpError } = await supabase
     .from("user_profiles")
-    .update({
-      xp: newXP,
-      level: newLevel,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", userId)
+    .update({ xp: newXP, level: newLevel, updated_at: new Date().toISOString() })
+    .eq("id", userId);
+  if (xpError) throw xpError;
 
-  if (xpError) throw xpError
-
-  // Log XP award
   await supabase.from("xp_logs").insert({
     user_id: userId,
     xp_amount: xpAmount,
     reason: `Admin reward test: ${featureName}`,
     admin_id: adminId,
-  })
+  });
 
   return {
     user_id: userId,
@@ -198,89 +230,94 @@ async function triggerRewardTest(userId: string, featureName: string, xpAmount: 
     new_xp_total: newXP,
     new_level: newLevel,
     test_timestamp: new Date().toISOString(),
-  }
+  };
 }
 
-async function processVoiceAIQuery(query: string, adminId: string) {
-  // Process the query with Galen's strategic intelligence
-  const lowerQuery = query.toLowerCase()
+async function processVoiceAIQuery(
+  supabase: SupabaseClient<Database>,
+  query: string,
+  adminId: string
+) {
+  const q = (query ?? "").toLowerCase();
 
-  if (lowerQuery.includes("platform health") || lowerQuery.includes("system status")) {
-    const health = await getSystemHealth()
+  if (q.includes("platform health") || q.includes("system status")) {
+    const health = await getSystemHealth(supabase);
     return {
-      reply_text: `The Giftverse pulses with ${health.health_score}% vitality, Agent. ${health.active_users} souls actively engage while ${health.total_xp} experience points flow through our digital arteries. The platform's heartbeat remains strong and steady.`,
+      reply_text: `Health ${health.health_score}% • Active ${health.active_users}/${health.total_users} • Total XP ${health.total_xp}.`,
       query_type: "health_check",
       data: health,
-    }
+    };
   }
 
-  if (lowerQuery.includes("top users") || lowerQuery.includes("leaderboard")) {
-    const leaders = await getTopUsers()
+  if (q.includes("top users") || q.includes("leaderboard")) {
+    const leaders = await getTopUsers(supabase);
+    const [a, b, c] = leaders;
     return {
-      reply_text: `The champions of our realm shine brightly, Agent. ${leaders[0]?.name} leads with ${leaders[0]?.xp} XP, followed by ${leaders[1]?.name} and ${leaders[2]?.name}. Their dedication illuminates the path for others.`,
+      reply_text: `Top agents: ${a?.name ?? "—"} (${a?.xp ?? 0} XP), ${b?.name ?? "—"} (${b?.xp ?? 0}), ${c?.name ?? "—"} (${c?.xp ?? 0}).`,
       query_type: "leaderboard",
       data: leaders,
-    }
+    };
   }
 
-  if (lowerQuery.includes("emotional") || lowerQuery.includes("mood") || lowerQuery.includes("sentiment")) {
-    const emotions = await getEmotionalSummary()
+  if (q.includes("emotional") || q.includes("mood") || q.includes("sentiment")) {
+    const emotions = await getEmotionalSummary(supabase);
     return {
-      reply_text: `The emotional currents flow with ${emotions.top_mood} as the dominant force, Agent. ${emotions.total_interactions} heartfelt interactions weave through our platform, creating a tapestry of human connection and digital empathy.`,
+      reply_text: `Dominant mood: ${emotions.top_mood}. ${emotions.total_interactions} interactions this week.`,
       query_type: "emotional_analysis",
       data: emotions,
-    }
+    };
   }
 
-  // Default strategic response
   return {
-    reply_text: `Your query flows through the Giftverse's neural networks, Agent. While I process the depths of your request, know that every question strengthens our platform's intelligence. How may I serve your strategic vision more precisely?`,
+    reply_text:
+      "Query received. Specify “platform health”, “top users”, or “emotional summary” for focused intelligence.",
     query_type: "general",
     original_query: query,
-  }
+  };
 }
 
-async function getEmotionalSummary() {
+async function getEmotionalSummary(supabase: SupabaseClient<Database>) {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
   const { data: emotions } = await supabase
     .from("emotional_tag_logs")
     .select("emotion_tags, intensity_score, created_at")
-    .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    .order("created_at", { ascending: true })
+    .gte("created_at", since)
+    .order("created_at", { ascending: true });
 
-  const totalInteractions = emotions?.length || 0
+  const items = emotions ?? [];
+  const totalInteractions = items.length;
 
-  // Calculate emotion distribution
-  const emotionCounts = {}
-  emotions?.forEach((e) => {
-    e.emotion_tags.forEach((tag) => {
-      emotionCounts[tag] = (emotionCounts[tag] || 0) + 1
-    })
-  })
+  const emotionCounts: Record<string, number> = {};
+  for (const e of items) {
+    for (const tag of e.emotion_tags ?? []) {
+      emotionCounts[tag] = (emotionCounts[tag] ?? 0) + 1;
+    }
+  }
 
-  const topMood = Object.keys(emotionCounts).reduce((a, b) => (emotionCounts[a] > emotionCounts[b] ? a : b), "neutral")
+  const topMood =
+    Object.keys(emotionCounts).reduce(
+      (best, k) => ((emotionCounts[k] ?? 0) > (emotionCounts[best] ?? 0) ? k : best),
+      Object.keys(emotionCounts)[0] ?? "neutral"
+    ) ?? "neutral";
 
-  // Generate trend data for the last 7 days
-  const trendData = []
+  const trendData: Array<Record<string, number | string>> = [];
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
-    const dayEmotions = emotions?.filter((e) => {
-      const emotionDate = new Date(e.created_at)
-      return emotionDate.toDateString() === date.toDateString()
-    })
+    const day = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    const dayStr = day.toDateString();
+    const dayItems = items.filter((e) => new Date(e.created_at).toDateString() === dayStr);
 
-    const dayCounts = { joy: 0, gratitude: 0, excitement: 0, love: 0, neutral: 0 }
-    dayEmotions?.forEach((e) => {
-      e.emotion_tags.forEach((tag) => {
-        if (dayCounts[tag] !== undefined) {
-          dayCounts[tag]++
-        }
-      })
-    })
+    const dayCounts: Record<string, number> = { joy: 0, gratitude: 0, excitement: 0, love: 0, neutral: 0 };
+    for (const e of dayItems) {
+      for (const tag of e.emotion_tags ?? []) {
+        if (dayCounts[tag] !== undefined) dayCounts[tag] += 1;
+      }
+    }
 
     trendData.push({
-      date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      date: day.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       ...dayCounts,
-    })
+    });
   }
 
   return {
@@ -288,37 +325,32 @@ async function getEmotionalSummary() {
     top_mood: topMood,
     emotion_distribution: emotionCounts,
     trend_data: trendData,
-  }
+  };
 }
 
-async function getSystemHealth() {
-  const { data: users } = await supabase.from("user_profiles").select("id, last_activity, xp")
+async function getSystemHealth(supabase: SupabaseClient<Database>) {
+  const { data: users } = await supabase.from("user_profiles").select("id, last_activity, xp");
+  const list = users ?? [];
 
-  const totalUsers = users?.length || 0
-  const activeUsers =
-    users?.filter((u) => {
-      const lastActivity = new Date(u.last_activity)
-      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-      return lastActivity > dayAgo
-    }).length || 0
-
-  const totalXP = users?.reduce((sum, u) => sum + (u.xp || 0), 0) || 0
-  const healthScore = totalUsers > 0 ? Math.min(100, (activeUsers / totalUsers) * 100 + 20) : 0
+  const totalUsers = list.length;
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const activeUsers = list.filter((u) => (u.last_activity ? new Date(u.last_activity) > dayAgo : false)).length;
+  const totalXP = list.reduce((sum, u) => sum + (u.xp ?? 0), 0);
+  const healthScore = totalUsers > 0 ? Math.min(100, (activeUsers / totalUsers) * 100 + 20) : 0;
 
   return {
     total_users: totalUsers,
     active_users: activeUsers,
     total_xp: totalXP,
     health_score: Math.round(healthScore),
-  }
+  };
 }
 
-async function getTopUsers() {
+async function getTopUsers(supabase: SupabaseClient<Database>) {
   const { data: users } = await supabase
     .from("user_profiles")
     .select("id, name, email, xp, level")
     .order("xp", { ascending: false })
-    .limit(5)
-
-  return users || []
+    .limit(5);
+  return users ?? [];
 }

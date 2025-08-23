@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useState, useEffect } from "react"
 import { ArrowLeft, Play, Pause, Volume2, VolumeX, Heart, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"

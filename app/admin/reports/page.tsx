@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { Suspense } from "react"
 import { AdminReportsPanel } from "@/components/admin/admin-reports-panel"
 import { Card, CardContent } from "@/components/ui/card"

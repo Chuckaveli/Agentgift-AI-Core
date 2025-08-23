@@ -1,5 +1,5 @@
 "use client";
-import { getBrowserClient } from "@/lib/supabase/clients";
+import { getBrowserClient } from "@/lib/supabase/browser";
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"

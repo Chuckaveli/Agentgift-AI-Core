@@ -1,23 +1,18 @@
-import { NextResponse } from "next/server"
-import { getServerClient } from "@/lib/supabase/clients"
+import { NextResponse } from "next/server";
+import { getSupabaseServer } from "@/lib/supabaseServer";
 
-// OAuth callback handler
 export async function GET(req: Request) {
-  const url = new URL(req.url)
-  const code = url.searchParams.get("code")
+  const { searchParams, origin } = new URL(req.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/dashboard";
 
-  try {
-    if (code) {
-      // Exchange the code for a session. This compiles and is safe even if cookies
-      // aren’t fully wired; at worst it’s a no-op and you can improve later.
-      const supabase = getServerClient()
-      await supabase.auth.exchangeCodeForSession(code)
+  if (code) {
+    const supabase = getSupabaseServer();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(`${origin}/auth/signin?error=${encodeURIComponent(error.message)}`);
     }
-  } catch (e) {
-    console.error("auth/callback exchange error:", e)
-    // Continue to redirect regardless
   }
 
-  // Redirect users somewhere sensible after login
-  return NextResponse.redirect(new URL("/dashboard", req.url))
+  return NextResponse.redirect(`${origin}${next}`);
 }
