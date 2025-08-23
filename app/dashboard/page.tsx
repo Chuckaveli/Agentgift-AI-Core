@@ -1,17 +1,125 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Gift, Sparkles, Globe, Brain, Users, Zap, TrendingUp, Calendar, Star, Crown, Heart } from "lucide-react"
-import Link from "next/link"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  Gift,
+  Sparkles,
+  Globe,
+  Brain,
+  Users,
+  Zap,
+  TrendingUp,
+  Calendar,
+  Star,
+  Crown,
+  Heart,
+} from "lucide-react";
+
+type BootState = "checking" | "ready" | "error";
+
+type Profile = {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  tier: string[] | null;
+  level: number | null;
+  onboarding_completed: boolean | null;
+};
 
 export default function DashboardPage() {
-  const [xp, setXp] = useState(1250)
-  const [level, setLevel] = useState(5)
-  const [nextLevelXp, setNextLevelXp] = useState(1500)
+  const supabase = getBrowserClient();
+
+  const [boot, setBoot] = useState<BootState>("checking");
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  // Local XP/Level state (fallbacks; updated from profile if present)
+  const [xp, setXp] = useState<number>(1250);
+  const [level, setLevel] = useState<number>(5);
+  const [nextLevelXp, setNextLevelXp] = useState<number>(1500);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        // 1) Check existing session
+        const { data: s1 } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        let userId = s1.session?.user?.id ?? null;
+
+        // 2) If returning from magic link / email link, exchange code for a session
+        if (!userId && typeof window !== "undefined" && window.location.search.includes("code=")) {
+          await supabase.auth.exchangeCodeForSession(window.location.href);
+          const { data: s2 } = await supabase.auth.getSession();
+          if (!mounted) return;
+          userId = s2.session?.user?.id ?? null;
+        }
+
+        setSessionUserId(userId);
+
+        // 3) Fetch profile if we have a user
+        if (userId) {
+          const { data, error } = await supabase
+            .from("user_profiles")
+            .select(
+              "user_id,email,display_name,tier,level,onboarding_completed"
+            )
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (!mounted) return;
+
+          if (error) {
+            console.warn("profile error:", error);
+            setBoot("error");
+            return;
+          }
+
+          setProfile(data ?? null);
+
+          // Safely hydrate level (and optionally xp if you add a column later)
+          if (data?.level != null) {
+            setLevel(data.level);
+            // Example progression math (keep your own if you have real totals):
+            const base = Math.max(0, data.level - 1) * 300; // fake baseline per level
+            const target = data.level * 300;
+            setXp(base + Math.min(250, 280)); // fake “in-progress” fill
+            setNextLevelXp(target);
+          }
+        }
+
+        setBoot("ready");
+      } catch (e) {
+        console.error("dashboard init error:", e);
+        setBoot("error");
+      }
+    };
+
+    init();
+
+    // 4) Keep session in sync (e.g., user logs out)
+    const sub = supabase.auth.onAuthStateChange((_event, s) => {
+      const uid = s?.session?.user?.id ?? null;
+      setSessionUserId(uid);
+      if (!uid) {
+        setProfile(null);
+      }
+    }).data?.subscription;
+
+    return () => {
+      mounted = false;
+      sub?.unsubscribe();
+    };
+  }, [supabase]);
 
   const quickActions = [
     {
@@ -46,43 +154,50 @@ export default function DashboardPage() {
       color: "bg-pink-500",
       xp: "+60 XP",
     },
-  ]
+  ] as const;
 
   const recentActivity = [
-    {
-      action: "Completed Gift DNA Analysis",
-      time: "2 hours ago",
-      xp: 50,
-      icon: Gift,
-    },
-    {
-      action: "Unlocked Cultural Insights",
-      time: "1 day ago",
-      xp: 100,
-      icon: Globe,
-    },
-    {
-      action: "Used Smart Search",
-      time: "2 days ago",
-      xp: 40,
-      icon: Brain,
-    },
-  ]
+    { action: "Completed Gift DNA Analysis", time: "2 hours ago", xp: 50, icon: Gift },
+    { action: "Unlocked Cultural Insights", time: "1 day ago", xp: 100, icon: Globe },
+    { action: "Used Smart Search", time: "2 days ago", xp: 40, icon: Brain },
+  ] as const;
 
+  // Example data; replace with your real occasions table later if needed
   const upcomingOccasions = [
-    {
-      name: "Mom's Birthday",
-      date: "Dec 25, 2024",
-      daysLeft: 12,
-      type: "Birthday",
-    },
-    {
-      name: "Anniversary",
-      date: "Jan 15, 2025",
-      daysLeft: 33,
-      type: "Anniversary",
-    },
-  ]
+    { name: "Mom's Birthday", date: "Dec 25, 2025", daysLeft: 124, type: "Birthday" },
+    { name: "Anniversary", date: "Jan 15, 2026", daysLeft: 145, type: "Anniversary" },
+  ] as const;
+
+  if (boot === "checking") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Loading your dashboard…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (boot === "error") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <h2 className="text-xl font-semibold">We hit a snag</h2>
+          <p className="text-sm text-muted-foreground">
+            Try refreshing the page or signing in again.
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button asChild variant="default">
+              <Link href="/auth/signin">Sign in</Link>
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,10 +205,14 @@ export default function DashboardPage() {
         {/* Welcome Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2">
-            Welcome back, Gift Master!
+            {profile?.display_name ? `Welcome back, ${profile.display_name}!` : "Welcome back, Gift Master!"}
             <Sparkles className="inline-block ml-2 h-8 w-8 text-yellow-500" />
           </h1>
-          <p className="text-muted-foreground">Ready to create some magical gifting moments?</p>
+          <p className="text-muted-foreground">
+            {sessionUserId
+              ? "Ready to create some magical gifting moments?"
+              : "You’re not signed in yet—some features may be limited."}
+          </p>
         </div>
 
         {/* XP Progress */}
@@ -101,7 +220,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-yellow-500" />
-              Level {level} - Gift Enthusiast
+              Level {level} — Gift Enthusiast
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -110,9 +229,9 @@ export default function DashboardPage() {
                 <span>{xp} XP</span>
                 <span>{nextLevelXp} XP</span>
               </div>
-              <Progress value={(xp / nextLevelXp) * 100} className="h-3" />
+              <Progress value={Math.max(0, Math.min(100, (xp / nextLevelXp) * 100))} className="h-3" />
               <p className="text-sm text-muted-foreground">
-                {nextLevelXp - xp} XP until Level {level + 1}
+                {Math.max(0, nextLevelXp - xp)} XP until Level {level + 1}
               </p>
             </div>
           </CardContent>
@@ -123,7 +242,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {quickActions.map((action, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="text-center pb-2">
                   <div
                     className={`w-12 h-12 mx-auto rounded-full ${action.color} flex items-center justify-center mb-3`}
@@ -197,7 +316,10 @@ export default function DashboardPage() {
                       <p className="font-medium text-sm">{occasion.name}</p>
                       <p className="text-xs text-muted-foreground">{occasion.date}</p>
                     </div>
-                    <Badge variant={occasion.daysLeft <= 14 ? "destructive" : "secondary"} className="text-xs">
+                    <Badge
+                      variant={occasion.daysLeft <= 14 ? "destructive" : "secondary"}
+                      className="text-xs"
+                    >
                       {occasion.daysLeft} days
                     </Badge>
                   </div>
@@ -223,7 +345,9 @@ export default function DashboardPage() {
               <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
                 <Gift className="h-8 w-8 text-purple-600 mb-2" />
                 <h3 className="font-semibold mb-1">Gift DNA</h3>
-                <p className="text-sm text-muted-foreground mb-3">Analyze personality for perfect matches</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Analyze personality for perfect matches
+                </p>
                 <Button size="sm" variant="outline" asChild>
                   <Link href="/gift-dna">Try Now</Link>
                 </Button>
@@ -232,7 +356,9 @@ export default function DashboardPage() {
               <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
                 <Globe className="h-8 w-8 text-blue-600 mb-2" />
                 <h3 className="font-semibold mb-1">Cultural Respect</h3>
-                <p className="text-sm text-muted-foreground mb-3">Ensure culturally appropriate gifting</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Ensure culturally appropriate gifting
+                </p>
                 <Button size="sm" variant="outline" asChild>
                   <Link href="/cultural-respect">Explore</Link>
                 </Button>
@@ -241,7 +367,9 @@ export default function DashboardPage() {
               <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
                 <Brain className="h-8 w-8 text-green-600 mb-2" />
                 <h3 className="font-semibold mb-1">Smart Search</h3>
-                <p className="text-sm text-muted-foreground mb-3">AI-powered gift discovery</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  AI-powered gift discovery
+                </p>
                 <Button size="sm" variant="outline" asChild>
                   <Link href="/smart-search">Search</Link>
                 </Button>
@@ -251,6 +379,5 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
-
