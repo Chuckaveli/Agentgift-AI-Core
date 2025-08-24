@@ -3,12 +3,11 @@
  * How to use:
  *
  * 1) Replace the existing file with this one.
- * 2) Import in components/pages like:
+ * 2) Import anywhere with:
  *      import { useUser } from "@/hooks/use-user";
  *
  * Requirements:
  * - Browser client helper at: /lib/supabase/browser.ts  (export function createClient() { ... })
- * - (Optional) Generated types at: /types/supabase.ts    (not strictly required to compile this file)
  */
 
 "use client";
@@ -31,8 +30,8 @@ type UserProfileRow = {
   last_activity: string | null;
   created_at: string;
   updated_at: string;
-  // In some places you reference admin_role; keep optional for compatibility.
-  admin_role?: string | boolean | null;
+  role?: string | null;              // <- preferred single source of truth
+  admin_role?: string | boolean | null; // <- legacy / compatibility
 };
 
 /** Normalized profile shape the app can rely on */
@@ -50,6 +49,7 @@ export type UserProfile = {
   last_activity: string | null;
   created_at: string;
   updated_at: string;
+  role?: string | null;
   admin_role?: string | boolean | null;
 };
 
@@ -69,6 +69,7 @@ function normalizeProfile(row: UserProfileRow): UserProfile {
     last_activity: row.last_activity ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    role: row.role ?? null,
     admin_role: row.admin_role ?? null,
   };
 }
@@ -93,11 +94,11 @@ export function useUser() {
         setUser(u);
 
         if (u) {
-          // IMPORTANT: your table uses user_id, not id
+          // Table PK is user_id (not id)
           const { data: row, error: profileError } = await supabase
             .from("user_profiles")
             .select(
-              "user_id,email,name,tier,credits,xp,level,badges,prestige_level,last_activity,created_at,updated_at,admin_role"
+              "user_id,email,name,tier,credits,xp,level,badges,prestige_level,last_activity,created_at,updated_at,role,admin_role"
             )
             .eq("user_id", u.id)
             .single();
@@ -131,7 +132,7 @@ export function useUser() {
         const { data: row } = await supabase
           .from("user_profiles")
           .select(
-            "user_id,email,name,tier,credits,xp,level,badges,prestige_level,last_activity,created_at,updated_at,admin_role"
+            "user_id,email,name,tier,credits,xp,level,badges,prestige_level,last_activity,created_at,updated_at,role,admin_role"
           )
           .eq("user_id", u.id)
           .single();
@@ -150,13 +151,12 @@ export function useUser() {
     };
   }, [supabase]);
 
-  // Robust admin detection across variants you use elsewhere
-  const isAdmin =
-    !!profile &&
-    (String(profile.tier || "").toLowerCase().includes("admin") ||
-      profile.admin_role === true ||
-      String(profile.admin_role || "").toLowerCase() === "admin" ||
-      String(profile.admin_role || "").toLowerCase() === "founder");
+  // Admin detection: prefer `role`, fall back to `admin_role`
+  const roleLower =
+    (profile?.role ??
+      (typeof profile?.admin_role === "string" ? profile?.admin_role : "")).toString().toLowerCase();
+
+  const isAdmin = roleLower === "admin" || roleLower === "founder";
 
   return { user, profile, loading, error, isAdmin };
 }
