@@ -1,0 +1,77 @@
+[35mapp/admin/command-deck/loading.tsx[m[36m:[m[32m30[m[36m:[m            <span>Authenticating [1;31madmin access[m</span>
+[35mapp/admin/command-deck/page.tsx[m[36m:[m[32m172[m[36m:[m  const { profile, loading, error, [1;31misAdmin[m } = useUser()
+[35mapp/admin/command-deck/page.tsx[m[36m:[m[32m207[m[36m:[m      if (![1;31misAdmin[m) {
+[35mapp/admin/command-deck/page.tsx[m[36m:[m[32m213[m[36m:[m  }, [profile, loading, error, [1;31misAdmin[m, router])
+[35mapp/admin/command-deck/page.tsx[m[36m:[m[32m217[m[36m:[m    if ([1;31misAdmin[m && profile?.id) {
+[35mapp/admin/command-deck/page.tsx[m[36m:[m[32m222[m[36m:[m  }, [[1;31misAdmin[m, profile?.id])
+[35mapp/admin/command-deck/page.tsx[m[36m:[m[32m585[m[36m:[m  if (![1;31misAdmin[m) {
+[35mapp/admin/memory-vault/loading.tsx[m[36m:[m[32m19[m[36m:[m            <p className="opacity-100">🔐 Authenticating [1;31madmin access[m...</p>
+[35mapp/admin/memory-vault/page.tsx[m[36m:[m[32m72[m[36m:[m  const { profile, loading, error, [1;31misAdmin[m } = useUser()
+[35mapp/admin/memory-vault/page.tsx[m[36m:[m[32m113[m[36m:[m    if (!loading && (!profile || ![1;31misAdmin[m)) {
+[35mapp/admin/memory-vault/page.tsx[m[36m:[m[32m117[m[36m:[m  }, [profile, loading, [1;31misAdmin[m, router])
+[35mapp/admin/memory-vault/page.tsx[m[36m:[m[32m121[m[36m:[m    if ([1;31misAdmin[m && profile?.id) {
+[35mapp/admin/memory-vault/page.tsx[m[36m:[m[32m124[m[36m:[m  }, [[1;31misAdmin[m, profile?.id])
+[35mapp/admin/memory-vault/page.tsx[m[36m:[m[32m364[m[36m:[m  if (![1;31misAdmin[m) {
+[35mapp/admin/voice-guardian/loading.tsx[m[36m:[m[32m10[m[36m:[m          <p className="text-purple-200">Authenticating [1;31madmin access[m and preparing voice systems...</p>
+[35mapp/admin/voice-guardian/page.tsx[m[36m:[m[32m303[m[36m:[m              <p className="text-purple-200">Authenticating [1;31madmin access[m...</p>
+[35mapp/api/admin/economy-architect/functions/route.ts[m[36m:[m[32m10[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/economy-architect/voice/route.ts[m[36m:[m[32m17[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/ecosystem-health/route.ts[m[36m:[m[32m6[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/giftverse-control/voice/route.ts[m[36m:[m[32m17[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/giftverse-leader/settings/route.ts[m[36m:[m[32m15[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/giftverse-leader/settings/route.ts[m[36m:[m[32m53[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/giftverse-leader/voice/route.ts[m[36m:[m[32m18[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/memory-vault/insights/route.ts[m[36m:[m[32m17[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/memory-vault/insights/route.ts[m[36m:[m[32m53[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/memory-vault/search/route.ts[m[36m:[m[32m15[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/sync-assistants/route.ts[m[36m:[m[32m9[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/sync-assistants/route.ts[m[36m:[m[32m71[m[36m:[m    // Verify [1;31madmin access[m (same as POST)
+[35mapp/api/admin/visual-analytics/route.ts[m[36m:[m[32m18[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/visual-analytics/route.ts[m[36m:[m[32m286[m[36m:[m    // Verify [1;31madmin access[m
+[35mapp/api/admin/voice-guardian/auth/route.ts[m[36m:[m[32m34[m[36m:[m        user_input: "Attempted [1;31madmin access[m",
+[35mcomponents/assistant-hub/assistant-hub-panel.tsx[m[36m:[m[32m286[m[36m:[m  const [[1;31misAdmin[m, setIsAdmin] = useState(false)
+[35mcomponents/assistant-hub/assistant-hub-panel.tsx[m[36m:[m[32m509[m[36m:[m    if (![1;31misAdmin[m) {
+[35mcomponents/assistant-hub/assistant-hub-panel.tsx[m[36m:[m[32m595[m[36m:[m      if (!showInactive && !assistant.is_active && ![1;31misAdmin[m) {
+[35mcomponents/assistant-hub/assistant-hub-panel.tsx[m[36m:[m[32m625[m[36m:[m  }, [assistants, searchQuery, selectedCategory, showInactive, sortBy, sortOrder, [1;31misAdmin[m])
+[35mcomponents/assistant-hub/assistant-hub-panel.tsx[m[36m:[m[32m667[m[36m:[m          {[1;31misAdmin[m && (
+[35mcomponents/assistant-hub/assistant-hub-panel.tsx[m[36m:[m[32m983[m[36m:[m              {[1;31misAdmin[m && (
+[35mcomponents/assistants/agent-gift-assistant-dashboard.tsx[m[36m:[m[32m294[m[36m:[m  const [[1;31misAdmin[m, setIsAdmin] = useState(false)
+[35mcomponents/layout/app-layout.tsx[m[36m:[m[32m99[m[36m:[m  const [1;31misAdmin[m = user?.tier === "premium" // Simplified admin check
+[35mcomponents/layout/app-layout.tsx[m[36m:[m[32m104[m[36m:[m    ...([1;31misAdmin[m ? adminNavigation : []),
+[35mcomponents/layout/app-layout.tsx[m[36m:[m[32m107[m[36m:[m    if (item.adminOnly && ![1;31misAdmin[m) return false
+[35mcomponents/registry/agent-gift-master-registry.tsx[m[36m:[m[32m146[m[36m:[m  const [[1;31misAdmin[m, setIsAdmin] = useState(false)
+[35mcomponents/registry/agent-gift-master-registry.tsx[m[36m:[m[32m238[m[36m:[m    let filtered = features.filter((feature) => feature.is_active || [1;31misAdmin[m)
+[35mcomponents/registry/agent-gift-master-registry.tsx[m[36m:[m[32m262[m[36m:[m  }, [features, searchTerm, selectedCategory, selectedTier, [1;31misAdmin[m])
+[35mcomponents/registry/agent-gift-master-registry.tsx[m[36m:[m[32m296[m[36m:[m    if (![1;31misAdmin[m) return
+[35mcomponents/registry/agent-gift-master-registry.tsx[m[36m:[m[32m340[m[36m:[m          {[1;31misAdmin[m && (
+[35mcomponents/registry/agent-gift-master-registry.tsx[m[36m:[m[32m541[m[36m:[m      {[1;31misAdmin[m && (
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m285[m[36m:[m  const [[1;31misAdmin[m, setIsAdmin] = useState(false)
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m438[m[36m:[m    if (![1;31misAdmin[m) return
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m483[m[36m:[m    if (![1;31misAdmin[m) {
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m509[m[36m:[m    if (![1;31misAdmin[m) {
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m555[m[36m:[m      if (!showInactive && !assistant.is_active && ![1;31misAdmin[m) {
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m561[m[36m:[m  }, [assistants, searchQuery, selectedCategory, selectedType, selectedStatus, showInactive, [1;31misAdmin[m])
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m598[m[36m:[m          {[1;31misAdmin[m && (
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m842[m[36m:[m                    {[1;31misAdmin[m && (
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m917[m[36m:[m            {[1;31misAdmin[m && (
+[35mcomponents/universal/universal-ai-plugin-loader.tsx[m[36m:[m[32m979[m[36m:[m              {[1;31misAdmin[m && (
+[35mhooks/use-user.ts[m[36m:[m[32m154[m[36m:[m  const [1;31misAdmin[m =
+[35mhooks/use-user.ts[m[36m:[m[32m161[m[36m:[m  return { user, profile, loading, error, [1;31misAdmin[m };
+[35mlib/auth-helpers.ts[m[36m:[m[32m55[m[36m:[m  const [1;31misAdmin[m = user.email === "admin@agentgift.ai" || user.user_metadata?.role === "admin"
+[35mlib/auth-helpers.ts[m[36m:[m[32m57[m[36m:[m  if (![1;31misAdmin[m) {
+[35mlib/trpc/server.ts[m[36m:[m[32m55[m[36m:[mconst [1;31misAdmin[m = t.middleware(({ next, ctx }) => {
+[35mlib/trpc/server.ts[m[36m:[m[32m80[m[36m:[mexport const adminProcedure = t.procedure.use([1;31misAdmin[m)
+[35mscripts/create-admin-dashboard-schema.sql[m[36m:[m[32m126[m[36m:[m-- Create RLS policies for [1;31madmin-only access[m
+[35mscripts/create-agentgift-features-schema.sql[m[36m:[m[32m75[m[36m:[m-- Policy for Enterprise users ([1;31madmin access[m)
+[35mscripts/create-universal-ai-system-schema.sql[m[36m:[m[32m468[m[36m:[m    -- Verify [1;31madmin access[m
+[35msupabase/functions/agentgift_features_query/index.ts[m[36m:[m[32m29[m[36m:[m    let [1;31misAdmin[m = false
+[35msupabase/functions/agentgift_features_query/index.ts[m[36m:[m[32m49[m[36m:[m            [1;31misAdmin[m = profile.email === "admin@agentgift.ai" || profile.role === "admin"
+[35msupabase/functions/agentgift_features_query/index.ts[m[36m:[m[32m76[m[36m:[m    if (![1;31misAdmin[m) {
+[35msupabase/functions/assistant_registry_fetch/index.ts[m[36m:[m[32m114[m[36m:[m    const [1;31misAdmin[m = userProfile?.role === "admin" || userProfile?.email === "admin@agentgift.ai"
+[35msupabase/functions/assistant_registry_fetch/index.ts[m[36m:[m[32m126[m[36m:[m        if (![1;31misAdmin[m) {
+[35msupabase/functions/assistant_registry_fetch/index.ts[m[36m:[m[32m189[m[36m:[m            is_admin: [1;31misAdmin[m,
+[35msupabase/functions/assistant_registry_fetch/index.ts[m[36m:[m[32m199[m[36m:[m        if (![1;31misAdmin[m) {
+[35msupabase/functions/assistant_registry_fetch/index.ts[m[36m:[m[32m226[m[36m:[m        if (![1;31misAdmin[m) {
+[35msupabase/functions/assistant_registry_fetch/index.ts[m[36m:[m[32m249[m[36m:[m        if (![1;31misAdmin[m) {
+[35mtrpc/context.ts[m[36m:[m[32m45[m[36m:[m  const [1;31misAdmin[m = ctx.user.email?.endsWith("@agentgift.ai") || ctx.user.user_metadata?.role === "admin"
+[35mtrpc/context.ts[m[36m:[m[32m47[m[36m:[m  if (![1;31misAdmin[m) {
