@@ -25,14 +25,9 @@ export const POST = withAuth(async (request: NextRequest, context) => {
   const supabase = getAdminClient();
 
   try {
-    const {
-      function: functionName,
-      parameters = {},
-      session_id,
-      admin_id,
-    } = await request.json();
+    const { function: functionName, parameters = {}, session_id, admin_id } = await request.json();
 
-    if (!context.user || !["admin", "founder"].includes(context.user.role ?? "")) {
+    if (!context.user || !context.user.tier?.includes("admin")) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
@@ -132,7 +127,7 @@ export const POST = withAuth(async (request: NextRequest, context) => {
   }
 });
 
-/* ================= helpers ================= */
+/* helpers */
 
 async function updateAssistantBrain(
   supabase: SupabaseClient<Database>,
@@ -140,13 +135,7 @@ async function updateAssistantBrain(
   newLogic: string,
   adminId: string
 ) {
-  // user_profiles now keyed by user_id
-  const { data: admin } = await supabase
-    .from("user_profiles")
-    .select("admin_role")
-    .eq("user_id", adminId)          // <-- user_id
-    .single();
-
+  const { data: admin } = await supabase.from("user_profiles").select("admin_role").eq("user_id", adminId).single();
   if (admin?.admin_role !== "founder") {
     throw new Error("Voice assistant logic updates require founder access");
   }
@@ -172,7 +161,6 @@ async function updateAssistantBrain(
 
 async function getFeatureUsageSummary(supabase: SupabaseClient<Database>) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
   const { data: featureUsage } = await supabase
     .from("feature_usage_logs")
     .select("feature_name, user_id")
@@ -216,7 +204,7 @@ async function triggerRewardTest(
   const { data: user } = await supabase
     .from("user_profiles")
     .select("xp, level")
-    .eq("user_id", userId)           // <-- user_id
+    .eq("user_id", userId)         // <-- fixed
     .single();
   if (!user) throw new Error("User not found");
 
@@ -226,7 +214,7 @@ async function triggerRewardTest(
   const { error: xpError } = await supabase
     .from("user_profiles")
     .update({ xp: newXP, level: newLevel, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);          // <-- user_id
+    .eq("user_id", userId);        // <-- fixed
   if (xpError) throw xpError;
 
   await supabase.from("xp_logs").insert({
@@ -249,7 +237,7 @@ async function triggerRewardTest(
 async function processVoiceAIQuery(
   supabase: SupabaseClient<Database>,
   query: string,
-  _adminId: string
+  adminId: string
 ) {
   const q = (query ?? "").toLowerCase();
 
@@ -266,7 +254,7 @@ async function processVoiceAIQuery(
     const leaders = await getTopUsers(supabase);
     const [a, b, c] = leaders;
     return {
-      reply_text: `Top agents: ${a?.name ?? "—"} (${a?.xp ?? 0} XP), ${b?.name ?? "—"} (${b?.xp ?? 0}), ${c?.name ?? "—"} (${c?.xp ?? 0}).`,
+      reply_text: `Top agents: ${a?.name ?? "—"} (${a?.xp ?? 0} XP), ${b?.name ?? 0} (${b?.xp ?? 0}), ${c?.name ?? "—"} (${c?.xp ?? 0}).`,
       query_type: "leaderboard",
       data: leaders,
     };
@@ -282,8 +270,7 @@ async function processVoiceAIQuery(
   }
 
   return {
-    reply_text:
-      "Query received. Specify “platform health”, “top users”, or “emotional summary” for focused intelligence.",
+    reply_text: "Query received. Specify “platform health”, “top users”, or “emotional summary” for focused intelligence.",
     query_type: "general",
     original_query: query,
   };
@@ -342,9 +329,7 @@ async function getEmotionalSummary(supabase: SupabaseClient<Database>) {
 }
 
 async function getSystemHealth(supabase: SupabaseClient<Database>) {
-  const { data: users } = await supabase
-    .from("user_profiles")
-    .select("user_id, last_activity, xp");    // <-- user_id
+  const { data: users } = await supabase.from("user_profiles").select("user_id, last_activity, xp");
   const list = users ?? [];
 
   const totalUsers = list.length;
@@ -364,7 +349,7 @@ async function getSystemHealth(supabase: SupabaseClient<Database>) {
 async function getTopUsers(supabase: SupabaseClient<Database>) {
   const { data: users } = await supabase
     .from("user_profiles")
-    .select("user_id, name, email, xp, level")  // <-- user_id
+    .select("user_id, name, email, xp, level")  // <-- no `id`
     .order("xp", { ascending: false })
     .limit(5);
   return users ?? [];
