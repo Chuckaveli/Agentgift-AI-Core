@@ -4,7 +4,6 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { withAuth } from "@/lib/middleware/withAuth";
 import type { Database } from "@/types/supabase";
 
-// Must be Node (service-role key)
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,11 +25,10 @@ export const POST = withAuth(async (request: NextRequest, context) => {
   const supabase = getAdminClient();
 
   try {
-    const { action, parameters = {}, target_user_id, session_id } =
-      await request.json();
+    const { action, parameters = {}, target_user_id, session_id } = await request.json();
 
-    // Adjust to your role model
-    if (!context.user || !["admin", "founder"].includes(context.user.role ?? "")) {
+    // Verify admin access
+    if (!context.user || !context.user.tier?.includes("admin")) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
@@ -38,7 +36,7 @@ export const POST = withAuth(async (request: NextRequest, context) => {
     let actionDetail = "";
 
     switch (action) {
-      case "adjust_user_xp": {
+      case "adjust_user_xp":
         result = await adjustUserXP(
           supabase,
           parameters.user_id,
@@ -48,9 +46,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Adjusted XP by ${parameters.xp_change} for user ${parameters.user_id}`;
         break;
-      }
 
-      case "adjust_user_credits": {
+      case "adjust_user_credits":
         result = await adjustUserCredits(
           supabase,
           parameters.user_id,
@@ -60,9 +57,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Adjusted credits by ${parameters.credit_change} for user ${parameters.user_id}`;
         break;
-      }
 
-      case "assign_badge": {
+      case "assign_badge":
         result = await assignBadge(
           supabase,
           parameters.user_id,
@@ -72,9 +68,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Assigned badge ${parameters.badge_id} to user ${parameters.user_id}`;
         break;
-      }
 
-      case "ban_user_from_feature": {
+      case "ban_user_from_feature":
         result = await banUserFromFeature(
           supabase,
           parameters.user_id,
@@ -85,9 +80,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Banned user ${parameters.user_id} from ${parameters.feature_name} for ${parameters.duration_hours} hours`;
         break;
-      }
 
-      case "trigger_announcement": {
+      case "trigger_announcement":
         result = await triggerAnnouncement(
           supabase,
           parameters.message,
@@ -97,9 +91,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Triggered announcement: ${String(parameters.message).slice(0, 50)}...`;
         break;
-      }
 
-      case "simulate_edge_case": {
+      case "simulate_edge_case":
         result = await simulateEdgeCase(
           supabase,
           parameters.event_type,
@@ -108,9 +101,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Simulated edge case: ${parameters.event_type}`;
         break;
-      }
 
-      case "get_emotional_logs": {
+      case "get_emotional_logs":
         result = await getEmotionalLogs(
           supabase,
           parameters.filters ?? {},
@@ -118,9 +110,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = "Retrieved emotional intelligence logs";
         break;
-      }
 
-      case "get_feature_usage_logs": {
+      case "get_feature_usage_logs":
         result = await getFeatureUsageLogs(
           supabase,
           parameters.filters ?? {},
@@ -128,21 +119,18 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = "Retrieved feature usage logs";
         break;
-      }
 
-      case "get_user_breakdown": {
+      case "get_user_breakdown":
         result = await getUserBreakdown(supabase, parameters.user_id);
         actionDetail = `Retrieved breakdown for user ${parameters.user_id}`;
         break;
-      }
 
-      case "export_giftverse_health": {
+      case "export_giftverse_health":
         result = await exportGiftverseHealth(supabase, context.user.id);
         actionDetail = "Exported Giftverse health snapshot";
         break;
-      }
 
-      case "start_impersonation": {
+      case "start_impersonation":
         result = await startUserImpersonation(
           supabase,
           parameters.user_id,
@@ -151,9 +139,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Started impersonating user ${parameters.user_id}`;
         break;
-      }
 
-      case "end_impersonation": {
+      case "end_impersonation":
         result = await endUserImpersonation(
           supabase,
           parameters.impersonation_id,
@@ -161,9 +148,8 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Ended impersonation session ${parameters.impersonation_id}`;
         break;
-      }
 
-      case "grant_5xp_bonus": {
+      case "grant_5xp_bonus":
         result = await grant5XPBonus(
           supabase,
           parameters.user_id,
@@ -172,7 +158,6 @@ export const POST = withAuth(async (request: NextRequest, context) => {
         );
         actionDetail = `Granted 5 XP bonus to user ${parameters.user_id}`;
         break;
-      }
 
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
@@ -217,7 +202,7 @@ export const POST = withAuth(async (request: NextRequest, context) => {
   }
 });
 
-/* ---------- helpers (admin client passed in) ---------- */
+/* ---------- helpers ---------- */
 
 async function adjustUserXP(
   supabase: SupabaseClient<Database>,
@@ -229,7 +214,7 @@ async function adjustUserXP(
   const { data: user, error: fetchError } = await supabase
     .from("user_profiles")
     .select("xp, level")
-    .eq("user_id", userId)            // <-- user_id
+    .eq("user_id", userId)
     .single();
   if (fetchError || !user) throw new Error("User not found");
 
@@ -239,7 +224,7 @@ async function adjustUserXP(
   const { error: updateError } = await supabase
     .from("user_profiles")
     .update({ xp: newXP, level: newLevel, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);           // <-- user_id
+    .eq("user_id", userId);
   if (updateError) throw updateError;
 
   await supabase.from("xp_logs").insert({
@@ -268,7 +253,7 @@ async function adjustUserCredits(
   const { data: user, error: fetchError } = await supabase
     .from("user_profiles")
     .select("credits")
-    ..eq("user_id", userId)           // <-- user_id
+    .eq("user_id", userId)        // <-- fixed: user_id
     .single();
   if (fetchError || !user) throw new Error("User not found");
 
@@ -277,7 +262,7 @@ async function adjustUserCredits(
   const { error: updateError } = await supabase
     .from("user_profiles")
     .update({ credits: newCredits, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);           // <-- user_id
+    .eq("user_id", userId);        // <-- fixed: user_id
   if (updateError) throw updateError;
 
   await supabase.from("credit_transactions").insert({
@@ -313,7 +298,7 @@ async function assignBadge(
   const { data: user } = await supabase
     .from("user_profiles")
     .select("badges")
-    .eq("user_id", userId)            // <-- user_id
+    .eq("user_id", userId)
     .single();
 
   const updatedBadges = [...(user?.badges || []), badgeId];
@@ -321,7 +306,7 @@ async function assignBadge(
   const { error: updateError } = await supabase
     .from("user_profiles")
     .update({ badges: updatedBadges, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);           // <-- user_id
+    .eq("user_id", userId);
   if (updateError) throw updateError;
 
   await supabase.from("badge_earned_logs").insert({
@@ -452,7 +437,7 @@ async function getUserBreakdown(
   const { data: user, error: userError } = await supabase
     .from("user_profiles")
     .select("*")
-    .eq("user_id", userId)           // <-- user_id
+    .eq("user_id", userId)       // <-- fixed
     .single();
   if (userError || !user) throw userError ?? new Error("User not found");
 
