@@ -1,57 +1,49 @@
+import { createServerClient } from "@/lib/supabase-server"
+import type { CreateNextContextOptions } from "@trpc/server/adapters/next"
 import { initTRPC, TRPCError } from "@trpc/server"
-import { getSupabaseServer } from "@/lib/supabaseServer"
 
-export async function createContext() {
-  const supabase = getSupabaseServer()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return { supabase, user }
-}
+// Initialize TRPC
+const t = initTRPC.context<Context>().create()
 
-const t = initTRPC.context<Awaited<ReturnType<typeof createContext>>>().create({
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError: error.cause instanceof Error ? error.cause.message : null,
-      },
-    }
-  },
-})
-
+// Create a router
 export const router = t.router
+
+// Create a public procedure
 export const publicProcedure = t.procedure
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required" })
+// Create a protected procedure
+const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.supabase.auth.getSession()) {
+    throw new TRPCError({ code: "UNAUTHORIZED" })
   }
   return next({
     ctx: {
-      ...ctx,
-      user: ctx.user,
+      supabase: ctx.supabase,
+      user: (await ctx.supabase.auth.getUser()).data.user,
     },
   })
 })
 
-export const adminProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Authentication required" })
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthed)
+
+export async function createTRPCContext(opts: CreateNextContextOptions) {
+  const { req, res } = opts
+
+  // Create the Supabase client
+  const supabase = createServerClient()
+
+  return {
+    req,
+    res,
+    supabase,
   }
+}
 
-  // Check if user is admin (you can customize this logic)
-  const isAdmin = ctx.user.email?.endsWith("@agentgift.ai") || ctx.user.user_metadata?.role === "admin"
+export type Context = Awaited<ReturnType<typeof createTRPCContext>>
 
-  if (!isAdmin) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" })
-  }
+// Export getSupabaseServer for backward compatibility
+export async function getSupabaseServer() {
+  return createServerClient()
+}
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user,
-    },
-  })
-})
+export const createContext = createTRPCContext

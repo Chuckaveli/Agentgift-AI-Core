@@ -14,13 +14,6 @@ export default function SignUpPage() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect_to") || "/dashboard"
 
-  // Determine site URL for Supabase redirect. Falls back to the current
-  // browser origin if NEXT_PUBLIC_SITE_URL isn't configured which avoids
-  // generating `undefined/auth/callback` during deployment.
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "")
-
   useEffect(() => {
     // Set redirect cookie for auth callback
     if (redirectTo) {
@@ -77,15 +70,15 @@ export default function SignUpPage() {
                   },
                 },
               },
-          className: {
-            container: "space-y-4",
-            button: "w-full px-4 py-3 font-medium transition-all duration-200",
-            input: "w-full px-4 py-3 transition-all duration-200",
-            label: "text-sm font-medium text-gray-700 mb-2",
-            message: "text-sm text-red-600 mt-2",
-          },
-        }}
-            redirectTo={`${siteUrl}/auth/callback`}
+              className: {
+                container: "space-y-4",
+                button: "w-full px-4 py-3 font-medium transition-all duration-200",
+                input: "w-full px-4 py-3 transition-all duration-200",
+                label: "text-sm font-medium text-gray-700 mb-2",
+                message: "text-sm text-red-600 mt-2",
+              },
+            }}
+            redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
             showLinks={false}
           />
 
