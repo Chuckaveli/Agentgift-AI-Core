@@ -1,11 +1,10 @@
+// components/layout/app-layout.tsx
 "use client";
-import { getBrowserClient } from "@/lib/supabase/browser";
-import Link from "next/link"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import type React from "react";
+import { useState, useEffect, useMemo } from "react";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   Home,
@@ -24,39 +23,40 @@ import {
   Users,
   Shield,
   LogOut,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useTheme } from "next-themes"
-import Image from "next/image"
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useTheme } from "next-themes";
+import Image from "next/image";
+import { useUser } from "@/hooks/use-user";
 
 interface NavigationItem {
-  id: string
-  label: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  badge?: string | number
-  requiresAuth?: boolean
-  adminOnly?: boolean
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string | number;
+  requiresAuth?: boolean;
+  adminOnly?: boolean;
 }
 
 interface AppLayoutProps {
-  children: React.ReactNode
-  user?: any | null
-  showSidebar?: boolean
-  showGamification?: boolean
-  showNotifications?: boolean
-  customModules?: React.ReactNode[]
+  children: React.ReactNode;
+  user?: any | null; // optional external user object you might pass in
+  showSidebar?: boolean;
+  showGamification?: boolean;
+  showNotifications?: boolean;
+  customModules?: React.ReactNode[];
 }
 
 const publicNavigation: NavigationItem[] = [
@@ -64,19 +64,19 @@ const publicNavigation: NavigationItem[] = [
   { id: "blog", label: "Gift Intel", href: "/blog", icon: BookOpen },
   { id: "pricing", label: "Pricing", href: "/pricing", icon: Zap },
   { id: "mission", label: "Our Mission", href: "/mission", icon: Gift },
-]
+];
 
 const userNavigation: NavigationItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: BarChart3, requiresAuth: true },
   { id: "concierge", label: "AI Concierge", href: "/concierge", icon: MessageCircle, requiresAuth: true, badge: "New" },
   { id: "profile", label: "Profile", href: "/profile", icon: UserIcon, requiresAuth: true },
   { id: "settings", label: "Settings", href: "/settings", icon: Settings, requiresAuth: true },
-]
+];
 
 const adminNavigation: NavigationItem[] = [
   { id: "admin", label: "Admin Panel", href: "/admin", icon: Shield, adminOnly: true },
   { id: "users", label: "User Management", href: "/admin/users", icon: Users, adminOnly: true },
-]
+];
 
 export default function AppLayout({
   children,
@@ -86,34 +86,56 @@ export default function AppLayout({
   showNotifications = true,
   customModules = [],
 }: AppLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const { theme, setTheme } = useTheme()
-  const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+
+  // Use our centralized user hook for admin truth (and profile fallback)
+  const { profile, isAdmin } = useUser();
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  const isAuthenticated = !!user
-  const isAdmin = user?.tier === "premium" // Simplified admin check
+  // Consider authenticated if we have either a passed-in user or a profile from Supabase
+  const isAuthenticated = !!(user || profile);
+
+  // For UI display, derive a single object from either prop `user` or `profile`
+  const ui = useMemo(() => {
+    const src = user ?? profile ?? null;
+
+    if (!src) return null;
+
+    // Try to normalize minimal fields this layout uses
+    return {
+      name: src.name ?? "",
+      email: src.email ?? "",
+      avatar: src.avatar ?? src.avatar_url ?? "",
+      level: src.level ?? 1,
+      credits: src.credits ?? 0,
+      xp: src.xp ?? src.current_xp ?? 0,
+      badges: Array.isArray(src.badges) ? src.badges : [],
+    };
+  }, [user, profile]);
 
   const allNavigation = [
     ...publicNavigation,
     ...(isAuthenticated ? userNavigation : []),
     ...(isAdmin ? adminNavigation : []),
   ].filter((item) => {
-    if (item.requiresAuth && !isAuthenticated) return false
-    if (item.adminOnly && !isAdmin) return false
-    return true
-  })
+    if (item.requiresAuth && !isAuthenticated) return false;
+    if (item.adminOnly && !isAdmin) return false;
+    return true;
+  });
 
   const getXPProgress = () => {
-    if (!user) return 0
-    const currentLevelXP = user.level * 1000
-    const nextLevelXP = (user.level + 1) * 1000
-    return ((user.xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100
-  }
+    if (!ui) return 0;
+    const currentLevelXP = (ui.level ?? 1) * 1000;
+    const nextLevelXP = (ui.level ?? 1 + 1) * 1000;
+    const delta = nextLevelXP - currentLevelXP || 1;
+    return Math.max(0, Math.min(100, ((ui.xp - currentLevelXP) / delta) * 100));
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -130,36 +152,36 @@ export default function AppLayout({
       </div>
 
       {/* Gamification Bar */}
-      {showGamification && user && (
+      {showGamification && ui && (
         <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">Level {user.level}</span>
+                <span className="text-sm font-medium">Level {ui.level}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Coins className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">{user.credits}</span>
+                <span className="text-sm font-medium">{ui.credits}</span>
               </div>
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-gray-600">
                 <span>XP Progress</span>
-                <span>{user.xp} XP</span>
+                <span>{ui.xp} XP</span>
               </div>
               <Progress value={getXPProgress()} className="h-2" />
             </div>
-            {user.badges.length > 0 && (
+            {!!ui.badges?.length && (
               <div className="flex flex-wrap gap-1">
-                {user.badges.slice(0, 3).map((badge, index) => (
+                {ui.badges.slice(0, 3).map((badge: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {badge}
                   </Badge>
                 ))}
-                {user.badges.length > 3 && (
+                {ui.badges.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{user.badges.length - 3} more
+                    +{ui.badges.length - 3} more
                   </Badge>
                 )}
               </div>
@@ -201,7 +223,7 @@ export default function AppLayout({
         </div>
       )}
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -254,49 +276,56 @@ export default function AppLayout({
             )}
 
             {/* User Menu */}
-            {user ? (
+            {ui ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={ui.avatar || "/placeholder.svg"} />
+                      <AvatarFallback>{(ui.name || ui.email || "?").charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.name}</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
+                      <p className="font-medium">{ui.name || "Agent"}</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">{ui.email}</p>
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    Profile
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                  <DropdownMenuItem asChild>
+                    <Link href="/auth/signout">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  Sign In
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/auth/signin">Sign In</Link>
                 </Button>
                 <Button
                   size="sm"
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  asChild
                 >
-                  Get Started
+                  <Link href="/auth/signup">Get Started</Link>
                 </Button>
               </div>
             )}
@@ -315,11 +344,11 @@ export default function AppLayout({
         {/* Main Content */}
         <main className={`flex-1 ${showSidebar && isAuthenticated ? "md:ml-80" : ""}`}>{children}</main>
       </div>
+
       {/* Footer */}
       <footer className="bg-gray-100 p-4 text-center">
-        <p>&copy; 2023 Your Company. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} AgentGift.ai. All rights reserved.</p>
       </footer>
     </div>
-  )
+  );
 }
-
