@@ -1,110 +1,95 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/browser"
-import type { User } from "@supabase/supabase-js"
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/browser";
+import type { User } from "@supabase/supabase-js";
+import type { Database } from "@/types/supabase";
 
-interface UserProfile {
-  id: string
-  name: string
-  email: string
-  admin_role: boolean
-  tier: string
-  xp_balance: number
-  created_at: string
-}
+// DB row type straight from your generated types
+type ProfileRow = Database["public"]["Tables"]["user_profiles"]["Row"];
+type NormalizedProfile = ProfileRow & { id: string };
+
+// Keep one shape everywhere: expose .id mirroring user_id
+const normalizeProfile = (p: ProfileRow): NormalizedProfile => ({ ...p, id: p.user_id });
 
 export function useUser() {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), []);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<NormalizedProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true
+    let active = true;
 
-    async function getUser() {
+    const load = async () => {
       try {
         const {
           data: { user },
-          error: userError,
-        } = await supabase.auth.getUser()
+          error: userErr,
+        } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+        if (!active) return;
 
-        if (userError) {
-          throw userError
-        }
-
-        if (mounted) {
-          setUser(user)
-        }
+        setUser(user ?? null);
 
         if (user) {
-          // Get user profile
-          const { data: profileData, error: profileError } = await supabase
+          const { data, error: profErr } = await supabase
             .from("user_profiles")
             .select("*")
-            .eq("id", user.id)
-            .single()
+            .eq("user_id", user.id)       // <-- correct column
+            .maybeSingle();               // don't throw if missing
 
-          if (profileError && profileError.code !== "PGRST116") {
-            throw profileError
-          }
+          if (profErr && profErr.code !== "PGRST116") throw profErr;
+          if (!active) return;
 
-          if (mounted) {
-            setProfile(profileData)
-          }
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : "An error occurred")
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    getUser()
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null)
-
-        if (session?.user) {
-          // Refresh profile when user changes
-          const { data: profileData } = await supabase
-            .from("user_profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single()
-
-          setProfile(profileData)
+          setProfile(data ? normalizeProfile(data) : null);
         } else {
-          setProfile(null)
+          setProfile(null);
         }
-
-        setLoading(false)
+      } catch (e: any) {
+        if (!active) return;
+        setError(e?.message ?? "Failed to load user");
+      } finally {
+        if (active) setLoading(false);
       }
-    })
+    };
+
+    load();
+
+    const { data: auth } = supabase.auth.onAuthStateChange(async (_evt, session) => {
+      if (!active) return;
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        const { data } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", session.user.id) // <-- correct column
+          .maybeSingle();
+
+        if (!active) return;
+        setProfile(data ? normalizeProfile(data) : null);
+      } else {
+        setProfile(null);
+      }
+
+      setLoading(false);
+    });
 
     return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, [])
+      active = false;
+      auth.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
-  return {
-    user,
-    profile,
-    loading,
-    error,
-    isAdmin: profile?.admin_role || false,
-  }
+  // Derive admin from tier; also honor optional string admin_role if you add it later
+  const isAdmin =
+    !!profile &&
+    (
+      /admin/i.test(profile.tier ?? "") ||
+      (typeof (profile as any).admin_role === "string" && (profile as any).admin_role === "founder")
+    );
+
+  return { user, profile, loading, error, isAdmin };
 }
-
