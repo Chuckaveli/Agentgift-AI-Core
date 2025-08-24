@@ -1,41 +1,40 @@
-import { redirect } from "next/navigation"
-import type { NextResponse } from "next/server"
+// lib/auth-helpers.ts
+import { redirect } from "next/navigation";
+import type { NextResponse } from "next/server";
+import { getServerClient } from "@/lib/supabase/server";
 
-export async function getUserOrRedirect(redirectTo = "/auth") {
-  const cookieStore = cookies()
-  const supabase = getServerClient() => cookieStore })
-
+export async function getUserOrRedirect(redirectTo = "/auth/signin") {
+  const supabase = getServerClient();
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
-    redirect(`${redirectTo}?redirect=${encodeURIComponent(redirectTo)}`)
+    redirect(`${redirectTo}?redirect=${encodeURIComponent(redirectTo)}`);
   }
-
-  return user
+  return user;
 }
 
 export async function getOptionalUser() {
-  const cookieStore = cookies()
-  const supabase = getServerClient() => cookieStore })
-
+  const supabase = getServerClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  return user
+  } = await supabase.auth.getUser();
+  return user ?? null;
 }
 
-export function setServerSessionCookies(response: NextResponse, sessionData: any) {
-  // Set session cookies for server-side auth
+export function setServerSessionCookies(
+  response: NextResponse,
+  sessionData: { access_token: string; refresh_token: string; expires_in: number }
+) {
   response.cookies.set("sb-access-token", sessionData.access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: sessionData.expires_in,
     path: "/",
-  })
+  });
 
   response.cookies.set("sb-refresh-token", sessionData.refresh_token, {
     httpOnly: true,
@@ -43,20 +42,18 @@ export function setServerSessionCookies(response: NextResponse, sessionData: any
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30, // 30 days
     path: "/",
-  })
+  });
 
-  return response
+  return response;
 }
 
 export async function requireAdmin() {
-  const user = await getUserOrRedirect("/auth")
+  const user = await getUserOrRedirect("/auth/signin");
 
-  // Check if user is admin (you can customize this logic)
-  const isAdmin = user.email === "admin@agentgift.ai" || user.user_metadata?.role === "admin"
+  const role = String(user.user_metadata?.role || "").toLowerCase();
+  const email = user.email || "";
+  const isAdmin = email.endsWith("@agentgift.ai") || role === "admin" || role === "founder";
 
-  if (!isAdmin) {
-    redirect("/dashboard")
-  }
-
-  return user
+  if (!isAdmin) redirect("/dashboard");
+  return user;
 }
