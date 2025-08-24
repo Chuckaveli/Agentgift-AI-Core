@@ -30,7 +30,7 @@ export const POST = withAuth(async (request: NextRequest, context) => {
       await request.json();
 
     // Adjust to your role model
-    if (!context.user || !context.user.tier?.includes("admin")) {
+    if (!context.user || !["admin", "founder"].includes(context.user.role ?? "")) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
