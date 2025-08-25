@@ -6,17 +6,18 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Gift, Sparkles, Heart, Star, Trophy, Zap, Users, Calendar, TrendingUp, ArrowRight } from "lucide-react"
+import { Gift, Sparkles, Heart, Star, Trophy, Zap, Users, Calendar, ArrowRight, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import type { User } from "@supabase/auth-helpers-nextjs"
 
 interface UserProfile {
-  id: string
-  email: string
-  full_name: string | null
-  xp: number
-  tier: string
-  onboarded: boolean
+  user_id: string
+  email: string | null
+  display_name: string | null
+  onboarding_completed: boolean
+  current_xp: number
+  lifetime_xp: number
+  tier: string[] | null
 }
 
 export default function DashboardPage() {
@@ -34,22 +35,22 @@ export default function DashboardPage() {
       if (user) {
         setUser(user)
 
-        // Fetch user profile
-        const { data: profileData, error } = await supabase.from("user_profiles").select("*").eq("id", user.id).single()
+        // ✅ match your schema: primary key column is user_id (not id)
+        const { data: profileData, error } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .single()
 
         if (profileData) {
-          setProfile(profileData)
+          setProfile(profileData as unknown as UserProfile)
         } else if (error) {
           console.error("Error fetching profile:", error)
-          // Trigger onboarding if profile doesn't exist
           try {
             await fetch("/api/orchestrator/onboard", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
             })
-            // Refresh the page to get the new profile
             window.location.reload()
           } catch (onboardError) {
             console.error("Onboarding error:", onboardError)
@@ -77,34 +78,10 @@ export default function DashboardPage() {
   }, [supabase.auth])
 
   const quickActions = [
-    {
-      title: "Smart Search",
-      description: "Find gifts with AI-powered search",
-      icon: Zap,
-      href: "/smart-search",
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      title: "AI Concierge",
-      description: "Chat with our gift expert AI",
-      icon: Heart,
-      href: "/concierge",
-      color: "from-pink-500 to-rose-500",
-    },
-    {
-      title: "Gift Occasions",
-      description: "Browse by upcoming events",
-      icon: Calendar,
-      href: "/occasions",
-      color: "from-purple-500 to-indigo-500",
-    },
-    {
-      title: "Community",
-      description: "Connect with other gift-givers",
-      icon: Users,
-      href: "/social",
-      color: "from-green-500 to-emerald-500",
-    },
+    { title: "Smart Search", description: "Find gifts with AI-powered search", icon: Zap, href: "/smart-search", color: "from-blue-500 to-cyan-500" },
+    { title: "AI Concierge", description: "Chat with our gift expert AI", icon: Heart, href: "/concierge", color: "from-pink-500 to-rose-500" },
+    { title: "Gift Occasions", description: "Browse by upcoming events", icon: Calendar, href: "/occasions", color: "from-purple-500 to-indigo-500" },
+    { title: "Community", description: "Connect with other gift-givers", icon: Users, href: "/social", color: "from-green-500 to-emerald-500" },
   ]
 
   if (loading) {
@@ -133,6 +110,9 @@ export default function DashboardPage() {
     )
   }
 
+  const xp = profile?.current_xp ?? 0
+  const tierLabel = (profile?.tier && profile.tier.length > 0) ? profile.tier.join(", ") : "Free"
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -141,22 +121,22 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {profile?.full_name || user.email?.split("@")[0]}! 👋
+                Welcome back, {profile?.display_name || user.email?.split("@")[0]}! 👋
               </h1>
               <p className="text-gray-600 mt-2">Ready to find the perfect gifts?</p>
             </div>
             <div className="flex items-center space-x-4">
               <Badge className="bg-purple-100 text-purple-700 border-purple-200">
                 <Trophy className="w-3 h-3 mr-1" />
-                {profile?.xp || 0} XP
+                {xp} XP
               </Badge>
-              <Badge variant="outline">{profile?.tier || "Free"} Tier</Badge>
+              <Badge variant="outline">{tierLabel} Tier</Badge>
             </div>
           </div>
         </div>
 
         {/* Welcome Bonus Alert */}
-        {profile?.xp === 100 && (
+        {xp >= 100 && (
           <Card className="mb-8 border-green-200 bg-green-50">
             <CardContent className="pt-6">
               <div className="flex items-center space-x-3">
@@ -165,7 +145,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-green-900">Welcome Bonus Earned!</h3>
-                  <p className="text-green-700">You've received 100 XP for joining AgentGift.ai</p>
+                  <p className="text-green-700">You've received XP for joining AgentGift.ai</p>
                 </div>
               </div>
             </CardContent>
@@ -180,9 +160,7 @@ export default function DashboardPage() {
               <Link key={index} href={action.href}>
                 <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer">
                   <CardHeader className="pb-3">
-                    <div
-                      className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center mb-3`}
-                    >
+                    <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center mb-3`}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
                     <CardTitle className="text-lg">{action.title}</CardTitle>
@@ -193,6 +171,62 @@ export default function DashboardPage() {
             )
           })}
         </div>
+
+        {/* ======================= ADMIN-ONLY WIDGETS ======================= */}
+        {/* Place your real admin components inside this wrapper. 
+            Regular users will never see anything inside <AdminOnly>. */}
+        <AdminOnly>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {/* Content Calendar (ADMIN) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Content Calendar</CardTitle>
+                <CardDescription>Admin-only planning view</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Replace this placeholder with your real <ContentCalendar /> component */}
+                <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
+              </CardContent>
+            </Card>
+
+            {/* Engagement Preview (ADMIN) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Engagement Preview</CardTitle>
+                <CardDescription>Admin-only metrics preview</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Replace with <EngagementPreview /> */}
+                <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
+              </CardContent>
+            </Card>
+
+            {/* This Week (ADMIN) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>This Week</CardTitle>
+                <CardDescription>Internal summary</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Replace with <ThisWeek /> */}
+                <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
+              </CardContent>
+            </Card>
+
+            {/* Scheduled Posts (ADMIN) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Scheduled Posts</CardTitle>
+                <CardDescription>Internal scheduler</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Replace with <ScheduledPosts /> */}
+                <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
+              </CardContent>
+            </Card>
+          </div>
+        </AdminOnly>
+        {/* ===================== END ADMIN-ONLY WIDGETS ===================== */}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -214,7 +248,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Welcome to AgentGift.ai!</p>
-                      <p className="text-xs text-gray-500">Earned 100 XP • Just now</p>
+                      <p className="text-xs text-gray-500">Earned {xp} XP • Just now</p>
                     </div>
                   </div>
 
@@ -242,13 +276,13 @@ export default function DashboardPage() {
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span>XP Progress</span>
-                      <span>{profile?.xp || 0}/500</span>
+                      <span>{xp}/500</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-purple-600 h-2 rounded-full"
-                        style={{ width: `${Math.min(((profile?.xp || 0) / 500) * 100, 100)}%` }}
-                      ></div>
+                        style={{ width: `${Math.min((xp / 500) * 100, 100)}%` }}
+                      />
                     </div>
                   </div>
 
