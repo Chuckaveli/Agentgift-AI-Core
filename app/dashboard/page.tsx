@@ -1,5 +1,6 @@
 "use client"
 
+import AdminOnly from '@/components/access/AdminOnly';
 import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
