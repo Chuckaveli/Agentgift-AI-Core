@@ -1,12 +1,12 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Home, Grid3X3, MessageCircle, User, Bell } from "lucide-react"
+import { Home, Grid3X3, MessageCircle, User, Bell, Shield } from "lucide-react"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 
 interface NavItem {
   id: string
@@ -16,54 +16,32 @@ interface NavItem {
   badge?: number
 }
 
-const navItems: NavItem[] = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: Home,
-  },
-  {
-    id: "features",
-    label: "Features",
-    href: "/features",
-    icon: Grid3X3,
-  },
-  {
-    id: "concierge",
-    label: "Concierge",
-    href: "/concierge",
-    icon: MessageCircle,
-    badge: 2,
-  },
-  {
-    id: "account",
-    label: "Account",
-    href: "/account",
-    icon: User,
-  },
-  {
-    id: "notifications",
-    label: "Alerts",
-    href: "/notifications",
-    icon: Bell,
-    badge: 5,
-  },
-]
-
 export function MobileFooterNav() {
   const pathname = usePathname()
+  const { isAdmin } = useIsAdmin()
   const [activeItem, setActiveItem] = useState<string>("")
 
+  const items: NavItem[] = useMemo(() => {
+    const base: NavItem[] = [
+      { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: Home },
+      { id: "features", label: "Features", href: "/features", icon: Grid3X3 },
+      { id: "concierge", label: "Concierge", href: "/concierge", icon: MessageCircle, badge: 2 },
+      { id: "account", label: "Account", href: "/account", icon: User },
+      { id: "notifications", label: "Alerts", href: "/notifications", icon: Bell, badge: 5 },
+    ]
+    if (isAdmin) base.push({ id: "admin", label: "Admin", href: "/admin", icon: Shield })
+    return base
+  }, [isAdmin])
+
   useEffect(() => {
-    const currentItem = navItems.find((item) => pathname.startsWith(item.href))
+    const currentItem = items.find((item) => pathname.startsWith(item.href))
     setActiveItem(currentItem?.id || "")
-  }, [pathname])
+  }, [pathname, items])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 md:hidden">
       <div className="flex items-center justify-around px-2 py-2">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon
           const isActive = activeItem === item.id
 
