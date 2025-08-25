@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Settings, LogOut, Menu, Heart, Search, Zap, Crown, Star } from "lucide-react"
+import { Settings, LogOut, Menu, Heart, Search, Zap, Crown, Star, Shield } from "lucide-react"
+import { useIsAdmin } from "@/hooks/useIsAdmin"
 
 interface ClientUser {
   id: string
@@ -35,6 +36,7 @@ export function Navbar() {
   const [user, setUser] = useState<ClientUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
+  const { isAdmin } = useIsAdmin()
 
   useEffect(() => {
     const getUser = async () => {
@@ -61,21 +63,20 @@ export function Navbar() {
     router.push("/")
   }
 
-  const handleSignIn = () => {
-    router.push("/auth/signin")
-  }
+  const handleSignIn = () => router.push("/auth/signin")
+  const handleSignUp = () => router.push("/auth?view=sign_up")
 
-  const handleSignUp = () => {
-    router.push("/auth?view=sign_up")
-  }
-
-  const navigation = [
+  const baseNavigation = [
     { name: "Dashboard", href: "/dashboard", icon: Zap },
     { name: "Smart Search", href: "/smart-search", icon: Search },
     { name: "Gift DNA", href: "/gift-dna", icon: Heart },
     { name: "Concierge", href: "/concierge", icon: Star },
     { name: "Pricing", href: "/pricing", icon: Crown },
-  ]
+  ] as const
+
+  const navigation = isAdmin
+    ? [...baseNavigation, { name: "Admin", href: "/admin", icon: Shield }]
+    : baseNavigation
 
   const isActive = (href: string) => pathname === href
 
@@ -85,11 +86,11 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+              <div className="animate-pulse bg-gray-200 h-8 w-32 rounded" />
             </div>
             <div className="flex items-center space-x-4">
-              <div className="animate-pulse bg-gray-200 h-8 w-20 rounded"></div>
-              <div className="animate-pulse bg-gray-200 h-8 w-8 rounded-full"></div>
+              <div className="animate-pulse bg-gray-200 h-8 w-20 rounded" />
+              <div className="animate-pulse bg-gray-200 h-8 w-8 rounded-full" />
             </div>
           </div>
         </div>
@@ -173,6 +174,14 @@ export function Navbar() {
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
+
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => router.push("/admin")}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Admin Console</span>
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -198,7 +207,7 @@ export function Navbar() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetContent side="right" className="w[300px] sm:w-[400px]">
                 <div className="flex flex-col space-y-4 mt-4">
                   {navigation.map((item) => {
                     const Icon = item.icon
