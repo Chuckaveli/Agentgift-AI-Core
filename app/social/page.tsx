@@ -1,84 +1,172 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import type { User } from "@supabase/auth-helpers-nextjs"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, MessageCircle, PlusCircle, Sparkles } from "lucide-react"
-import { useIsAdmin } from "@/hooks/useIsAdmin"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "@/components/ui/use-toast"
+
+import { Users, Send, Shield, Loader2, MessageCircle, Heart, Plus } from "lucide-react"
 
 type CommunityPost = {
   id: string
   user_id: string
-  title: string | null
-  body: string | null
+  content: string
   created_at: string
+  is_hidden: boolean
   author_name: string | null
+  author_avatar: string | null
+  likes?: number | null
+  replies?: number | null
 }
 
-export default function CommunityPage() {
+export default function SocialPage() {
   const supabase = createClientComponentClient()
-  const { isAdmin } = useIsAdmin()
+  const router = useRouter()
 
   const [user, setUser] = useState<User | null>(null)
-  const [posts, setPosts] = useState<CommunityPost[] | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [posting, setPosting] = useState<boolean>(false)
+  const [feed, setFeed] = useState<CommunityPost[]>([])
+  const [newPost, setNewPost] = useState<string>("")
 
+  // --- bootstrap session + admin flag
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user ?? null)
+      const { data: sess } = await supabase.auth.getSession()
+      const authedUser = sess.session?.user ?? null
+      setUser(authedUser)
 
-      // RLS will only return visible posts (your policies already enforce this)
-      const { data } = await supabase
-        .from("community_posts")
-        .select("id,user_id,title,body,created_at,author_name")
-        .order("created_at", { ascending: false })
-        .limit(20)
+      // Ask Postgres if this user is an admin (uses your SQL is_admin(uid) function)
+      if (authedUser) {
+        const { data: adminFlag } = await supabase.rpc("is_admin", { uid: authedUser.id })
+        setIsAdmin(!!adminFlag)
+      }
 
-      setPosts(data ?? [])
       setLoading(false)
     }
-
     init()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null)
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setUser(s?.user ?? null)
     })
-    return () => subscription.unsubscribe()
+    return () => sub.subscription.unsubscribe()
   }, [supabase])
+
+  // --- fetch visible community posts (user-facing only)
+  const fetchFeed = async () => {
+    // RLS already hides hidden posts; we also filter explicitly for clarity
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select(
+        `
+        id,
+        user_id,
+        content,
+        created_at,
+        is_hidden,
+        likes,
+        replies,
+        author:user_profiles!community_posts_user_id_fkey (
+          display_name,
+          avatar_url
+        )
+      `
+      )
+      .eq("is_hidden", false)
+      .order("created_at", { ascending: false })
+      .limit(25)
+
+    if (error) {
+      console.error(error)
+      toast?.({
+        title: "Couldn’t load community feed",
+        description: error.message,
+        variant: "destructive",
+      })
+      return
+    }
+
+    const normalized: CommunityPost[] =
+      (data as any[])?.map((row) => ({
+        id: row.id,
+        user_id: row.user_id,
+        content: row.content,
+        created_at: row.created_at,
+        is_hidden: row.is_hidden,
+        likes: row.likes ?? 0,
+        replies: row.replies ?? 0,
+        author_name: row.author?.display_name ?? null,
+        author_avatar: row.author?.avatar_url ?? null,
+      })) ?? []
+
+    setFeed(normalized)
+  }
+
+  useEffect(() => {
+    fetchFeed()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const initials = useMemo(() => {
+    const name = user?.user_metadata?.full_name as string | undefined
+    const email = user?.email ?? "U"
+    return (name?.[0] || email?.[0] || "U").toUpperCase()
+  }, [user])
+
+  const handleCreatePost = async () => {
+    if (!newPost.trim()) return
+    setPosting(true)
+    const { error } = await supabase.from("community_posts").insert({
+      user_id: user?.id,
+      content: newPost.trim(),
+      is_hidden: false, // user-side posts are public by default
+    })
+    setPosting(false)
+
+    if (error) {
+      toast?.({
+        title: "Couldn’t post",
+        description: error.message,
+        variant: "destructive",
+      })
+      return
+    }
+
+    setNewPost("")
+    fetchFeed()
+    toast?.({ title: "Posted!", description: "Your message is now visible to the community." })
+  }
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="animate-pulse h-8 w-40 bg-gray-200 rounded mb-6" />
-        <div className="grid gap-4">
-          <div className="h-28 bg-gray-100 rounded" />
-          <div className="h-28 bg-gray-100 rounded" />
-          <div className="h-28 bg-gray-100 rounded" />
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
       </div>
     )
   }
 
   if (!user) {
+    // Middleware should already protect /social, but keep a friendly fallback.
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Join the Community</CardTitle>
-            <CardDescription>Sign in to view and share posts.</CardDescription>
+            <CardDescription>Sign in to view and post in AgentGift.ai Community.</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-center gap-2">
+          <CardContent className="text-center">
             <Link href="/auth/signin">
-              <Button>Sign In</Button>
-            </Link>
-            <Link href="/auth?view=sign_up">
-              <Button variant="outline">Create Account</Button>
+              <Button className="agentgift-gradient text-white">Sign In</Button>
             </Link>
           </CardContent>
         </Card>
@@ -88,83 +176,101 @@ export default function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="w-7 h-7 text-purple-600" />
-              Community
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Share wins, ask for help, and learn from other thoughtful gift-givers.
-            </p>
+          <div className="flex items-center gap-2">
+            <Users className="w-6 h-6 text-purple-600" />
+            <h1 className="text-2xl font-bold text-gray-900">Community</h1>
           </div>
 
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Link href="/admin">
-                <Button variant="outline">Admin Console</Button>
-              </Link>
-            )}
-            <Link href="/social/new">
-              <Button className="agentgift-gradient text-white">
-                <PlusCircle className="w-4 h-4 mr-2" />
-                New Post
-              </Button>
+          {/* Admin hint ONLY shows to admins; links to internal ops page */}
+          {isAdmin && (
+            <Link href="/admin/community">
+              <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">
+                <Shield className="w-3 h-3 mr-1" />
+                Ops
+              </Badge>
             </Link>
-          </div>
+          )}
         </div>
 
-        {/* No internal widgets here — safe for users */}
-        {(!posts || posts.length === 0) ? (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <MessageCircle className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-600">No posts yet. Be the first to start a discussion!</p>
-              <Link href="/social/new">
-                <Button className="mt-4 agentgift-gradient text-white">
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Start a conversation
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 gap-5">
-            {posts.map((p) => (
+        {/* Composer */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">Share something thoughtful</CardTitle>
+            <CardDescription>Ask for ideas, share a win, or crowdsource a tricky gift.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={(user.user_metadata as any)?.avatar_url || ""} alt="You" />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <Textarea
+                  placeholder="What are you thinking about gifting?"
+                  value={newPost}
+                  onChange={(e) => setNewPost(e.target.value)}
+                  className="min-h-[90px] resize-y"
+                />
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="text-xs text-gray-500">
+                    Be kind. No promotions. Keep it gift-centric.
+                  </div>
+                  <Button onClick={handleCreatePost} disabled={posting || !newPost.trim()}>
+                    {posting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                    Post
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Feed */}
+        <div className="space-y-4">
+          {feed.length === 0 ? (
+            <Card>
+              <CardContent className="py-10 text-center text-gray-600">
+                No posts yet. Be the first to share! <Plus className="inline w-4 h-4 ml-1" />
+              </CardContent>
+            </Card>
+          ) : (
+            feed.map((p) => (
               <Card key={p.id} className="hover:shadow-sm transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">{p.title || "Untitled"}</CardTitle>
-                  <CardDescription>
-                    by {p.author_name || "Someone"} • {new Date(p.created_at).toLocaleString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-800 whitespace-pre-wrap">
-                    {p.body || "No content"}
-                  </p>
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={p.author_avatar || ""} alt={p.author_name || "User"} />
+                      <AvatarFallback>
+                        {(p.author_name?.[0] || "U").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">
+                          {p.author_name || "Community Member"}
+                        </span>
+                        <span className="text-xs text-gray-500">• {new Date(p.created_at).toLocaleString()}</span>
+                      </div>
+                      <p className="mt-2 whitespace-pre-wrap text-gray-900">{p.content}</p>
+                      <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+                        <span className="inline-flex items-center gap-1">
+                          <Heart className="w-4 h-4" />
+                          {p.likes ?? 0}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <MessageCircle className="w-4 h-4" />
+                          {p.replies ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Helpful tips (safe, non-internal) */}
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" /> Posting Tips
-              </CardTitle>
-              <CardDescription>Get better feedback and ideas from the crowd.</CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-gray-700 space-y-2">
-              <p>• Include the occasion, budget range, and recipient’s vibe.</p>
-              <p>• Share what they already own or love to avoid duplicates.</p>
-              <p>• Mark updates when you find “the one” so others can learn.</p>
-            </CardContent>
-          </Card>
+            ))
+          )}
         </div>
       </div>
     </div>
