@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
   process.env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
 )
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     // Fetch all social proof submissions with user details
     const { data: submissions, error } = await supabase
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
+async function __orig_PATCH(request: NextRequest) {
   try {
     const body = await request.json()
     const { submission_id, action, admin_notes, admin_user_id } = body
@@ -130,3 +131,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_PATCH = withAdmin(__orig_PATCH);
+export const PATCH = withAdmin(__orig_PATCH);
+/* ADMIN_GUARDED */

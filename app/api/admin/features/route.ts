@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET() {
+async function __orig_GET() {
   try {
     const { data: features, error } = await supabase
       .from("registered_features")
@@ -19,7 +20,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
@@ -98,3 +99,9 @@ async function generateFeatureFiles(slug: string, name: string, uiType: string, 
   // In production, this would use file system operations
   // or integrate with a deployment pipeline
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

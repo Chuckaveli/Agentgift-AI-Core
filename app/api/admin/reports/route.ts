@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { env } from "@/lib/env"
+import { withAdmin } from '@/lib/with-admin';
 
 export const dynamic = "force-dynamic"
 
 const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const reportType = searchParams.get("type") || "overview"
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { report_type, title, description, data, filters } = body
@@ -86,3 +87,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

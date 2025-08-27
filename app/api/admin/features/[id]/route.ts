@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+async function __orig_PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
     const { id } = params
@@ -24,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+async function __orig_DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params
 
@@ -38,3 +39,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ error: "Failed to delete feature" }, { status: 500 })
   }
 }
+
+const __orig_PATCH = withAdmin(__orig_PATCH);
+export const PATCH = withAdmin(__orig_PATCH);
+const __orig_DELETE = withAdmin(__orig_DELETE);
+export const DELETE = withAdmin(__orig_DELETE);
+/* ADMIN_GUARDED */

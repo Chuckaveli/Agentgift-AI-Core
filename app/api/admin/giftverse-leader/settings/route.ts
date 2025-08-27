@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const adminId = searchParams.get("adminId")
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const { adminId, settings } = await request.json()
 
@@ -102,3 +103,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update settings", details: error.message }, { status: 500 })
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

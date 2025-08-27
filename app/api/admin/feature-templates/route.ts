@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://demo.supabase.co",
   process.env.SUPABASE_SERVICE_ROLE_KEY || "demo-key",
 )
 
-export async function GET() {
+async function __orig_GET() {
   try {
     // Try to fetch from database, fallback to mock data if table doesn't exist
     const { data: templates, error } = await supabase
@@ -54,3 +55,7 @@ export async function GET() {
     return NextResponse.json({ templates: [] })
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+/* ADMIN_GUARDED */

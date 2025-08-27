@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { fetchEcosystemHealth } from "@/lib/ecosystem-health"
+import { withAdmin } from '@/lib/with-admin';
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     // Verify admin access
     const authHeader = request.headers.get("authorization")
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     // This endpoint can be used to manually trigger health updates
     const body = await request.json()
@@ -64,3 +65,9 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

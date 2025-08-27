@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase-client"
+import { withAdmin } from '@/lib/with-admin';
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const { command } = await request.json()
     const supabase = createAdminClient()
@@ -73,3 +74,7 @@ export async function POST(request: NextRequest) {
     })
   }
 }
+
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

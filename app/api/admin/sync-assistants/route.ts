@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { syncAssistantsToRegistry, AGENTGIFT_ASSISTANTS } from "@/lib/assistant-sync"
+import { withAdmin } from '@/lib/with-admin';
 
 // This API route provides server-side access to the sync function
 // It ensures the service role key is only used on the server
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     // Verify admin access
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     // Verify admin access (same as POST)
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -120,3 +121,9 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

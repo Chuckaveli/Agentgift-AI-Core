@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { withAuth } from "@/lib/middleware/withAuth"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export const POST = withAuth(async (request: NextRequest, context) => {
+const __orig_POST = withAuth(async (request: NextRequest, context) => {
   try {
     const { action, parameters, target_user_id, session_id } = await request.json()
 
@@ -461,3 +462,6 @@ async function endUserImpersonation(impersonationId: string, adminId: string) {
 async function grant5XPBonus(userId: string, reason: string, adminId: string) {
   return await adjustUserXP(userId, 5, `5XP Bonus: ${reason}`, adminId)
 }
+
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

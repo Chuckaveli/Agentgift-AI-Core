@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const { userId, sessionId } = await request.json()
 
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+async function __orig_DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get("sessionId")
@@ -171,3 +172,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Failed to end session" }, { status: 500 })
   }
 }
+
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+const __orig_DELETE = withAdmin(__orig_DELETE);
+export const DELETE = withAdmin(__orig_DELETE);
+/* ADMIN_GUARDED */

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { withAdmin } from '@/lib/with-admin';
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const { format, data, timeRange } = await request.json()
 
@@ -31,3 +32,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to export data" }, { status: 500 })
   }
 }
+
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

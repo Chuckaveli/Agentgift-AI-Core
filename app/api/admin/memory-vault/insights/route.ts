@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase-client"
+import { withAdmin } from '@/lib/with-admin';
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const adminId = searchParams.get("adminId")
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { adminId, insightData, action } = body
@@ -395,3 +396,9 @@ function generateRecommendations(insights: any): any[] {
 
   return recommendations
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

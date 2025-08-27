@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { withAdmin } from '@/lib/with-admin';
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     // Simulate analytics data - replace with actual Supabase queries
     const mockAnalytics = {
@@ -51,3 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(fallbackAnalytics)
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+/* ADMIN_GUARDED */

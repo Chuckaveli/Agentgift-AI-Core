@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
+import { withAdmin } from '@/lib/with-admin';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -10,7 +11,7 @@ function getOpenAIClient() {
   })
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const { action, audioData, textInput, sessionId, userId } = await request.json()
 
@@ -228,3 +229,7 @@ function getVoiceTone(voiceName: string): string {
   }
   return toneMap[voiceName as keyof typeof toneMap] || "neutral"
 }
+
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */

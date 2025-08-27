@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase-client"
+import { withAdmin } from '@/lib/with-admin';
 
 const DEFAULT_BOTS = [
   {
@@ -84,7 +85,7 @@ const DEFAULT_BOTS = [
   },
 ]
 
-export async function GET(request: NextRequest) {
+async function __orig_GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
 
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function __orig_POST(request: NextRequest) {
   try {
     const { botId, action } = await request.json()
     const supabase = createAdminClient()
@@ -150,3 +151,9 @@ export async function POST(request: NextRequest) {
     })
   }
 }
+
+const __orig_GET = withAdmin(__orig_GET);
+export const GET = withAdmin(__orig_GET);
+const __orig_POST = withAdmin(__orig_POST);
+export const POST = withAdmin(__orig_POST);
+/* ADMIN_GUARDED */
