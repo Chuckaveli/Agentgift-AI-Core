@@ -1,48 +1,56 @@
-"use client"
+"use client";
 
-import { Auth } from "@supabase/auth-ui-react"
-import { ThemeSupa } from "@supabase/auth-ui-shared"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import Link from "next/link"
-import { Gift } from "lucide-react"
-import { useSearchParams } from "next/navigation"
-import { useEffect } from "react"
-
-const supabase = createClientComponentClient()
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
 
 export default function SignInPage() {
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect_to") || "/dashboard"
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+  const search = useSearchParams();
 
+<<<<<<< HEAD
+=======
+  const redirectTo = search.get("redirectTo") || "/dashboard";
+  const reason = search.get("reason");
+
+>>>>>>> 2b0f65d (UPDATED)
   useEffect(() => {
-    // Set redirect cookie for auth callback
-    if (redirectTo) {
-      document.cookie = `redirect_to=${redirectTo}; path=/; max-age=3600`
-    }
-  }, [redirectTo])
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        // after we have a session, bounce to redirectTo
+        router.replace(redirectTo);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase, router, redirectTo]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AgentGift.ai
-            </span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-          <p className="text-gray-600">Sign in to your account to continue finding perfect gifts</p>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-semibold">Sign in to AgentGift.ai</h1>
+          {reason === "auth" && (
+            <p className="text-sm text-gray-500">Please sign in to continue.</p>
+          )}
+          {reason === "admin" && (
+            <p className="text-sm text-gray-500">
+              Admin access required. Sign in with an admin account.
+            </p>
+          )}
         </div>
 
-        {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="rounded-lg border p-4">
           <Auth
             supabaseClient={supabase}
+            appearance={{ theme: ThemeSupa }}
+            providers={[]}
             view="sign_in"
+<<<<<<< HEAD
             providers={["google", "apple"]}
             appearance={{
               theme: ThemeSupa,
@@ -80,32 +88,14 @@ export default function SignInPage() {
             }}
             redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
             showLinks={false}
+=======
+            // Optional: style the UI to match your brand
+            theme="light"
+            onlyThirdPartyProviders={false}
+>>>>>>> 2b0f65d (UPDATED)
           />
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-500">
-            By signing in, you agree to our{" "}
-            <Link href="/legal/terms" className="text-purple-600 hover:text-purple-500">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/legal/privacy" className="text-purple-600 hover:text-purple-500">
-              Privacy Policy
-            </Link>
-          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }
