@@ -4,7 +4,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import globby from "globby";
+import { globby } from "globby";
 
 const HTTP_VERBS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
 const GUARD_IMPORT_SOURCE = "@/lib/with-admin"; // change if your helper lives elsewhere
