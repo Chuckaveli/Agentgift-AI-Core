@@ -56,6 +56,18 @@ function isPlaceholder(value: string): boolean {
   return placeholders.some((placeholder) => value.toLowerCase().includes(placeholder.toLowerCase())) || !value
 }
 
+// Validate URL format
+function isValidUrl(url: string): boolean {
+  if (!url || isPlaceholder(url)) return false
+
+  try {
+    const parsedUrl = new URL(url)
+    return parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:"
+  } catch {
+    return false
+  }
+}
+
 // Check if Supabase is properly configured
 export function isSupabaseConfigured(): boolean {
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
@@ -71,12 +83,12 @@ export function isSupabaseConfigured(): boolean {
   }
 
   // Validate URL format
-  try {
-    new URL(supabaseUrl)
-    return true
-  } catch (error) {
+  if (!isValidUrl(supabaseUrl)) {
     return false
   }
+
+  // Check if it's a valid Supabase URL
+  return supabaseUrl.includes("supabase.co") || supabaseUrl.includes("localhost")
 }
 
 // Validation function - only warn, don't throw

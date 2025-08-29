@@ -1,335 +1,290 @@
 "use client"
 
+import { useEffect } from "react"
+
 import type React from "react"
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useState } from "react"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
-import {
-  Menu,
-  Home,
-  Search,
-  Users,
-  Settings,
-  HelpCircle,
-  Twitter,
-  Instagram,
-  Linkedin,
-  Github,
-  MessageCircle,
-} from "lucide-react"
-import { createClient } from "@/lib/supabase-client"
-import type { User } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
-import { ThemeProvider } from "@/components/theme-provider"
+import { Navbar } from "@/components/Navbar"
 import { Toaster } from "@/components/ui/sonner"
+import Link from "next/link"
+import { Heart, Mail, MapPin, Twitter, Linkedin, Github } from "lucide-react"
+
+interface User {
+  id: string
+  email?: string
+  user_metadata?: {
+    full_name?: string
+    avatar_url?: string
+  }
+}
 
 interface ClientLayoutProps {
   children: React.ReactNode
 }
 
-export default function ClientLayout({ children }: ClientLayoutProps) {
+function isValidUrl(url: string): boolean {
+  if (!url || typeof url !== "string") return false
+
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isSupabaseConfigured(): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return false
+  }
+
+  const placeholders = ["placeholder", "your-", "example", "localhost", "127.0.0.1"]
+  if (
+    placeholders.some(
+      (placeholder) =>
+        supabaseUrl.toLowerCase().includes(placeholder) || supabaseAnonKey.toLowerCase().includes(placeholder),
+    )
+  ) {
+    return false
+  }
+
+  if (!isValidUrl(supabaseUrl)) {
+    return false
+  }
+
+  return true
+}
+
+export function ClientLayout({ children }: ClientLayoutProps) {
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    const getUser = async () => {
+    const initializeAuth = async () => {
       try {
+        if (!isSupabaseConfigured()) {
+          console.warn("⚠️ Supabase not configured, running in demo mode")
+          setLoading(false)
+          return
+        }
+
+        const { createClient } = await import("@/lib/supabase-client")
+        const supabase = createClient()
+
         const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        setUser(user)
+          data: { session },
+        } = await supabase.auth.getSession()
+        setUser(session?.user || null)
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user || null)
+        })
+
+        setLoading(false)
+
+        return () => subscription.unsubscribe()
       } catch (error) {
-        console.error("Error getting user:", error)
-      } finally {
+        console.error("Error initializing auth:", error)
+        console.warn("⚠️ Running in demo mode due to auth error")
         setLoading(false)
       }
     }
 
-    getUser()
+    initializeAuth()
+  }, [])
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
-      if (event === "SIGNED_IN") {
-        router.refresh()
-      }
-      setLoading(false)
-    })
-
-    // Track page views
-    if (typeof window !== "undefined") {
-      console.log("Page view:", window.location.pathname)
-    }
-
-    return () => subscription.unsubscribe()
-  }, [supabase.auth, router])
-
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Smart Search", href: "/smart-search", icon: Search },
-    { name: "Community", href: "/social", icon: Users },
-    { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Help", href: "/contact", icon: HelpCircle },
-  ]
-
-  const isAuthPage = pathname?.startsWith("/auth") || pathname === "/login"
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut()
-      router.push("/")
-    } catch (error) {
-      console.error("Error signing out:", error)
-    }
-  }
+  const hideNavbar = pathname?.startsWith("/auth") || pathname === "/login"
+  const hideFooter =
+    pathname?.startsWith("/auth") ||
+    pathname === "/login" ||
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/admin")
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      {loading ? (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      ) : (
-        <div className="min-h-screen bg-gray-50">
-          {/* Header */}
-          {!isAuthPage && (
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                  {/* Logo */}
-                  <Link href="/" className="flex items-center space-x-2">
-                    <div className="relative">
-                      <Image
-                        src="/agentgift-logo.png"
-                        alt="AgentGift.ai Logo"
-                        width={32}
-                        height={32}
-                        className="rounded-lg"
-                      />
-                    </div>
-                    <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      AgentGift.ai
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      Beta
-                    </Badge>
-                  </Link>
+    <div className="min-h-screen bg-background flex flex-col">
+      {!hideNavbar && <Navbar />}
+      <main className="container-responsive py-6 sm:py-8 lg:py-12 flex-1">{children}</main>
+      {!hideFooter && (
+        <footer className="bg-gray-900 text-white">
+          <div className="container-responsive py-8 sm:py-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              {/* Company Info */}
+              <div className="space-y-4 sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center space-x-2">
+                  <Heart className="w-6 h-6 text-pink-500 flex-shrink-0" />
+                  <span className="text-lg sm:text-xl font-bold">AgentGift.ai</span>
+                </div>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  AI-powered gift recommendations that create meaningful connections and lasting memories.
+                </p>
+                <div className="flex space-x-4">
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-full"
+                    aria-label="Twitter"
+                  >
+                    <Twitter className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-full"
+                    aria-label="LinkedIn"
+                  >
+                    <Linkedin className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-full"
+                    aria-label="GitHub"
+                  >
+                    <Github className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
 
-                  {/* Desktop Navigation */}
-                  <nav className="hidden md:flex items-center space-x-8">
-                    {user &&
-                      navigation.map((item) => {
-                        const Icon = item.icon
-                        return (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                              pathname === item.href
-                                ? "bg-purple-100 text-purple-700"
-                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                            <span>{item.name}</span>
-                          </Link>
-                        )
-                      })}
-                  </nav>
+              {/* Product */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Product</h3>
+                <ul className="space-y-3">
+                  <li>
+                    <Link
+                      href="/smart-search"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Smart Search
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/gift-dna"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Gift DNA
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/concierge"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      AI Concierge
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/group-gifting"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Group Gifting
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/pricing"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Pricing
+                    </Link>
+                  </li>
+                </ul>
+              </div>
 
-                  {/* Auth Buttons */}
-                  <div className="flex items-center space-x-4">
-                    {user ? (
-                      <div className="flex items-center space-x-3">
-                        <span className="text-sm text-gray-600">Welcome, {user.email?.split("@")[0]}</span>
-                        <Button variant="outline" size="sm" onClick={handleSignOut}>
-                          Sign Out
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-3">
-                        <Link href="/auth/signin">
-                          <Button variant="ghost" size="sm">
-                            Sign In
-                          </Button>
-                        </Link>
-                        <Link href="/auth/signup">
-                          <Button size="sm">Sign Up</Button>
-                        </Link>
-                      </div>
-                    )}
+              {/* Company */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Company</h3>
+                <ul className="space-y-3">
+                  <li>
+                    <Link
+                      href="/mission"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Our Mission
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/blog" className="text-gray-400 hover:text-white transition-colors text-sm block py-1">
+                      Blog
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/contact"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Contact
+                    </Link>
+                  </li>
+                  <li>
+                    <a
+                      href="mailto:support@agentgift.ai"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Support
+                    </a>
+                  </li>
+                </ul>
+              </div>
 
-                    {/* Mobile Menu */}
-                    {user && (
-                      <Sheet>
-                        <SheetTrigger asChild>
-                          <Button variant="ghost" size="sm" className="md:hidden">
-                            <Menu className="w-5 h-5" />
-                          </Button>
-                        </SheetTrigger>
-                        <SheetContent side="right" className="w-64">
-                          <div className="flex flex-col space-y-4 mt-8">
-                            {navigation.map((item) => {
-                              const Icon = item.icon
-                              return (
-                                <Link
-                                  key={item.name}
-                                  href={item.href}
-                                  className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                    pathname === item.href
-                                      ? "bg-purple-100 text-purple-700"
-                                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                                  }`}
-                                >
-                                  <Icon className="w-4 h-4" />
-                                  <span>{item.name}</span>
-                                </Link>
-                              )
-                            })}
-                          </div>
-                        </SheetContent>
-                      </Sheet>
-                    )}
+              {/* Legal */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Legal</h3>
+                <ul className="space-y-3">
+                  <li>
+                    <Link
+                      href="/legal/privacy"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Privacy Policy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/legal/terms"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Terms of Service
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/legal/data-deletion"
+                      className="text-gray-400 hover:text-white transition-colors text-sm block py-1"
+                    >
+                      Data Deletion
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-800 mt-8 pt-6 sm:pt-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                <p className="text-gray-400 text-sm">© {new Date().getFullYear()} AgentGift.ai. All rights reserved.</p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-6">
+                  <div className="flex items-center text-gray-400 text-sm">
+                    <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span>Global</span>
+                  </div>
+                  <div className="flex items-center text-gray-400 text-sm">
+                    <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <a href="mailto:hello@agentgift.ai" className="hover:text-white transition-colors">
+                      hello@agentgift.ai
+                    </a>
                   </div>
                 </div>
               </div>
-            </header>
-          )}
-
-          {/* Main Content */}
-          <main className={isAuthPage ? "" : "flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>{children}</main>
-
-          {/* Footer */}
-          {!isAuthPage && (
-            <footer className="bg-white border-t border-gray-200 mt-16">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                  {/* Company Info */}
-                  <div className="col-span-1 md:col-span-2">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <div className="relative">
-                        <Image
-                          src="/agentgift-logo.png"
-                          alt="AgentGift.ai Logo"
-                          width={32}
-                          height={32}
-                          className="rounded-lg"
-                        />
-                      </div>
-                      <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                        AgentGift.ai
-                      </span>
-                    </div>
-                    <p className="text-gray-600 mb-4 max-w-md">
-                      AI-powered gift recommendations that understand emotions, relationships, and cultural context.
-                      Find the perfect gift every time.
-                    </p>
-                    <div className="flex space-x-4">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href="https://twitter.com/agentgift" target="_blank" rel="noopener noreferrer">
-                          <Twitter className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href="https://instagram.com/agentgift" target="_blank" rel="noopener noreferrer">
-                          <Instagram className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href="https://linkedin.com/company/agentgift" target="_blank" rel="noopener noreferrer">
-                          <Linkedin className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href="https://github.com/agentgift" target="_blank" rel="noopener noreferrer">
-                          <Github className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href="https://discord.gg/FVDQPDvkEH" target="_blank" rel="noopener noreferrer">
-                          <MessageCircle className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Quick Links */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Product</h3>
-                    <ul className="space-y-2">
-                      <li>
-                        <Link href="/smart-search" className="text-sm text-gray-600 hover:text-gray-900">
-                          Smart Search
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/concierge" className="text-sm text-gray-600 hover:text-gray-900">
-                          AI Concierge
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/pricing" className="text-sm text-gray-600 hover:text-gray-900">
-                          Pricing
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/features" className="text-sm text-gray-600 hover:text-gray-900">
-                          Features
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Support */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Support</h3>
-                    <ul className="space-y-2">
-                      <li>
-                        <Link href="/contact" className="text-sm text-gray-600 hover:text-gray-900">
-                          Contact Us
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/legal/terms" className="text-sm text-gray-600 hover:text-gray-900">
-                          Terms of Service
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/legal/privacy" className="text-sm text-gray-600 hover:text-gray-900">
-                          Privacy Policy
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="https://discord.gg/FVDQPDvkEH"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-gray-600 hover:text-gray-900"
-                        >
-                          Discord Community
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-200 mt-8 pt-8">
-                  <p className="text-sm text-gray-500 text-center">© 2024 AgentGift.ai. All rights reserved.</p>
-                </div>
-              </div>
-            </footer>
-          )}
-        </div>
+            </div>
+          </div>
+        </footer>
       )}
       <Toaster />
-    </ThemeProvider>
+    </div>
   )
 }

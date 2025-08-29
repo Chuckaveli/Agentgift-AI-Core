@@ -1,20 +1,16 @@
 {
-  "name": "my-v0-project",
+  "name": "agentgift-dashboard",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "dev-start": "tsx scripts/dev-start.ts",
-    "dev:check": "npm run verify-config && npm run dev",
     "lint": "next lint",
-    "start": "next start",
-    "verify-config": "tsx scripts/verify-config.ts"
+    "start": "next start"
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",
     "@emotion/is-prop-valid": "latest",
-    "@hookform/resolvers": "^3.9.1",
     "@mediapipe/face_mesh": "latest",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
@@ -45,8 +41,6 @@
     "@radix-ui/react-tooltip": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
     "@supabase/auth-helpers-react": "latest",
-    "@supabase/auth-ui-react": "latest",
-    "@supabase/auth-ui-shared": "latest",
     "@supabase/supabase-js": "latest",
     "@tanstack/react-query": "latest",
     "@tensorflow-models/face-detection": "latest",
@@ -60,7 +54,6 @@
     "@trpc/react-query": "latest",
     "@trpc/server": "latest",
     "ai": "latest",
-    "autoprefixer": "^10.4.20",
     "child_process": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -71,7 +64,6 @@
     "embla-carousel-react": "latest",
     "framer-motion": "latest",
     "fs": "latest",
-    "geist": "^1.3.1",
     "input-otp": "latest",
     "jest": "latest",
     "jsonwebtoken": "latest",
@@ -96,12 +88,15 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "latest",
     "ws": "latest",
-    "zod": "^3.24.1"
+    "zod": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.1.3",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

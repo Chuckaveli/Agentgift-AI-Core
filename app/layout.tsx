@@ -3,15 +3,15 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import ClientLayout from "@/components/layout/client-layout"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AgentGift.ai - AI-Powered Gift Recommendations",
+  title: "AgentGift.ai - AI-Powered Gift Discovery Platform",
   description:
-    "Discover the perfect gifts with AI-powered recommendations tailored to your loved ones' personalities and preferences.",
-  keywords: ["AI", "gifts", "recommendations", "personalized", "shopping"],
+    "Discover perfect gifts with AI-powered recommendations, cultural intelligence, and personalized experiences.",
+  keywords: ["gifts", "AI", "recommendations", "personalized", "occasions"],
   authors: [{ name: "AgentGift.ai Team" }],
   creator: "AgentGift.ai",
   publisher: "AgentGift.ai",
@@ -22,28 +22,20 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   openGraph: {
-    title: "AgentGift.ai - AI-Powered Gift Recommendations",
+    title: "AgentGift.ai - AI-Powered Gift Discovery Platform",
     description:
-      "Discover the perfect gifts with AI-powered recommendations tailored to your loved ones' personalities and preferences.",
-    url: "/",
+      "Discover perfect gifts with AI-powered recommendations, cultural intelligence, and personalized experiences.",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     siteName: "AgentGift.ai",
-    images: [
-      {
-        url: "/agentgift-logo.png",
-        width: 1200,
-        height: 630,
-        alt: "AgentGift.ai Logo",
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AgentGift.ai - AI-Powered Gift Recommendations",
+    title: "AgentGift.ai - AI-Powered Gift Discovery Platform",
     description:
-      "Discover the perfect gifts with AI-powered recommendations tailored to your loved ones' personalities and preferences.",
-    images: ["/agentgift-logo.png"],
+      "Discover perfect gifts with AI-powered recommendations, cultural intelligence, and personalized experiences.",
+    creator: "@agentgiftai",
   },
   robots: {
     index: true,
@@ -67,8 +59,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <ClientLayout>{children}</ClientLayout>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

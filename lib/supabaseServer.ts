@@ -11,19 +11,18 @@ function createClient() {
     return createMockServerClient()
   }
 
-  const cookieStore = cookies()
-  return createServerComponentClient({ cookies: () => cookieStore })
+  try {
+    const cookieStore = cookies()
+    return createServerComponentClient({ cookies: () => cookieStore })
+  } catch (error) {
+    console.error("❌ Error creating server client:", error)
+    return createMockServerClient()
+  }
 }
 
 // Create server-side client for Server Components (alias for compatibility)
 function createServerClient() {
-  if (!isSupabaseConfigured()) {
-    console.warn("⚠️ Supabase not configured, using mock client")
-    return createMockServerClient()
-  }
-
-  const cookieStore = cookies()
-  return createServerComponentClient({ cookies: () => cookieStore })
+  return createClient()
 }
 
 // Create admin client for server-side operations

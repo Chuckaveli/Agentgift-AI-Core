@@ -1,57 +1,61 @@
-#!/usr/bin/env node
-
 import { spawn } from "child_process"
-import { config } from "dotenv"
-import { resolve } from "path"
+import dotenv from "dotenv"
 
 // Load environment variables
-config({ path: resolve(process.cwd(), ".env.local") })
+dotenv.config({ path: ".env.local" })
 
-console.log("🚀 Starting AgentGift.ai Development Server...\n")
+async function runConfigCheck(): Promise<boolean> {
+  return new Promise((resolve) => {
+    console.log("🚀 Starting AgentGift.ai Development Server...\n")
 
-// Check critical environment variables
-const criticalVars = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "NEXT_PUBLIC_BFF_URL"]
+    const configCheck = spawn("npx", ["tsx", "scripts/verify-config.ts"], {
+      stdio: "inherit",
+      shell: true,
+    })
 
-const missingVars = criticalVars.filter((varName) => !process.env[varName])
-
-if (missingVars.length > 0) {
-  console.log("❌ Missing critical environment variables:")
-  missingVars.forEach((varName) => {
-    console.log(`   - ${varName}`)
+    configCheck.on("close", (code) => {
+      resolve(code === 0)
+    })
   })
-  console.log("\nPlease check your .env.local file and try again.")
-  process.exit(1)
 }
 
-// Validate BFF URL format
-try {
-  new URL(process.env.NEXT_PUBLIC_BFF_URL!)
-  console.log(`✅ BFF URL is valid: ${process.env.NEXT_PUBLIC_BFF_URL}`)
-} catch (error) {
-  console.log(`❌ Invalid BFF URL format: ${process.env.NEXT_PUBLIC_BFF_URL}`)
-  process.exit(1)
+async function startDevServer() {
+  const configValid = await runConfigCheck()
+
+  if (!configValid) {
+    console.log("\n❌ Configuration check failed!")
+    console.log("Please fix the configuration issues before starting the development server.")
+    process.exit(1)
+  }
+
+  console.log("\n✅ Configuration check passed!")
+  console.log("🚀 Starting Next.js development server...\n")
+
+  // Start the Next.js development server
+  const devServer = spawn("npm", ["run", "dev"], {
+    stdio: "inherit",
+    shell: true,
+  })
+
+  devServer.on("close", (code) => {
+    console.log(`Development server exited with code ${code}`)
+    process.exit(code || 0)
+  })
+
+  // Handle process termination
+  process.on("SIGINT", () => {
+    console.log("\n🛑 Shutting down development server...")
+    devServer.kill("SIGINT")
+  })
+
+  process.on("SIGTERM", () => {
+    console.log("\n🛑 Shutting down development server...")
+    devServer.kill("SIGTERM")
+  })
 }
 
-console.log("✅ Environment configuration looks good!")
-console.log("🔄 Starting Next.js development server...\n")
-
-// Start the Next.js development server
-const nextDev = spawn("npx", ["next", "dev"], {
-  stdio: "inherit",
-  shell: true,
-})
-
-nextDev.on("close", (code) => {
-  console.log(`\n🛑 Development server exited with code ${code}`)
-})
-
-// Handle process termination
-process.on("SIGINT", () => {
-  console.log("\n🛑 Shutting down development server...")
-  nextDev.kill("SIGINT")
-})
-
-process.on("SIGTERM", () => {
-  console.log("\n🛑 Shutting down development server...")
-  nextDev.kill("SIGTERM")
+// Start the development process
+startDevServer().catch((error) => {
+  console.error("❌ Failed to start development server:", error)
+  process.exit(1)
 })

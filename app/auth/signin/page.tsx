@@ -1,109 +1,152 @@
 "use client"
 
-import { Auth } from "@supabase/auth-ui-react"
-import { ThemeSupa } from "@supabase/auth-ui-shared"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import * as React from "react"
 import Link from "next/link"
-import { Gift } from "lucide-react"
-import { useSearchParams } from "next/navigation"
-import { useEffect } from "react"
-
-const supabase = createClientComponentClient()
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Gift, Mail, Lock, ArrowLeft } from "lucide-react"
+import { isSupabaseConfigured } from "@/lib/supabase-client"
 
 export default function SignInPage() {
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect_to") || "/dashboard"
+  const [email, setEmail] = React.useState("")
+  const [password, setPassword] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState("")
+  const supabaseConfigured = isSupabaseConfigured()
 
-  useEffect(() => {
-    // Set redirect cookie for auth callback
-    if (redirectTo) {
-      document.cookie = `redirect_to=${redirectTo}; path=/; max-age=3600`
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    if (!supabaseConfigured) {
+      setError("Authentication is not configured. Running in demo mode.")
+      setIsLoading(false)
+      return
     }
-  }, [redirectTo])
+
+    // Simulate authentication
+    setTimeout(() => {
+      setError("Demo mode - authentication disabled")
+      setIsLoading(false)
+    }, 1000)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AgentGift.ai
-            </span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-          <p className="text-gray-600">Sign in to your account to continue finding perfect gifts</p>
-        </div>
-
-        {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <Auth
-            supabaseClient={supabase}
-            view="sign_in"
-            providers={["google", "apple"]}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: "#9333ea",
-                    brandAccent: "#7c3aed",
-                    brandButtonText: "white",
-                    defaultButtonBackground: "#f3f4f6",
-                    defaultButtonBackgroundHover: "#e5e7eb",
-                    inputBackground: "#f9fafb",
-                    inputBorder: "#d1d5db",
-                    inputBorderHover: "#9333ea",
-                    inputBorderFocus: "#7c3aed",
-                  },
-                  borderWidths: {
-                    buttonBorderWidth: "1px",
-                    inputBorderWidth: "1px",
-                  },
-                  radii: {
-                    borderRadiusButton: "8px",
-                    buttonBorderRadius: "8px",
-                    inputBorderRadius: "8px",
-                  },
-                },
-              },
-              className: {
-                container: "space-y-4",
-                button: "w-full px-4 py-3 font-medium transition-all duration-200",
-                input: "w-full px-4 py-3 transition-all duration-200",
-                label: "text-sm font-medium text-gray-700 mb-2",
-                message: "text-sm text-red-600 mt-2",
-              },
-            }}
-            redirectTo={`${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`}
-            showLinks={false}
-          />
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-purple-600 hover:text-purple-500 transition-colors">
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-500">
-            By signing in, you agree to our{" "}
-            <Link href="/legal/terms" className="text-purple-600 hover:text-purple-500">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/legal/privacy" className="text-purple-600 hover:text-purple-500">
-              Privacy Policy
+        {/* Back to Home */}
+        <div className="mb-6">
+          <Button variant="ghost" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
             </Link>
-          </p>
+          </Button>
+        </div>
+
+        {/* Logo */}
+        <div className="flex items-center justify-center mb-8">
+          <Gift className="h-8 w-8 text-primary mr-2" />
+          <span className="text-2xl font-bold">AgentGift.ai</span>
+        </div>
+
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Welcome back</CardTitle>
+            <CardDescription>Sign in to your account to continue discovering perfect gifts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!supabaseConfigured && (
+              <Alert className="mb-6">
+                <AlertDescription>
+                  <strong>Demo Mode:</strong> Authentication is not configured. You can explore the platform without
+                  signing in.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                    disabled={!supabaseConfigured}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                    disabled={!supabaseConfigured}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full" disabled={isLoading || !supabaseConfigured}>
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center space-y-4">
+              <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot your password?
+              </Link>
+
+              <div className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link href="/auth/signup" className="text-primary hover:underline">
+                  Sign up
+                </Link>
+              </div>
+
+              {!supabaseConfigured && (
+                <div className="pt-4 border-t">
+                  <Button variant="outline" className="w-full bg-transparent" asChild>
+                    <Link href="/dashboard">Continue to Dashboard (Demo)</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          By signing in, you agree to our{" "}
+          <Link href="/legal/terms" className="text-primary hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/legal/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
         </div>
       </div>
     </div>

@@ -1,10 +1,9 @@
-#!/usr/bin/env node
-
-import { config } from "dotenv"
-import { resolve } from "path"
+import dotenv from "dotenv"
+import path from "path"
+import fs from "fs"
 
 // Load environment variables
-config({ path: resolve(process.cwd(), ".env.local") })
+dotenv.config({ path: ".env.local" })
 
 interface ConfigCheck {
   name: string
@@ -13,7 +12,7 @@ interface ConfigCheck {
   description: string
 }
 
-const requiredConfig: ConfigCheck[] = [
+const requiredConfigs: ConfigCheck[] = [
   {
     name: "NEXT_PUBLIC_SUPABASE_URL",
     value: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -35,71 +34,95 @@ const requiredConfig: ConfigCheck[] = [
   {
     name: "NEXT_PUBLIC_BFF_URL",
     value: process.env.NEXT_PUBLIC_BFF_URL,
-    required: true,
+    required: false,
     description: "Backend for Frontend URL",
   },
   {
-    name: "OPENAI_API_KEY",
-    value: process.env.OPENAI_API_KEY,
+    name: "NEXT_PUBLIC_SITE_URL",
+    value: process.env.NEXT_PUBLIC_SITE_URL,
     required: false,
-    description: "OpenAI API key for AI features",
-  },
-  {
-    name: "ELEVENLABS_API_KEY",
-    value: process.env.ELEVENLABS_API_KEY,
-    required: false,
-    description: "ElevenLabs API key for voice features",
+    description: "Site URL for redirects",
   },
 ]
 
-console.log("🔍 AgentGift.ai Configuration Verification\n")
+function verifyConfig() {
+  console.log("🔍 Verifying AgentGift.ai Configuration...\n")
 
-let hasErrors = false
-let hasWarnings = false
-
-requiredConfig.forEach((config) => {
-  const status = config.value ? "✅" : config.required ? "❌" : "⚠️"
-  const statusText = config.value ? "SET" : config.required ? "MISSING" : "OPTIONAL"
-
-  console.log(`${status} ${config.name}: ${statusText}`)
-  console.log(`   Description: ${config.description}`)
-
-  if (config.value) {
-    // Validate URL format for URL-based configs
-    if (config.name.includes("URL")) {
-      try {
-        new URL(config.value)
-        console.log(`   Value: ${config.value}`)
-      } catch (error) {
-        console.log(`   ❌ Invalid URL format: ${config.value}`)
-        hasErrors = true
-      }
-    } else {
-      // Show partial value for security
-      const maskedValue = config.value.length > 10 ? `${config.value.substring(0, 10)}...` : config.value
-      console.log(`   Value: ${maskedValue}`)
-    }
+  // Check if .env.local exists
+  const envPath = path.join(process.cwd(), ".env.local")
+  if (!fs.existsSync(envPath)) {
+    console.log("❌ .env.local file not found!")
+    console.log("📝 Please create .env.local file with your environment variables\n")
+    return false
   }
 
-  if (!config.value && config.required) {
-    hasErrors = true
-  } else if (!config.value && !config.required) {
-    hasWarnings = true
+  let allValid = true
+  const issues: string[] = []
+
+  requiredConfigs.forEach((config) => {
+    const status = config.value ? "✅" : config.required ? "❌" : "⚠️"
+    const statusText = config.value ? "SET" : config.required ? "MISSING" : "OPTIONAL"
+
+    console.log(`${status} ${config.name}: ${statusText}`)
+    console.log(`   Description: ${config.description}`)
+
+    if (config.value) {
+      // Mask sensitive values
+      const maskedValue =
+        config.name.includes("KEY") || config.name.includes("SECRET")
+          ? `${config.value.substring(0, 8)}...`
+          : config.value
+      console.log(`   Value: ${maskedValue}`)
+    }
+
+    console.log("")
+
+    if (config.required && !config.value) {
+      allValid = false
+      issues.push(`Missing required variable: ${config.name}`)
+    }
+  })
+
+  // Additional checks
+  console.log("🔧 Additional Checks:")
+
+  // Check Supabase URL format
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (supabaseUrl && !supabaseUrl.startsWith("https://")) {
+    console.log("⚠️  Supabase URL should start with https://")
+    issues.push("Supabase URL format issue")
+  } else if (supabaseUrl) {
+    console.log("✅ Supabase URL format is valid")
+  }
+
+  // Check BFF URL format if provided
+  const bffUrl = process.env.NEXT_PUBLIC_BFF_URL
+  if (bffUrl && !bffUrl.startsWith("http")) {
+    console.log("⚠️  BFF URL should start with http:// or https://")
+    issues.push("BFF URL format issue")
+  } else if (bffUrl) {
+    console.log("✅ BFF URL format is valid")
   }
 
   console.log("")
-})
 
-// Summary
-console.log("📋 Summary:")
-if (hasErrors) {
-  console.log("❌ Configuration has errors. Please fix missing required variables.")
-  process.exit(1)
-} else if (hasWarnings) {
-  console.log("⚠️  Configuration is valid but some optional features may not work.")
-  console.log("✅ Ready to start development server!")
-} else {
-  console.log("✅ All configuration is valid!")
+  if (allValid && issues.length === 0) {
+    console.log("🎉 Configuration verification passed!")
+    console.log("✅ All required environment variables are set")
+    return true
+  } else {
+    console.log("❌ Configuration verification failed!")
+    console.log("\n📋 Issues found:")
+    issues.forEach((issue) => console.log(`   • ${issue}`))
+    console.log("\n💡 Next steps:")
+    console.log("   1. Check your .env.local file")
+    console.log("   2. Ensure all required variables are set")
+    console.log("   3. Verify variable formats are correct")
+    console.log("   4. Restart your development server after making changes")
+    return false
+  }
 }
 
-console.log('\n🚀 Run "npm run dev" to start the development server.')
+// Run verification
+const isValid = verifyConfig()
+process.exit(isValid ? 0 : 1)

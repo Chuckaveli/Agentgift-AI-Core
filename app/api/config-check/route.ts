@@ -1,42 +1,55 @@
 import { NextResponse } from "next/server"
-import { env, isSupabaseConfigured, getBaseUrl } from "@/lib/env"
-
-export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const configStatus = {
+    const config = {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? "configured" : "missing",
+      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "configured" : "missing",
+      supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? "configured" : "missing",
+      bffUrl: process.env.NEXT_PUBLIC_BFF_URL ? "configured" : "not set",
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL ? "configured" : "not set",
+      nodeEnv: process.env.NODE_ENV,
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      baseUrl: getBaseUrl(),
-      supabase: {
-        configured: isSupabaseConfigured(),
-        url: env.NEXT_PUBLIC_SUPABASE_URL ? "✅ Set" : "❌ Missing",
-        anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "✅ Set" : "❌ Missing",
-        serviceKey: env.SUPABASE_SERVICE_ROLE_KEY ? "✅ Set" : "❌ Missing",
-      },
-      bff: {
-        url: env.NEXT_PUBLIC_BFF_URL || "Not configured",
-        configured: !!env.NEXT_PUBLIC_BFF_URL,
-      },
-      apis: {
-        openai: env.OPENAI_API_KEY ? "✅ Set" : "❌ Missing",
-        elevenlabs: env.ELEVENLABS_API_KEY ? "✅ Set" : "❌ Missing",
-        whisper: env.WHISPER_API_KEY ? "✅ Set" : "❌ Missing",
-        stripe: env.STRIPE_SECRET_KEY ? "✅ Set" : "❌ Missing",
-      },
     }
 
+    const issues = []
+
+    // Check required variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      issues.push("NEXT_PUBLIC_SUPABASE_URL is required")
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      issues.push("NEXT_PUBLIC_SUPABASE_ANON_KEY is required")
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      issues.push("SUPABASE_SERVICE_ROLE_KEY is required")
+    }
+
+    // Check URL formats
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("https://")) {
+      issues.push("NEXT_PUBLIC_SUPABASE_URL should start with https://")
+    }
+
+    if (process.env.NEXT_PUBLIC_BFF_URL && !process.env.NEXT_PUBLIC_BFF_URL.startsWith("http")) {
+      issues.push("NEXT_PUBLIC_BFF_URL should start with http:// or https://")
+    }
+
+    const status = issues.length === 0 ? "healthy" : "issues_found"
+
     return NextResponse.json({
-      status: "healthy",
-      message: "Configuration check completed",
-      config: configStatus,
+      status,
+      config,
+      issues,
+      message:
+        issues.length === 0 ? "All configuration checks passed" : `Found ${issues.length} configuration issue(s)`,
     })
   } catch (error) {
     return NextResponse.json(
       {
         status: "error",
-        message: "Configuration check failed",
+        message: "Failed to check configuration",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
