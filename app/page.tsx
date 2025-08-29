@@ -1,47 +1,64 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Sparkles, Heart, Star, Gift, Brain, Target, MessageCircle } from "lucide-react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowRight,
+  Sparkles,
+  Heart,
+  Star,
+  Gift,
+  Brain,
+  Target,
+  MessageCircle,
+} from "lucide-react";
 
 export default function LandingPage() {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true)
-
-    // Track landing page view
+    setIsVisible(true);
     if (typeof window !== "undefined") {
-      console.log("Landing page viewed")
+      console.log("Landing page viewed");
     }
-  }, [])
+  }, []);
 
   const features = [
     {
       icon: Brain,
       title: "AI-Powered Recommendations",
-      description: "Our advanced AI analyzes personalities, preferences, and relationships to suggest perfect gifts.",
+      description:
+        "Our advanced AI analyzes personalities, preferences, and relationships to suggest perfect gifts.",
     },
     {
       icon: Heart,
       title: "Emotional Intelligence",
-      description: "Understanding the emotional context behind gift-giving to create meaningful connections.",
+      description:
+        "Understanding the emotional context behind gift-giving to create meaningful connections.",
     },
     {
       icon: Target,
       title: "Precision Matching",
-      description: "Match gifts to recipients with unprecedented accuracy using our proprietary algorithms.",
+      description:
+        "Match gifts to recipients with unprecedented accuracy using our proprietary algorithms.",
     },
     {
       icon: Sparkles,
       title: "Personalized Experience",
-      description: "Every recommendation is tailored to your unique relationships and gift-giving style.",
+      description:
+        "Every recommendation is tailored to your unique relationships and gift-giving style.",
     },
-  ]
+  ];
 
   const testimonials = [
     {
@@ -54,7 +71,8 @@ export default function LandingPage() {
     {
       name: "Michael Chen",
       role: "Software Engineer",
-      content: "I used to stress about gift-giving, but now I'm confident every time. The recommendations are spot-on.",
+      content:
+        "I used to stress about gift-giving, but now I'm confident every time. The recommendations are spot-on.",
       rating: 5,
     },
     {
@@ -64,7 +82,7 @@ export default function LandingPage() {
         "The cultural sensitivity feature is amazing. It helped me choose appropriate gifts for my international colleagues.",
       rating: 5,
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -73,7 +91,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <div
-              className={`transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+              className={`transition-all duration-1000 ${
+                isVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-10"
+              }`}
             >
               <div className="mb-8 flex justify-center">
                 <Image
@@ -85,23 +107,33 @@ export default function LandingPage() {
                 />
               </div>
 
-              <Badge variant="secondary" className="mb-6 bg-purple-100 text-purple-700">
+              <Badge
+                variant="secondary"
+                className="mb-6 bg-purple-100 text-purple-700"
+              >
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI-Powered Gift Intelligence
               </Badge>
 
               <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-                Find the <span className="agentgift-text-gradient">Perfect Gift</span> Every Time
+                Find the{" "}
+                <span className="agentgift-text-gradient">Perfect Gift</span>{" "}
+                Every Time
               </h1>
 
               <p className="mt-6 text-lg leading-8 text-gray-600">
-                Discover personalized gift recommendations powered by advanced AI. Our intelligent system understands
-                personalities, relationships, and preferences to suggest gifts that create lasting memories.
+                Discover personalized gift recommendations powered by advanced
+                AI. Our intelligent system understands personalities,
+                relationships, and preferences to suggest gifts that create
+                lasting memories.
               </p>
 
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link href="/auth?view=sign_up&redirect=/dashboard">
-                  <Button size="lg" className="agentgift-gradient hover:opacity-90 text-white">
+                  <Button
+                    size="lg"
+                    className="agentgift-gradient hover:opacity-90 text-white"
+                  >
                     Get My Gift Recommendations
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -121,21 +153,28 @@ export default function LandingPage() {
       <section className="py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Why Choose AgentGift.ai?</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              Why Choose AgentGift.ai?
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Our AI-powered platform combines emotional intelligence with advanced algorithms to revolutionize how you
-              give gifts.
+              Our AI-powered platform combines emotional intelligence with
+              advanced algorithms to revolutionize how you give gifts.
             </p>
           </div>
 
           <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
             <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-4">
               {features.map((feature, index) => {
-                const Icon = feature.icon
+                const Icon = feature.icon;
                 return (
                   <div
                     key={feature.title}
-                    className={`transition-all duration-700 delay-${index * 100} ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                    className={`transition-all duration-700 ${
+                      isVisible
+                        ? "opacity-100 translate-y-0"
+                        : "opacity-0 translate-y-10"
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
                   >
                     <Card className="h-full hover:shadow-lg transition-shadow">
                       <CardHeader>
@@ -143,15 +182,19 @@ export default function LandingPage() {
                           <div className="p-2 rounded-lg agentgift-gradient">
                             <Icon className="h-6 w-6 text-white" />
                           </div>
-                          <CardTitle className="text-lg">{feature.title}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {feature.title}
+                          </CardTitle>
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <CardDescription className="text-gray-600">{feature.description}</CardDescription>
+                        <CardDescription className="text-gray-600">
+                          {feature.description}
+                        </CardDescription>
                       </CardContent>
                     </Card>
                   </div>
-                )
+                );
               })}
             </dl>
           </div>
@@ -162,8 +205,12 @@ export default function LandingPage() {
       <section className="py-24 sm:py-32 bg-gray-50">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">How It Works</h2>
-            <p className="mt-4 text-lg text-gray-600">Get personalized gift recommendations in three simple steps</p>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              How It Works
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Get personalized gift recommendations in three simple steps
+            </p>
           </div>
 
           <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
@@ -172,10 +219,12 @@ export default function LandingPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full agentgift-gradient text-white text-xl font-bold">
                   1
                 </div>
-                <h3 className="mt-6 text-xl font-semibold text-gray-900">Tell Us About Them</h3>
+                <h3 className="mt-6 text-xl font-semibold text-gray-900">
+                  Tell Us About Them
+                </h3>
                 <p className="mt-2 text-gray-600">
-                  Share details about the gift recipient - their personality, interests, and your relationship with
-                  them.
+                  Share details about the gift recipient - their personality,
+                  interests, and your relationship with them.
                 </p>
               </div>
 
@@ -183,9 +232,12 @@ export default function LandingPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full agentgift-gradient text-white text-xl font-bold">
                   2
                 </div>
-                <h3 className="mt-6 text-xl font-semibold text-gray-900">AI Analysis</h3>
+                <h3 className="mt-6 text-xl font-semibold text-gray-900">
+                  AI Analysis
+                </h3>
                 <p className="mt-2 text-gray-600">
-                  Our AI processes the information using advanced algorithms and emotional intelligence models.
+                  Our AI processes the information using advanced algorithms and
+                  emotional intelligence models.
                 </p>
               </div>
 
@@ -193,9 +245,12 @@ export default function LandingPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full agentgift-gradient text-white text-xl font-bold">
                   3
                 </div>
-                <h3 className="mt-6 text-xl font-semibold text-gray-900">Perfect Recommendations</h3>
+                <h3 className="mt-6 text-xl font-semibold text-gray-900">
+                  Perfect Recommendations
+                </h3>
                 <p className="mt-2 text-gray-600">
-                  Receive personalized gift suggestions with detailed explanations of why each gift is perfect.
+                  Receive personalized gift suggestions with detailed
+                  explanations of why each gift is perfect.
                 </p>
               </div>
             </div>
@@ -207,9 +262,12 @@ export default function LandingPage() {
       <section className="py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">What Our Users Say</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              What Our Users Say
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Join thousands of satisfied gift-givers who've discovered the perfect presents
+              Join thousands of satisfied gift-givers who've discovered the
+              perfect presents
             </p>
           </div>
 
@@ -217,20 +275,34 @@ export default function LandingPage() {
             {testimonials.map((testimonial, index) => (
               <Card
                 key={testimonial.name}
-                className={`transition-all duration-700 delay-${index * 200} ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                className={`transition-all duration-700 ${
+                  isVisible
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-10"
+                }`}
+                style={{ transitionDelay: `${index * 200}ms` }}
               >
                 <CardHeader>
                   <div className="flex items-center space-x-1">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star
+                        key={i}
+                        className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                      />
                     ))}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <blockquote className="text-gray-600 mb-4">"{testimonial.content}"</blockquote>
+                  <blockquote className="text-gray-600 mb-4">
+                    "{testimonial.content}"
+                  </blockquote>
                   <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-sm text-gray-500">{testimonial.role}</div>
+                    <div className="font-semibold text-gray-900">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {testimonial.role}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -247,12 +319,16 @@ export default function LandingPage() {
               Ready to Give the Perfect Gift?
             </h2>
             <p className="mt-6 text-lg leading-8 text-purple-100">
-              Join thousands of users who've discovered the joy of perfect gift-giving. Start your personalized gift
-              journey today.
+              Join thousands of users who've discovered the joy of perfect
+              gift-giving. Start your personalized gift journey today.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link href="/auth?view=sign_up&redirect=/dashboard">
-                <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="bg-white text-purple-600 hover:bg-gray-100"
+                >
                   Get Started Free
                   <Gift className="ml-2 h-4 w-4" />
                 </Button>
@@ -271,8 +347,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-<<<<<<< HEAD
-=======
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
@@ -290,11 +364,20 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">AgentGift.ai</span>
               </div>
               <p className="text-gray-400 mb-4">
-                AI-powered gift recommendations that create meaningful connections and lasting memories.
+                AI-powered gift recommendations that create meaningful
+                connections and lasting memories.
               </p>
               <div className="flex space-x-4">
-                <Link href="https://discord.gg/agentgift" target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                <Link
+                  href="https://discord.gg/agentgift"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-white"
+                  >
                     <MessageCircle className="h-5 w-5" />
                   </Button>
                 </Link>
@@ -359,7 +442,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
->>>>>>> 9d8a50d (updated)
     </div>
-  )
+  );
 }
