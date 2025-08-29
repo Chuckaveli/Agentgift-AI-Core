@@ -1,347 +1,269 @@
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Navbar } from "@/components/Navbar"
-import { Gift, Brain, Globe, Sparkles, Users, Heart, Star, ArrowRight, Zap } from "lucide-react"
-
-const features = [
-  {
-    icon: Brain,
-    title: "AI-Powered Recommendations",
-    description: "Advanced algorithms analyze preferences, occasions, and relationships to suggest perfect gifts.",
-    badge: "Smart",
-  },
-  {
-    icon: Globe,
-    title: "Cultural Intelligence",
-    description: "Culturally appropriate gift suggestions that respect traditions and customs worldwide.",
-    badge: "Global",
-  },
-  {
-    icon: Sparkles,
-    title: "Serendipity Engine",
-    description: "Discover unexpected and delightful gift ideas that create memorable moments.",
-    badge: "Surprise",
-  },
-  {
-    icon: Users,
-    title: "Group Gifting",
-    description: "Coordinate with friends and family for collaborative gift-giving experiences.",
-    badge: "Social",
-  },
-  {
-    icon: Heart,
-    title: "Emotional Intelligence",
-    description: "Understand the emotional context behind gift-giving for more meaningful connections.",
-    badge: "Empathy",
-  },
-  {
-    icon: Star,
-    title: "Premium Curation",
-    description: "Hand-picked, high-quality gifts from trusted brands and artisans.",
-    badge: "Quality",
-  },
-]
-
-const testimonials = [
-  {
-    name: "Sarah Chen",
-    role: "Marketing Director",
-    content:
-      "AgentGift.ai helped me find the perfect gift for my colleague's promotion. The cultural intelligence feature was amazing!",
-    rating: 5,
-  },
-  {
-    name: "Michael Rodriguez",
-    role: "Father of 3",
-    content:
-      "Finally, a platform that understands what my kids actually want. The AI recommendations are spot-on every time.",
-    rating: 5,
-  },
-  {
-    name: "Emma Thompson",
-    role: "Event Planner",
-    content: "The group gifting feature saved me hours of coordination. My clients love the personalized touch.",
-    rating: 5,
-  },
-]
-
-const stats = [
-  { label: "Happy Customers", value: "50K+" },
-  { label: "Perfect Matches", value: "95%" },
-  { label: "Countries Served", value: "120+" },
-  { label: "Gift Categories", value: "500+" },
-]
+import Link from "next/link"
+import Image from "next/image"
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Navigation */}
+      <nav className="border-b bg-white/80 backdrop-blur-sm dark:bg-gray-900/80">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Image src="/agentgift-logo.png" alt="AgentGift.ai" width={40} height={40} className="rounded-lg" />
+              <span className="text-xl font-bold text-gray-900 dark:text-white">AgentGift.ai</span>
+            </div>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link
+                href="/features"
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                Features
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/about"
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                About
+              </Link>
+              <Button asChild variant="outline">
+                <Link href="/auth/signin">Sign In</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/auth/signup">Get Started</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 sm:py-32">
-        <div className="container-responsive">
-          <div className="mx-auto max-w-4xl text-center">
-            <Badge variant="secondary" className="mb-4">
-              <Zap className="mr-1 h-3 w-3" />
-              AI-Powered Gift Discovery
-            </Badge>
-            <h1 className="heading-responsive mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Find the Perfect Gift with AI Intelligence
-            </h1>
-            <p className="text-responsive mb-8 text-muted-foreground max-w-2xl mx-auto">
-              Discover meaningful gifts that create lasting memories. Our AI understands relationships, occasions, and
-              cultural nuances to recommend gifts that truly matter.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link href="/dashboard">
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/features">Explore Features</Link>
-              </Button>
-            </div>
+      <section className="container mx-auto px-4 py-20 text-center">
+        <div className="max-w-4xl mx-auto">
+          <Badge variant="secondary" className="mb-4">
+            🎁 AI-Powered Gift Intelligence
+          </Badge>
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            Discover the Perfect Gift with{" "}
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              AI Intelligence
+            </span>
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+            Transform your gift-giving with our AI-powered platform that understands personalities, cultural
+            preferences, and creates meaningful connections through thoughtful presents.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
+              <Link href="/dashboard">Start Gifting Smart</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/demo">Watch Demo</Link>
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container-responsive">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-primary mb-2">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+      {/* Features Grid */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Intelligent Gift Solutions
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Our AI-powered platform combines personality analysis, cultural intelligence, and advanced algorithms to
+            find gifts that truly matter.
+          </p>
         </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="py-20">
-        <div className="container-responsive">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Intelligent Gift Discovery</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our advanced AI platform combines machine learning, cultural intelligence, and emotional understanding to
-              revolutionize gift-giving.
-            </p>
-          </div>
-
-          <div className="grid-responsive">
-            {features.map((feature, index) => (
-              <Card key={index} className="relative overflow-hidden group hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <feature.icon className="h-8 w-8 text-primary" />
-                    <Badge variant="secondary">{feature.badge}</Badge>
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-base">{feature.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container-responsive">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Three simple steps to discover the perfect gift
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-primary-foreground">1</span>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
+                🧠
               </div>
-              <h3 className="text-xl font-semibold mb-2">Tell Us About Them</h3>
-              <p className="text-muted-foreground">
-                Share details about the recipient, occasion, and your relationship
-              </p>
-            </div>
+              <CardTitle>AI Gift Intelligence</CardTitle>
+              <CardDescription>
+                Advanced algorithms analyze personality traits, preferences, and relationships to suggest the most
+                meaningful gifts.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-primary-foreground">2</span>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
+                🌍
               </div>
-              <h3 className="text-xl font-semibold mb-2">AI Analysis</h3>
-              <p className="text-muted-foreground">
-                Our AI analyzes preferences, cultural context, and emotional significance
-              </p>
-            </div>
+              <CardTitle>Cultural Intelligence</CardTitle>
+              <CardDescription>
+                Respect cultural traditions and preferences with our global gift intelligence that understands diverse
+                customs and celebrations.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-primary-foreground">3</span>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
+                💝
               </div>
-              <h3 className="text-xl font-semibold mb-2">Perfect Matches</h3>
-              <p className="text-muted-foreground">Receive personalized recommendations with detailed explanations</p>
-            </div>
-          </div>
-        </div>
-      </section>
+              <CardTitle>Personalized Experiences</CardTitle>
+              <CardDescription>
+                Create unique gift experiences tailored to individual personalities, interests, and special moments in
+                their lives.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-      {/* Testimonials Section */}
-      <section className="py-20">
-        <div className="container-responsive">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">What Our Users Say</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of satisfied customers who've found the perfect gifts
-            </p>
-          </div>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center mb-4">
+                📊
+              </div>
+              <CardTitle>Smart Analytics</CardTitle>
+              <CardDescription>
+                Track gift success rates, learn from feedback, and continuously improve recommendations for better
+                results.
+              </CardDescription>
+            </CardHeader>
+          </Card>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <div className="flex items-center space-x-1 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <CardTitle className="text-lg">{testimonial.name}</CardTitle>
-                  <CardDescription>{testimonial.role}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground italic">"{testimonial.content}"</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center mb-4">
+                🎯
+              </div>
+              <CardTitle>Occasion Matching</CardTitle>
+              <CardDescription>
+                Perfect gifts for every occasion - birthdays, holidays, anniversaries, and spontaneous moments of
+                appreciation.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center mb-4">
+                🚀
+              </div>
+              <CardTitle>Instant Delivery</CardTitle>
+              <CardDescription>
+                Seamless integration with delivery services for last-minute gifts and scheduled surprises that arrive
+                right on time.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container-responsive text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Find the Perfect Gift?</h2>
-          <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-            Join thousands of users who've discovered the joy of AI-powered gift giving. Start your free trial today and
-            never give a disappointing gift again.
+      <section className="container mx-auto px-4 py-20">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-12 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Gift-Giving?</h2>
+          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+            Join thousands of users who have discovered the joy of giving perfect gifts with AI-powered intelligence and
+            cultural awareness.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/dashboard">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              <Link href="/auth/signup">Start Free Trial</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent"
+              className="text-white border-white hover:bg-white hover:text-blue-600 bg-transparent"
               asChild
             >
-              <Link href="/pricing">View Pricing</Link>
+              <Link href="/contact">Contact Sales</Link>
             </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t">
-        <div className="container-responsive">
+      <footer className="border-t bg-white dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-12">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <Gift className="h-6 w-6 text-primary" />
-                <span className="text-lg font-bold">AgentGift.ai</span>
+                <Image src="/agentgift-logo.png" alt="AgentGift.ai" width={32} height={32} className="rounded-lg" />
+                <span className="text-lg font-bold text-gray-900 dark:text-white">AgentGift.ai</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                AI-powered gift discovery platform that helps you find meaningful gifts for every occasion.
+              <p className="text-gray-600 dark:text-gray-300">
+                AI-powered gift intelligence for meaningful connections.
               </p>
             </div>
-
             <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-300">
                 <li>
-                  <Link href="/features" className="hover:text-foreground">
+                  <Link href="/features" className="hover:text-gray-900 dark:hover:text-white">
                     Features
                   </Link>
                 </li>
                 <li>
-                  <Link href="/pricing" className="hover:text-foreground">
+                  <Link href="/pricing" className="hover:text-gray-900 dark:hover:text-white">
                     Pricing
                   </Link>
                 </li>
                 <li>
-                  <Link href="/dashboard" className="hover:text-foreground">
-                    Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/api" className="hover:text-foreground">
+                  <Link href="/api" className="hover:text-gray-900 dark:hover:text-white">
                     API
                   </Link>
                 </li>
               </ul>
             </div>
-
             <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-300">
                 <li>
-                  <Link href="/about" className="hover:text-foreground">
+                  <Link href="/about" className="hover:text-gray-900 dark:hover:text-white">
                     About
                   </Link>
                 </li>
                 <li>
-                  <Link href="/blog" className="hover:text-foreground">
+                  <Link href="/blog" className="hover:text-gray-900 dark:hover:text-white">
                     Blog
                   </Link>
                 </li>
                 <li>
-                  <Link href="/careers" className="hover:text-foreground">
+                  <Link href="/careers" className="hover:text-gray-900 dark:hover:text-white">
                     Careers
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-foreground">
-                    Contact
                   </Link>
                 </li>
               </ul>
             </div>
-
             <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-300">
                 <li>
-                  <Link href="/legal/privacy" className="hover:text-foreground">
-                    Privacy Policy
+                  <Link href="/help" className="hover:text-gray-900 dark:hover:text-white">
+                    Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link href="/legal/terms" className="hover:text-foreground">
-                    Terms of Service
+                  <Link href="/contact" className="hover:text-gray-900 dark:hover:text-white">
+                    Contact
                   </Link>
                 </li>
                 <li>
-                  <Link href="/legal/data-deletion" className="hover:text-foreground">
-                    Data Deletion
+                  <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white">
+                    Privacy
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-
-          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+          <div className="border-t mt-12 pt-8 text-center text-gray-600 dark:text-gray-300">
             <p>&copy; 2024 AgentGift.ai. All rights reserved.</p>
           </div>
         </div>

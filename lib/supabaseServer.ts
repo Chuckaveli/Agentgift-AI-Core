@@ -122,5 +122,29 @@ function createMockServerClient() {
   } as any
 }
 
-export { createClient, createServerClient, createAdminClient }
-export const getSupabaseServerClient = createServerClient
+// Server-side Supabase client
+export function getServerClient() {
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.warn("Supabase server configuration missing")
+    return null
+  }
+
+  try {
+    return createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+  } catch (error) {
+    console.error("Failed to create server Supabase client:", error)
+    return null
+  }
+}
+
+export const supabaseServer = getServerClient()
+
+export { createClient, createAdminClient }

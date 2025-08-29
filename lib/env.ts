@@ -15,8 +15,8 @@ export const env = {
 
   // Server-only API keys
   ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY || "",
-  ELEVENLABS_VOICE_AVELYN_ID: process.env.ELEVENLABS_VOICE_AVELYN_ID || "",
-  ELEVENLABS_VOICE_GALEN_ID: process.env.ELEVENLABS_VOICE_GALEN_ID || "",
+  ELEVENLABS_VOICE_AVELYN_ID: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID || "",
+  ELEVENLABS_VOICE_GALEN_ID: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID || "",
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
   OPENAI_API_KEY_PREMIUM: process.env.OPENAI_API_KEY_PREMIUM || "",
   OPENAI_API_KEY_PRO: process.env.OPENAI_API_KEY_PRO || "",
@@ -41,6 +41,8 @@ export const clientEnv = {
   NEXT_PUBLIC_BFF_URL: env.NEXT_PUBLIC_BFF_URL,
   NEXT_PUBLIC_VERCEL_URL: env.NEXT_PUBLIC_VERCEL_URL,
   NEXT_PUBLIC_MAKE_WEBHOOK_URL: env.NEXT_PUBLIC_MAKE_WEBHOOK_URL,
+  NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID: env.NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID,
+  NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID: env.NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID,
 }
 
 // Check if a value is a placeholder
@@ -93,25 +95,20 @@ export function isSupabaseConfigured(): boolean {
 
 // Validation function - only warn, don't throw
 export function validateEnv() {
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const required = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]
 
-  if (!isSupabaseConfigured()) {
-    const message = `Supabase is not properly configured. Please set valid environment variables:
-    - NEXT_PUBLIC_SUPABASE_URL: ${supabaseUrl || "not set"}
-    - NEXT_PUBLIC_SUPABASE_ANON_KEY: ${supabaseAnonKey ? "[hidden]" : "not set"}`
+  const missing = required.filter((key) => !env[key as keyof typeof env])
 
-    if (process.env.NODE_ENV === "development") {
-      console.warn(`⚠️  ${message}`)
-      console.warn("⚠️  The application will use a mock Supabase client")
-    } else {
-      console.error(`❌ ${message}`)
-    }
+  if (missing.length > 0) {
+    console.warn(`Missing environment variables: ${missing.join(", ")}`)
     return false
   }
 
   return true
 }
+
+export const isProduction = process.env.NODE_ENV === "production"
+export const isDevelopment = process.env.NODE_ENV === "development"
 
 // Get base URL for API calls
 export function getBaseUrl() {
