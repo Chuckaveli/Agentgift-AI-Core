@@ -174,14 +174,6 @@ export function Navbar() {
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
-
-                  {isAdmin && (
-                    <DropdownMenuItem onClick={() => router.push("/admin")}>
-                      <Shield className="mr-2 h-4 w-4" />
-                      <span>Admin Console</span>
-                    </DropdownMenuItem>
-                  )}
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />

@@ -1,6 +1,6 @@
 "use client"
 
-import AdminOnly from '@/components/access/AdminOnly';
+import AdminOnly from "@/components/access/AdminOnly"
 import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,7 +24,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const getUser = async () => {
@@ -135,23 +134,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Welcome Bonus Alert */}
-        {xp >= 100 && (
-          <Card className="mb-8 border-green-200 bg-green-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-green-900">Welcome Bonus Earned!</h3>
-                  <p className="text-green-700">You've received XP for joining AgentGift.ai</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Quick Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {quickActions.map((action, index) => {
@@ -173,35 +155,26 @@ export default function DashboardPage() {
         </div>
 
         {/* ======================= ADMIN-ONLY WIDGETS ======================= */}
-        {/* Place your real admin components inside this wrapper. 
-            Regular users will never see anything inside <AdminOnly>. */}
         <AdminOnly>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            {/* Content Calendar (ADMIN) */}
             <Card>
               <CardHeader>
                 <CardTitle>Content Calendar</CardTitle>
                 <CardDescription>Admin-only planning view</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Replace this placeholder with your real <ContentCalendar /> component */}
                 <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
               </CardContent>
             </Card>
-
-            {/* Engagement Preview (ADMIN) */}
             <Card>
               <CardHeader>
                 <CardTitle>Engagement Preview</CardTitle>
                 <CardDescription>Admin-only metrics preview</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Replace with <EngagementPreview /> */}
                 <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
               </CardContent>
             </Card>
-
-            {/* This Week (ADMIN) */}
             <Card>
               <CardHeader>
                 <CardTitle>This Week</CardTitle>
@@ -212,15 +185,12 @@ export default function DashboardPage() {
                 <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
               </CardContent>
             </Card>
-
-            {/* Scheduled Posts (ADMIN) */}
             <Card>
               <CardHeader>
                 <CardTitle>Scheduled Posts</CardTitle>
                 <CardDescription>Internal scheduler</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Replace with <ScheduledPosts /> */}
                 <div className="text-sm text-gray-500">[Admin widget placeholder]</div>
               </CardContent>
             </Card>

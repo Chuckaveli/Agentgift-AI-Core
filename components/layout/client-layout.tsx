@@ -23,7 +23,6 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase-client"
 import type { User } from "@supabase/supabase-js"
-import { useRouter } from "next/navigation"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 
@@ -64,7 +63,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
       setLoading(false)
     })
 
-    // Track page views
     if (typeof window !== "undefined") {
       console.log("Page view:", window.location.pathname)
     }
@@ -104,7 +102,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
             <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                  {/* Logo */}
                   <Link href="/" className="flex items-center space-x-2">
                     <div className="relative">
                       <Image
@@ -167,7 +164,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
                       </div>
                     )}
 
-                    {/* Mobile Menu */}
                     {user && (
                       <Sheet>
                         <SheetTrigger asChild>
