@@ -3,7 +3,11 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 62841888717e65a520dd629dcd2165ef9c1d2b44
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -25,6 +29,7 @@ const nextConfig = {
 
   // Webpack optimization
   webpack: (config, { isServer, dev }) => {
+<<<<<<< HEAD
     // Bundle analyzer (only in production client builds)
     if (!dev && !isServer && process.env.ANALYZE === 'true') {
       config.plugins.push(
@@ -33,6 +38,21 @@ const nextConfig = {
           openAnalyzer: true,
         })
       );
+=======
+    // Only add bundle analyzer in production client builds when ANALYZE=true
+    if (!dev && !isServer && process.env.ANALYZE === 'true') {
+      // Dynamic import for bundle analyzer
+      import('webpack-bundle-analyzer').then(({ BundleAnalyzerPlugin }) => {
+        config.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'server',
+            openAnalyzer: true,
+          })
+        )
+      }).catch(() => {
+        // Silently fail if bundle analyzer is not installed
+      })
+>>>>>>> 62841888717e65a520dd629dcd2165ef9c1d2b44
     }
 
     // Optimize TensorFlow.js
