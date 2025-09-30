@@ -2,48 +2,30 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import ClientLayout from "./client-layout"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "AgentGift.ai - AI-Powered Gift Intelligence Platform",
   description:
-    "Discover the perfect gifts with AI-powered recommendations, cultural intelligence, and personalized gift experiences.",
-  keywords: ["AI gifts", "gift recommendations", "personalized gifts", "gift intelligence"],
+    "Transform gift-giving with AI-powered insights, emotional intelligence, and personalized recommendations",
+  keywords: ["gifts", "AI", "personalization", "emotional intelligence", "gift recommendations"],
   authors: [{ name: "AgentGift.ai Team" }],
   openGraph: {
     title: "AgentGift.ai - AI-Powered Gift Intelligence",
-    description: "Discover the perfect gifts with AI-powered recommendations",
-    url: "https://agentgift.ai",
-    siteName: "AgentGift.ai",
-    images: [
-      {
-        url: "/agentgift-logo.png",
-        width: 1200,
-        height: 630,
-        alt: "AgentGift.ai Logo",
-      },
-    ],
-    locale: "en_US",
+    description: "Transform gift-giving with AI-powered insights",
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AgentGift.ai - AI-Powered Gift Intelligence",
-    description: "Discover the perfect gifts with AI-powered recommendations",
-    images: ["/agentgift-logo.png"],
+    title: "AgentGift.ai",
+    description: "AI-Powered Gift Intelligence Platform",
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
   },
     generator: 'v0.app'
 }
@@ -55,10 +37,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://blob.v0.app" />
+        <link rel="dns-prefetch" href="https://supabase.co" />
+      </head>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   )

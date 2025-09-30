@@ -1,0 +1,45 @@
+Contact: mailto:security@agentgift.ai
+Expires: 2025-12-31T23:59:59.000Z
+Encryption: https://agentgift.ai/.well-known/pgp-key.txt
+Preferred-Languages: en
+Canonical: https://agentgift.ai/.well-known/security.txt
+Policy: https://agentgift.ai/security-policy
+Acknowledgments: https://agentgift.ai/security-hall-of-fame
+
+# Security Disclosure Policy
+
+## Reporting Security Issues
+
+If you believe you have found a security vulnerability in AgentGift.ai, 
+we encourage you to let us know right away.
+
+Please email security@agentgift.ai with:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Your contact information
+
+## Response Timeline
+
+- Acknowledgment: Within 24 hours
+- Initial assessment: Within 48 hours
+- Status update: Within 7 days
+- Fix deployed: Depends on severity (1-30 days)
+
+## Bug Bounty Program
+
+We offer rewards for valid security vulnerabilities:
+- Critical: $500-$2000
+- High: $250-$500
+- Medium: $100-$250
+- Low: $50-$100
+
+## Out of Scope
+
+- Social engineering
+- Physical attacks
+- DoS/DDoS attacks
+- Spam
+- Issues in third-party services
+
+Thank you for helping keep AgentGift.ai safe!

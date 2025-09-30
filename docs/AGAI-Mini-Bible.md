@@ -1,24 +1,28 @@
-# 🎯 AGAI Mini Bible - Quick Copy-Paste Reference
+# 🎯 AGAI Mini Bible - Quick Reference
 
-## 🚀 Essential Imports
+## 🚀 Essential Commands
+
+### Auth Check
 \`\`\`typescript
-// Authentication
-import { requireAuth, withAuth } from '@/lib/middleware/withAuth'
+import { requireAuth } from '@/lib/middleware/withAuth'
+const user = await requireAuth()
+\`\`\`
+
+### Feature Access
+\`\`\`typescript
 import { checkUserAccess } from '@/lib/helpers/checkUserAccess'
+const { accessGranted } = await checkUserAccess('feature-name')
+\`\`\`
 
-// Components
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FeatureGateWrapper } from '@/components/ui/FeatureGateWrapper'
-import { UserTierGate } from '@/components/global/user-tier-gate'
-import { XPTracker } from '@/components/global/xp-tracker'
+### XP & Credits
+\`\`\`typescript
+import { XPEngine, CreditSystem } from '@/lib/global-logic'
 
-// Hooks
-import { useToast } from '@/hooks/use-toast'
-import { useUser } from '@/hooks/use-user'
+// Add XP
+await XPEngine.addXP(userId, 25, 'reason')
 
-// Logic
-import { XPEngine, CreditSystem, TierEnforcement } from '@/lib/global-logic'
+// Deduct Credits  
+await CreditSystem.deductCredits(userId, 2, 'feature-use')
 \`\`\`
 
 ## 🔐 Auth Patterns
@@ -41,7 +45,7 @@ export const POST = withAuth(async (req, { user, deductCredits }) => {
   const success = await deductCredits(2, 'Feature Name')
   if (!success) return Response.json({ error: 'No credits' }, { status: 402 })
   
-  return Response.json({ success: true, xp_gained: 1 })
+  return Response.json({ success: true })
 })
 \`\`\`
 
@@ -62,6 +66,7 @@ if (!accessGranted) {
 // 2 Credits = 1 XP
 // 150 XP = 1 Level  
 // 100 Levels = Prestige
+// Silver = 10%, Gold = 20%, Diamond = 50%
 
 const xpGained = Math.floor(creditsUsed / 2)
 const levelUp = Math.floor(totalXP / 150)
@@ -96,15 +101,13 @@ await CreditSystem.addCredits(userId, 50, 'Purchase')
 ## 🏆 Tier System
 
 ### Tier Hierarchy
-\`\`\`typescript
-const TIER_HIERARCHY = {
-  free_agent: 0,
-  premium_spy: 1,
-  pro_agent: 2,
-  agent_00g: 3,
-  small_biz: 4,
-  enterprise: 5
-}
+\`\`\`
+free_agent: 0
+premium_spy: 1
+pro_agent: 2  
+agent_00g: 3
+small_biz: 4
+enterprise: 5
 \`\`\`
 
 ### Tier Checking
@@ -126,21 +129,17 @@ const PRESTIGE_BENEFITS = {
 
 ## 🧩 Component Patterns
 
-### Feature Gate Wrapper
+### Feature Wrapper
 \`\`\`typescript
-<FeatureGateWrapper 
-  featureName="my-feature"
-  showLockedPreview={true}
-  previewContent={<PreviewComponent />}
->
-  <FullFeatureComponent />
+<FeatureGateWrapper featureName="my-feature">
+  <MyFeatureContent />
 </FeatureGateWrapper>
 \`\`\`
 
 ### Tier Gate
 \`\`\`typescript
 <UserTierGate requiredTier="pro_agent">
-  <ProOnlyContent />
+  <ProContent />
 </UserTierGate>
 \`\`\`
 
@@ -164,41 +163,14 @@ toast({
 })
 \`\`\`
 
-## 🗄️ Database Queries
+## 🗄️ Key Tables
 
-### Get User Profile
-\`\`\`typescript
-const { data: user } = await supabase
-  .from('user_profiles')
-  .select('*')
-  .eq('id', userId)
-  .single()
-\`\`\`
+- `user_profiles` - User data, tier, credits, XP
+- `feature_usage` - Usage tracking
+- `xp_logs` - XP transaction history
+- `registered_features` - Dynamic features
 
-### Log Feature Usage
-\`\`\`typescript
-await supabase
-  .from('feature_usage')
-  .insert({
-    user_id: userId,
-    feature_name: 'my-feature',
-    credits_used: 2,
-    xp_gained: 1
-  })
-\`\`\`
-
-### Update Credits/XP
-\`\`\`typescript
-await supabase
-  .from('user_profiles')
-  .update({
-    credits: user.credits - 2,
-    xp: user.xp + 1
-  })
-  .eq('id', userId)
-\`\`\`
-
-## 🔧 Feature Development
+## 🔧 Feature Registration
 
 ### Feature Config Registration
 \`\`\`typescript
@@ -213,80 +185,22 @@ export const FEATURE_CONFIGS = {
 }
 \`\`\`
 
-### Feature Folder Structure
-\`\`\`
-/features/my-feature/
-  component.tsx    # Main React component
-  route.ts        # API handler
-  modal.tsx       # Optional modal
-\`\`\`
+## 🎨 Common Imports
 
-### Component Template
 \`\`\`typescript
-"use client"
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
 import { FeatureGateWrapper } from '@/components/ui/FeatureGateWrapper'
-
-export default function MyFeature() {
-  return (
-    <FeatureGateWrapper featureName="my-feature">
-      <div>Feature content</div>
-    </FeatureGateWrapper>
-  )
-}
 \`\`\`
 
-### API Route Template
-\`\`\`typescript
-import { withAuth } from '@/lib/middleware/withAuth'
+## 📱 File Structure
 
-export const POST = withAuth(async (req, { user, deductCredits }) => {
-  const success = await deductCredits(2, 'My Feature')
-  if (!success) {
-    return Response.json({ error: 'Insufficient credits' }, { status: 402 })
-  }
-  
-  // Feature logic here
-  return Response.json({ success: true, xp_gained: 1 })
-})
 \`\`\`
-
-## 🎨 Common UI Patterns
-
-### Loading State
-\`\`\`typescript
-{loading ? (
-  <div className="animate-pulse bg-gray-200 h-32 rounded-lg" />
-) : (
-  <ActualContent />
-)}
-\`\`\`
-
-### Error Handling
-\`\`\`typescript
-try {
-  const response = await fetch('/api/feature')
-  const data = await response.json()
-  
-  if (!response.ok) {
-    throw new Error(data.error)
-  }
-} catch (error) {
-  toast({
-    title: "Error",
-    description: error.message,
-    variant: "destructive"
-  })
-}
-\`\`\`
-
-### Credit Display
-\`\`\`typescript
-<div className="flex items-center gap-2">
-  <span className="text-sm">Credits: {user.credits}</span>
-  <Button size="sm" variant="outline">
-    Buy More
-  </Button>
-</div>
+/features/[name]/
+  component.tsx
+  route.ts
+  modal.tsx (optional)
 \`\`\`
 
 ## 🚀 Deployment
@@ -300,14 +214,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key
 
 ### Deploy Commands
 \`\`\`bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy to production
 vercel --prod
-
-# Set environment variables
-vercel env add NEXT_PUBLIC_SUPABASE_URL
 \`\`\`
 
 ### Database Setup
