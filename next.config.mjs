@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   
   // Image optimization
   images: {
@@ -19,20 +18,24 @@ const nextConfig = {
         hostname: '*.supabase.co',
       },
     ],
-    unoptimized: true, // Added from updates
+    unoptimized: true,
   },
 
   // Webpack optimization
   webpack: (config, { isServer, dev }) => {
-    // Bundle analyzer (only in production)
-    if (!dev && !isServer) {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
-      config.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: process.env.ANALYZE === 'true' ? 'server' : 'disabled',
-          openAnalyzer: true,
-        })
-      )
+    // Only add bundle analyzer in production client builds when ANALYZE=true
+    if (!dev && !isServer && process.env.ANALYZE === 'true') {
+      // Dynamic import for bundle analyzer
+      import('webpack-bundle-analyzer').then(({ BundleAnalyzerPlugin }) => {
+        config.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'server',
+            openAnalyzer: true,
+          })
+        )
+      }).catch(() => {
+        // Silently fail if bundle analyzer is not installed
+      })
     }
 
     // Optimize TensorFlow.js
@@ -106,10 +109,10 @@ const nextConfig = {
 
   // ESLint and TypeScript configurations
   eslint: {
-    ignoreDuringBuilds: true, // Added from updates
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true, // Added from updates
+    ignoreBuildErrors: true,
   },
 }
 
