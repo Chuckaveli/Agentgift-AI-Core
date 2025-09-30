@@ -1,117 +1,96 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { createClient as supabaseCreateClient, type SupabaseClient } from "@supabase/supabase-js"
+import { env, isSupabaseConfigured } from "./env"
 
-// Validation functions
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url)
-    return true
-  } catch {
-    return false
-  }
-}
+let supabaseClient: SupabaseClient | null = null
 
-function isSupabaseUrl(url: string): boolean {
-  return url.includes("supabase.co") || url.includes("localhost")
-}
-
-function isPlaceholder(value: string): boolean {
-  const placeholders = ["your-project", "your_project", "placeholder", "example", "demo"]
-  return placeholders.some((p) => value.toLowerCase().includes(p))
-}
-
-// Environment variables with fallbacks
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-
-// Validation
-const isValidConfig =
-  supabaseUrl &&
-  supabaseAnonKey &&
-  isValidUrl(supabaseUrl) &&
-  isSupabaseUrl(supabaseUrl) &&
-  !isPlaceholder(supabaseUrl) &&
-  !isPlaceholder(supabaseAnonKey)
-
-// Mock client for demo mode
-const createMockClient = () => ({
-  auth: {
-    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-    signInWithPassword: () =>
-      Promise.resolve({
-        data: { user: null, session: null },
-        error: { message: "Demo mode - authentication disabled" },
-      }),
-    signUp: () =>
-      Promise.resolve({
-        data: { user: null, session: null },
-        error: { message: "Demo mode - authentication disabled" },
-      }),
-    signOut: () => Promise.resolve({ error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-  },
-  from: () => ({
-    select: () => Promise.resolve({ data: [], error: null }),
-    insert: () => Promise.resolve({ data: null, error: { message: "Demo mode - database disabled" } }),
-    update: () => Promise.resolve({ data: null, error: { message: "Demo mode - database disabled" } }),
-    delete: () => Promise.resolve({ data: null, error: { message: "Demo mode - database disabled" } }),
-  }),
-  rpc: () => Promise.resolve({ data: null, error: { message: "Demo mode - functions disabled" } }),
-})
-
-// Create client function - REQUIRED NAMED EXPORT
-export function createClient() {
-  if (!isValidConfig) {
-    console.warn("Supabase not configured properly, using demo mode")
-    return createMockClient() as any
+// Singleton pattern for client-side Supabase client
+export function createClient(): SupabaseClient {
+  if (typeof window === "undefined") {
+    // Server-side: Create a new client on each request
+    if (!isSupabaseConfigured()) {
+      console.warn("Supabase is not configured, returning a mock client.")
+      return createMockClient()
+    }
+    return supabaseCreateClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   }
 
-  try {
-    return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
+  // Client-side: Use a singleton to prevent multiple initializations
+  if (!supabaseClient) {
+    if (!isSupabaseConfigured()) {
+      console.warn("Supabase is not configured, returning a mock client.")
+      return createMockClient()
+    }
+    supabaseClient = supabaseCreateClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  }
+  return supabaseClient
+}
+
+// Create a Supabase client for server-side use (with service role key)
+export function createAdminClient(): SupabaseClient {
+  if (!isSupabaseConfigured()) {
+    console.warn("Supabase is not configured, returning a mock client.")
+    return createMockClient()
+  }
+  return supabaseCreateClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      persistSession: false,
+    },
+  })
+}
+
+// Create a Supabase client for server components (with cookie forwarding)
+import { cookies } from "next/headers"
+
+export function createServerClient(): SupabaseClient {
+  if (!isSupabaseConfigured()) {
+    console.warn("Supabase is not configured, returning a mock client.")
+    return createMockClient()
+  }
+  return supabaseCreateClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    cookies: {
+      get(name: string) {
+        return cookies().get(name)?.value
       },
-    })
-  } catch (error) {
-    console.warn("Failed to create Supabase client, using demo mode:", error)
-    return createMockClient() as any
-  }
-}
-
-// Create admin client function - REQUIRED NAMED EXPORT
-export function createAdminClient() {
-  if (!isValidConfig) {
-    console.warn("Supabase not configured properly, using demo mode")
-    return createMockClient() as any
-  }
-
-  if (!serviceRoleKey) {
-    console.warn("Service role key not configured, using regular client")
-    return createClient()
-  }
-
-  try {
-    return createSupabaseClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
+      set(name: string, value: string, options: any) {
+        cookies().set({ name, value, ...options })
       },
-    })
-  } catch (error) {
-    console.warn("Failed to create Supabase admin client, using demo mode:", error)
-    return createMockClient() as any
-  }
+      remove(name: string, options: any) {
+        cookies().delete({ name, ...options })
+      },
+    },
+  })
 }
 
-// Create server client function - REQUIRED NAMED EXPORT
-export function createServerClient() {
-  return createClient()
+// Mock Supabase client for handling missing environment variables
+function createMockClient(): SupabaseClient {
+  console.warn("Using mock Supabase client.")
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+      signInWithOAuth: async () => ({ data: { session: null, user: null }, error: null }),
+      signOut: async () => ({ data: null, error: null }),
+      onAuthStateChange: (callback: any) => {
+        callback("SIGNED_OUT", { user: null, session: null })
+        return { data: { subscription: { unsubscribe: () => {} } }, error: null }
+      },
+    },
+    from: () => ({
+      select: async () => ({ data: [], error: null }),
+      insert: async () => ({ data: [], error: null }),
+      update: async () => ({ data: [], error: null }),
+      delete: async () => ({ data: [], error: null }),
+    }),
+    storage: {
+      from: () => ({
+        upload: async () => ({ data: { path: "" }, error: null }),
+        getPublicUrl: () => ({ data: { publicUrl: "" }, error: null }),
+      }),
+    },
+  } as any
 }
 
-// Additional exports for compatibility
-export const supabase = createClient()
-export const isSupabaseConfigured = () => isValidConfig
-export const getSupabaseClient = () => createClient()
-export default supabase
+// Re-export the isSupabaseConfigured function
+export { isSupabaseConfigured }
+
+// Default export
+export default createClient()

@@ -15,8 +15,8 @@ export const env = {
 
   // Server-only API keys
   ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY || "",
-  ELEVENLABS_VOICE_AVELYN_ID: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID || "",
-  ELEVENLABS_VOICE_GALEN_ID: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID || "",
+  ELEVENLABS_VOICE_AVELYN_ID: process.env.ELEVENLABS_VOICE_AVELYN_ID || "",
+  ELEVENLABS_VOICE_GALEN_ID: process.env.ELEVENLABS_VOICE_GALEN_ID || "",
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
   OPENAI_API_KEY_PREMIUM: process.env.OPENAI_API_KEY_PREMIUM || "",
   OPENAI_API_KEY_PRO: process.env.OPENAI_API_KEY_PRO || "",
@@ -41,8 +41,8 @@ export const clientEnv = {
   NEXT_PUBLIC_BFF_URL: env.NEXT_PUBLIC_BFF_URL,
   NEXT_PUBLIC_VERCEL_URL: env.NEXT_PUBLIC_VERCEL_URL,
   NEXT_PUBLIC_MAKE_WEBHOOK_URL: env.NEXT_PUBLIC_MAKE_WEBHOOK_URL,
-  NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID: env.NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID,
-  NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID: env.NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID,
+  NEXT_PUBLIC_ELEVENLABS_VOICE_AVELYN_ID: env.ELEVENLABS_VOICE_AVELYN_ID,
+  NEXT_PUBLIC_ELEVENLABS_VOICE_GALEN_ID: env.ELEVENLABS_VOICE_GALEN_ID,
 }
 
 // Check if a value is a placeholder
@@ -93,7 +93,7 @@ export function isSupabaseConfigured(): boolean {
   return supabaseUrl.includes("supabase.co") || supabaseUrl.includes("localhost")
 }
 
-// Validation function - only warn, don't throw
+// Validation function - only warn, don't throw (renamed from validateEnvironment)
 export function validateEnv() {
   const required = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]
 
@@ -106,9 +106,6 @@ export function validateEnv() {
 
   return true
 }
-
-export const isProduction = process.env.NODE_ENV === "production"
-export const isDevelopment = process.env.NODE_ENV === "development"
 
 // Get base URL for API calls
 export function getBaseUrl() {

@@ -1,34 +1,72 @@
-import { createClient } from "@/lib/supabase-client"
-import { createAdminClient } from "@/lib/supabase-client"
+import { createClient } from "@supabase/supabase-js"
+import * as dotenv from "dotenv"
 
-export async function testSupabaseConnection() {
+// Load environment variables
+dotenv.config({ path: ".env.local" })
+
+async function testSupabaseConnection() {
   console.log("🔍 Testing Supabase Connection...\n")
+
+  // Check environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  console.log("📋 Environment Variables:")
+  console.log(`NEXT_PUBLIC_SUPABASE_URL: ${supabaseUrl ? "✅ Set" : "❌ Missing"}`)
+  console.log(`NEXT_PUBLIC_SUPABASE_ANON_KEY: ${supabaseAnonKey ? "✅ Set" : "❌ Missing"}`)
+  console.log(`SUPABASE_SERVICE_ROLE_KEY: ${supabaseServiceKey ? "✅ Set" : "❌ Missing"}\n`)
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("❌ Missing required environment variables")
+    console.log("Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file")
+    process.exit(1)
+  }
 
   try {
     // Test client connection
-    const client = createClient()
-    console.log("✅ Supabase client created successfully")
+    console.log("🔗 Testing client connection...")
+    const client = createClient(supabaseUrl, supabaseAnonKey)
 
-    // Test admin connection
-    const adminClient = createAdminClient()
-    console.log("✅ Supabase admin client created successfully")
+    const { data: clientData, error: clientError } = await client.from("users").select("count").limit(1)
 
-    // Test a simple query (this will work even with mock clients)
-    const { data, error } = await client.from("profiles").select("count").limit(1)
-
-    if (error && error.message.includes("Mock client")) {
-      console.log("⚠️  Using mock client - environment variables may be missing")
-      return false
-    } else if (error) {
-      console.log("⚠️  Database query failed:", error.message)
-      console.log("   This might be normal if tables don't exist yet")
+    if (clientError) {
+      console.log(`❌ Client connection failed: ${clientError.message}`)
     } else {
-      console.log("✅ Database connection successful")
+      console.log("✅ Client connection successful")
     }
 
-    return true
+    // Test admin connection
+    if (supabaseServiceKey) {
+      console.log("🔗 Testing admin connection...")
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+
+      const { data: adminData, error: adminError } = await adminClient.from("users").select("count").limit(1)
+
+      if (adminError) {
+        console.log(`❌ Admin connection failed: ${adminError.message}`)
+      } else {
+        console.log("✅ Admin connection successful")
+      }
+    }
+
+    // Test auth
+    console.log("🔐 Testing auth service...")
+    const { data: authData, error: authError } = await client.auth.getSession()
+
+    if (authError) {
+      console.log(`❌ Auth service failed: ${authError.message}`)
+    } else {
+      console.log("✅ Auth service working")
+      console.log(`Session: ${authData.session ? "Active" : "None"}`)
+    }
+
+    console.log("\n🎉 Connection test completed!")
   } catch (error) {
-    console.error("❌ Supabase connection failed:", error)
-    return false
+    console.error("❌ Connection test failed:", error)
+    process.exit(1)
   }
 }
+
+// Run the test
+testSupabaseConnection()

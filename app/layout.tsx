@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+=======
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import ClientLayout from "./client-layout"
+>>>>>>> beac17554917101f076a52ff5b6ef9392d302d8c
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,6 +19,7 @@ export const metadata: Metadata = {
   ),
   title: "AgentGift.ai - AI-Powered Gift Intelligence Platform",
   description:
+<<<<<<< HEAD
     "Discover the perfect gifts with AI-powered recommendations, cultural intelligence, and personalized gift experiences.",
   keywords: [
     "AI gifts",
@@ -34,26 +43,33 @@ export const metadata: Metadata = {
       },
     ],
     locale: "en_US",
+=======
+    "Transform gift-giving with AI-powered insights, emotional intelligence, and personalized recommendations",
+  keywords: ["gifts", "AI", "personalization", "emotional intelligence", "gift recommendations"],
+  authors: [{ name: "AgentGift.ai Team" }],
+  openGraph: {
+    title: "AgentGift.ai - AI-Powered Gift Intelligence",
+    description: "Transform gift-giving with AI-powered insights",
+>>>>>>> beac17554917101f076a52ff5b6ef9392d302d8c
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
+<<<<<<< HEAD
     title: "AgentGift.ai - AI-Powered Gift Intelligence",
     description:
       "Discover the perfect gifts with AI-powered recommendations, cultural intelligence, and personalized gift experiences.",
     images: ["/agentgift-logo.png"],
     creator: "@AgentGiftAI",
+=======
+    title: "AgentGift.ai",
+    description: "AI-Powered Gift Intelligence Platform",
+>>>>>>> beac17554917101f076a52ff5b6ef9392d302d8c
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
   },
   generator: "v0.app",
   alternates: {
@@ -71,7 +87,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://blob.v0.app" />
+        <link rel="dns-prefetch" href="https://supabase.co" />
+      </head>
       <body className={inter.className}>
+<<<<<<< HEAD
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -80,6 +103,9 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+=======
+        <ClientLayout>{children}</ClientLayout>
+>>>>>>> beac17554917101f076a52ff5b6ef9392d302d8c
       </body>
     </html>
   );
