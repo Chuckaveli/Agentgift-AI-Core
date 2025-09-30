@@ -1,4 +1,7 @@
 // scripts/verify-vercel-env.ts
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" }); // 👈 force-load local env file
+
 const requiredVars = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
