@@ -1,20 +1,28 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://agentgift.ai"
+  ),
   title: "AgentGift.ai - AI-Powered Gift Intelligence Platform",
   description:
     "Discover the perfect gifts with AI-powered recommendations, cultural intelligence, and personalized gift experiences.",
-  keywords: ["AI gifts", "gift recommendations", "personalized gifts", "gift intelligence"],
-  authors: [{ name: "AgentGift.ai Team" }],
+  keywords: [
+    "AI gifts",
+    "gift recommendations",
+    "personalized gifts",
+    "gift intelligence",
+  ],
+  authors: [{ name: "AgentGift.ai Team", url: "https://agentgift.ai" }],
   openGraph: {
     title: "AgentGift.ai - AI-Powered Gift Intelligence",
-    description: "Discover the perfect gifts with AI-powered recommendations",
+    description:
+      "Discover the perfect gifts with AI-powered recommendations, cultural intelligence, and personalized gift experiences.",
     url: "https://agentgift.ai",
     siteName: "AgentGift.ai",
     images: [
@@ -31,8 +39,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AgentGift.ai - AI-Powered Gift Intelligence",
-    description: "Discover the perfect gifts with AI-powered recommendations",
+    description:
+      "Discover the perfect gifts with AI-powered recommendations, cultural intelligence, and personalized gift experiences.",
     images: ["/agentgift-logo.png"],
+    creator: "@AgentGiftAI",
   },
   robots: {
     index: true,
@@ -45,21 +55,32 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-    generator: 'v0.app'
-}
+  generator: "v0.app",
+  alternates: {
+    canonical: "https://agentgift.ai",
+    languages: {
+      "en-US": "https://agentgift.ai",
+    },
+  },
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
