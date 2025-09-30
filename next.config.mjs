@@ -1,8 +1,9 @@
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  
+
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -19,36 +20,35 @@ const nextConfig = {
         hostname: '*.supabase.co',
       },
     ],
-    unoptimized: true, // Added from updates
+    unoptimized: true,
   },
 
   // Webpack optimization
   webpack: (config, { isServer, dev }) => {
-    // Bundle analyzer (only in production)
-    if (!dev && !isServer) {
-      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+    // Bundle analyzer (only in production client builds)
+    if (!dev && !isServer && process.env.ANALYZE === 'true') {
       config.plugins.push(
         new BundleAnalyzerPlugin({
-          analyzerMode: process.env.ANALYZE === 'true' ? 'server' : 'disabled',
+          analyzerMode: 'server',
           openAnalyzer: true,
         })
-      )
+      );
     }
 
     // Optimize TensorFlow.js
     config.resolve.alias = {
       ...config.resolve.alias,
       '@tensorflow/tfjs$': '@tensorflow/tfjs/dist/tf.min.js',
-    }
+    };
 
     // Tree shaking
     config.optimization = {
       ...config.optimization,
       usedExports: true,
       sideEffects: false,
-    }
+    };
 
-    return config
+    return config;
   },
 
   // Experimental features
@@ -64,9 +64,10 @@ const nextConfig = {
 
   // Compiler options
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? { exclude: ['error', 'warn'] }
+        : false,
   },
 
   // Headers for caching
@@ -90,7 +91,7 @@ const nextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
 
   // Redirects
@@ -101,16 +102,16 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
-    ]
+    ];
   },
 
   // ESLint and TypeScript configurations
   eslint: {
-    ignoreDuringBuilds: true, // Added from updates
+    ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true, // Added from updates
+    ignoreBuildErrors: true,
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
